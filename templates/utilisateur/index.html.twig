@@ -1,0 +1,61 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Utilisateurs{% endblock %}
+
+{% block body %}
+<link rel="stylesheet" href="https://cdn.datatables.net/2.0.7/css/dataTables.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/2.0.7/css/dataTables.bootstrap5.min.css">
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/2.0.7/js/dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/2.0.7/js/dataTables.bootstrap5.min.js"></script>
+
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0" style="color: #232946; font-family: 'Segoe UI', sans-serif; font-weight: bold; letter-spacing: 1px;">Utilisateurs</h1>
+        <a href="/utilisateur/new" class="btn btn-primary" style="font-weight: 500;">Créer nouvel utilisateur</a>
+    </div>
+    <div class="card shadow-sm p-4">
+        <table id="utilisateursTable" class="table table-striped" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Prénom</th>
+                    <th>Nom</th>
+                    <th>Email</th>
+                    <th>Numéro</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Jean</td><td>Dupont</td><td>jean.dupont@email.com</td><td>0601020304</td><td><a href="#" class="btn btn-sm btn-outline-info">Voir</a></td></tr>
+                <tr><td>Marie</td><td>Curie</td><td>marie.curie@email.com</td><td>0605060708</td><td><a href="#" class="btn btn-sm btn-outline-info">Voir</a></td></tr>
+                <tr><td>Paul</td><td>Martin</td><td>paul.martin@email.com</td><td>0611223344</td><td><a href="#" class="btn btn-sm btn-outline-info">Voir</a></td></tr>
+                <tr><td>Lucie</td><td>Lefevre</td><td>lucie.lefevre@email.com</td><td>0622334455</td><td><a href="#" class="btn btn-sm btn-outline-info">Voir</a></td></tr>
+                <tr><td>Ahmed</td><td>Benali</td><td>ahmed.benali@email.com</td><td>0633445566</td><td><a href="#" class="btn btn-sm btn-outline-info">Voir</a></td></tr>
+                <tr><td>Sophie</td><td>Durand</td><td>sophie.durand@email.com</td><td>0644556677</td><td><a href="#" class="btn btn-sm btn-outline-info">Voir</a></td></tr>
+                <tr><td>Karim</td><td>Bouaziz</td><td>karim.bouaziz@email.com</td><td>0655667788</td><td><a href="#" class="btn btn-sm btn-outline-info">Voir</a></td></tr>
+                <tr><td>Emma</td><td>Petit</td><td>emma.petit@email.com</td><td>0666778899</td><td><a href="#" class="btn btn-sm btn-outline-info">Voir</a></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+<script>
+    
+    
+    
+    
+    
+    
+    $(document).ready(function() {
+        $('#utilisateursTable').DataTable({
+            language: {
+                url: '//cdn.datatables.net/plug-ins/2.0.7/i18n/fr-FR.json'
+            },
+            responsive: true,
+            pageLength: 8,
+            lengthChange: false,
+            info: false,
+            searching: false
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,78 @@
+body {
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 100;
+    width: 200px;
+    transition: transform 0.3s ease-in-out;
+}
+
+.sidebar-hidden {
+    transform: translateX(-100%);
+}
+
+@media (max-width: 767.98px) {
+    .sidebar {
+        transform: translateX(-100%);
+    }
+    .sidebar-visible {
+        transform: translateX(0);
+    }
+}
+
+main {
+    transition: margin-left 0.3s ease-in-out;
+}
+
+@media (min-width: 768px) {
+    main {
+        margin-left: 200px;
+    }
+}
+
+.dashboard-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.btn-outline-primary, .btn-outline-info, .btn-outline-success, .btn-outline-warning, .btn-outline-danger, .btn-outline-dark, .btn-outline-secondary {
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.btn-outline-primary:hover, .btn-outline-info:hover, .btn-outline-success:hover, .btn-outline-warning:hover, .btn-outline-danger:hover, .btn-outline-dark:hover, .btn-outline-secondary:hover {
+    color: #fff;
+}
+
+.btn-outline-primary:hover {
+    background-color: #393e46;
+}
+
+.btn-outline-info:hover {
+    background-color: #3a86ff;
+}
+
+.btn-outline-success:hover {
+    background-color: #43aa8b;
+}
+
+.btn-outline-warning:hover {
+    background-color: #ffd166;
+    color: #232946;
+}
+
+.btn-outline-danger:hover {
+    background-color: #ef476f;
+}
+
+.btn-outline-dark:hover {
+    background-color: #232946;
+}
+
+.btn-outline-secondary:hover {
+    background-color: #6c757d;
+}
