@@ -3,45 +3,104 @@
 {% block title %}Créer un nouvel utilisateur{% endblock %}
 
 {% block body %}
-<div class="container py-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="mb-0" style="color: #232946; font-family: 'Segoe UI', sans-serif; font-weight: bold; letter-spacing: 1px;">Créer un nouvel utilisateur</h1>
-        <a href="/utilisateur" class="btn btn-outline-secondary">← Retour à la liste</a>
+<div class="container-fluid py-5 px-4" style="min-height: calc(100vh - 60px);">
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <h1 class="mb-0 " style="color: #232946; font-family: 'Segoe UI', sans-serif; font-weight: bold; letter-spacing: 1px;">
+            Créer un nouvel utilisateur
+        </h1>
+        <a href="/utilisateur" class="btn btn-outline-dark btn-lg d-flex align-items-center gap-2" style="border-radius: 10px; padding: 0.75rem 1.5rem;">
+            <i class="bi bi-arrow-left"></i> Retour à la liste
+        </a>
     </div>
     <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-6">
-            <div class="card shadow-sm p-4">
+        <div class="col-12 col-lg-10">
+            <div class="card p-5" style="border: none; border-radius: 16px; background: #f8fafc; min-height: 600px;">
                 <form>
-                    <div class="mb-3">
-                        <label for="prenom" class="form-label">Prénom</label>
-                        <input type="text" class="form-control" id="prenom" placeholder="Entrez le prénom" required>
+                    <div class="row g-4 mb-5">
+                        <div class="col-md-6">
+                            <label for="prenom" class="form-label fw-bold" style="color: #232946; font-size: 1.1rem;">Prénom</label>
+                            <input type="text" class="form-control form-control-lg" id="prenom" placeholder="Entrez le prénom" required style="border-radius: 10px; padding: 0.75rem; font-size: 1.1rem;">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="nom" class="form-label fw-bold" style="color: #232946; font-size: 1.1rem;">Nom</label>
+                            <input type="text" class="form-control form-control-lg" id="nom" placeholder="Entrez le nom" required style="border-radius: 10px; padding: 0.75rem; font-size: 1.1rem;">
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="nom" class="form-label">Nom</label>
-                        <input type="text" class="form-control" id="nom" placeholder="Entrez le nom" required>
+                    <div class="row g-4 mb-5">
+                        <div class="col-md-6">
+                            <label for="email" class="form-label fw-bold" style="color: #232946; font-size: 1.1rem;">Email</label>
+                            <input type="email" class="form-control form-control-lg" id="email" placeholder="Entrez l'email" required style="border-radius: 10px; padding: 0.75rem; font-size: 1.1rem;">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="numero" class="form-label fw-bold" style="color: #232946; font-size: 1.1rem;">Numéro</label>
+                            <input type="text" class="form-control form-control-lg" id="numero" placeholder="Entrez le numéro" required style="border-radius: 10px; padding: 0.75rem; font-size: 1.1rem;">
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="email" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="email" placeholder="Entrez l'email" required>
+                    <div class="row g-4 mb-5">
+                        <div class="col-md-6">
+                            <label for="motdepasse" class="form-label fw-bold" style="color: #232946; font-size: 1.1rem;">Mot de passe</label>
+                            <input type="password" class="form-control form-control-lg" id="motdepasse" placeholder="Entrez le mot de passe" required style="border-radius: 10px; padding: 0.75rem; font-size: 1.1rem;">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="confirmermotdepasse" class="form-label fw-bold" style="color: #232946; font-size: 1.1rem;">Confirmer le mot de passe</label>
+                            <input type="password" class="form-control form-control-lg" id="confirmermotdepasse" placeholder="Confirmez le mot de passe" required style="border-radius: 10px; padding: 0.75rem; font-size: 1.1rem;">
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="numero" class="form-label">Numéro</label>
-                        <input type="text" class="form-control" id="numero" placeholder="Entrez le numéro" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="motdepasse" class="form-label">Mot de passe</label>
-                        <input type="password" class="form-control" id="motdepasse" placeholder="Entrez le mot de passe" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="confirmermotdepasse" class="form-label">Confirmer le mot de passe</label>
-                        <input type="password" class="form-control" id="confirmermotdepasse" placeholder="Confirmez le mot de passe" required>
+                    <div class="mb-5">
+                        <label class="form-label fw-bold mb-3" style="color: #232946; font-size: 1.1rem;">Rôles de l'utilisateur</label>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" name="roles[]" id="role_admin" value="ROLE_ADMIN" style="width: 1.5rem; height: 1.5rem;">
+                                    <label class="form-check-label" for="role_admin" style="font-size: 1rem;">Administrateur</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" name="roles[]" id="role_admin" value="ROLE_ADMIN" style="width: 1.5rem; height: 1.5rem;">
+                                    <label class="form-check-label" for="role_admin" style="font-size: 1rem;">Administrateur</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" name="roles[]" id="role_admin" value="ROLE_ADMIN" style="width: 1.5rem; height: 1.5rem;">
+                                    <label class="form-check-label" for="role_admin" style="font-size: 1rem;">Administrateur</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" name="roles[]" id="role_admin" value="ROLE_ADMIN" style="width: 1.5rem; height: 1.5rem;">
+                                    <label class="form-check-label" for="role_admin" style="font-size: 1rem;">Administrateur</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" name="roles[]" id="role_admin" value="ROLE_ADMIN" style="width: 1.5rem; height: 1.5rem;">
+                                    <label class="form-check-label" for="role_admin" style="font-size: 1rem;">Administrateur</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" name="roles[]" id="role_user" value="ROLE_USER" style="width: 1.5rem; height: 1.5rem;">
+                                    <label class="form-check-label" for="role_user" style="font-size: 1rem;">Utilisateur</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" name="roles[]" id="role_manager" value="ROLE_MANAGER" style="width: 1.5rem; height: 1.5rem;">
+                                    <label class="form-check-label" for="role_manager" style="font-size: 1rem;">Manager</label>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="d-grid">
-                        <button type="submit" class="btn btn-primary btn-lg">Créer</button>
+                        <button type="submit" class="btn btn-primary btn-lg" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); border: none; border-radius: 10px; padding: 0.75rem; font-size: 1.2rem; transition: transform 0.2s, opacity 0.2s;">
+                            Ajouter
+                        </button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
-{% endblock %} 
+{% endblock %}

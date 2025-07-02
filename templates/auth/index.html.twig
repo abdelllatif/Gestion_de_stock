@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login | Stock Management</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #e6e9f0;
+    }
+    .login-container {
+      max-width: 950px;
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      border-radius: 12px;
+    }
+    .left-panel {
+      background-color: #fff;
+      padding: 3rem;
+    }
+    .right-panel {
+      background: linear-gradient(135deg, #4b00ff, #6a00ff, #25009c);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .right-panel img {
+      max-width: 100%;
+      height: auto;
+    }
+    .form-control:focus {
+      box-shadow: none;
+      border-color: #4b00ff;
+    }
+    .btn-primary {
+      background-color: #4b00ff;
+      border: none;
+    }
+    .btn-primary:hover {
+      background-color: #3b00cc;
+    }
+  </style>
+</head>
+<body>
+  <div class="container vh-100 d-flex align-items-center justify-content-center">
+    <div class="row w-100 login-container bg-white">
+         <div class="col-md-6 left-panel">
+        <div class="text-center mb-4">
+          <img src="{{ asset('imgs/logo.png')  }}" alt="Logo" width="90">
+          <h2 class="fw-bold mt-3">Bienvenue !</h2>
+          <p class="text-muted">Connectez-vous pour accéder à la gestion du stock.</p>
+        </div>
+
+        <form method="post">
+          <div class="mb-3">
+            <label for="email" class="form-label fw-bold" style="color: #232946; font-size: 1.1rem;">Adresse e-mail *</label>
+            <input type="email" class="form-control form-control-lg" id="email" name="email" required placeholder="Entrez votre adresse e-mail" style="border-radius: 10px; padding: 0.75rem; font-size: 1.1rem;">
+          </div>
+
+          <div class="mb-3">
+            <label for="password" class="form-label fw-bold" style="color: #232946; font-size: 1.1rem;">Mot de passe *</label>
+            <input type="password" class="form-control form-control-lg" id="password" name="password" required placeholder="Entrez votre mot de passe" style="border-radius: 10px; padding: 0.75rem; font-size: 1.1rem;">
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+              <input type="checkbox" class="form-check-input me-1" id="remember">
+              <label class="form-check-label" for="remember">Se souvenir de moi</label>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-lg w-100" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); border: none; border-radius: 10px; padding: 0.75rem; font-size: 1.2rem; transition: transform 0.2s, opacity 0.2s;">
+            Se connecter
+          </button>
+
+        </form>
+      </div>
+        <div class="col-md-6 right-panel d-none d-md-block position-relative p-0">
+        <img class="img-fluid w-100 h-100 position-absolute top-0 start-0 object-fit-cover" 
+            src="{{ asset('imgs/silhouette-de-construction.jpg') }}" 
+            alt="Login Illustration">
+        <div class="position-absolute top-0 start-0 w-100 h-100" style="background-color: rgba(0, 0, 255, 0.29);"></div>
+        </div>
+
+      
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

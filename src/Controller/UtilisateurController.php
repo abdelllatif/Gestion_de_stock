@@ -21,4 +21,13 @@ final class UtilisateurController extends AbstractController
     {
         return $this->render('utilisateur/new.html.twig');
     }
+
+    #[Route('/utilisateur/{id}/edit', name: 'app_utilisateur_edit', methods: ['GET'])]
+    public function edit(int $id): Response
+    {
+        // TODO: Fetch the user by $id and pass to the template if needed
+        return $this->render('utilisateur/edit.html.twig', [
+            'user_id' => $id,
+        ]);
+    }
 }
