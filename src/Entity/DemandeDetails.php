@@ -19,10 +19,11 @@ class DemandeDetails
     private ?DemandeAchat $demandeAchat = null;
 
     /**
-     * @var Collection<int, Article>
+     * L'article demandé
      */
-    #[ORM\OneToMany(targetEntity: Article::class, mappedBy: 'demandeDetails')]
-    private Collection $article;
+    #[ORM\ManyToOne(targetEntity: Article::class, inversedBy: 'demandeDetails')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Article $article = null;
 
     #[ORM\Column]
     private ?int $quantite = null;
@@ -33,10 +34,6 @@ class DemandeDetails
     #[ORM\Column]
     private ?float $prix_unitaire = null;
 
-    public function __construct()
-    {
-        $this->article = new ArrayCollection();
-    }
 
     public function getId(): ?int
     {
@@ -56,31 +53,16 @@ class DemandeDetails
     }
 
     /**
-     * @return Collection<int, Article>
+     * Retourne l'article demandé
      */
-    public function getArticle(): Collection
+    public function getArticle(): ?Article
     {
         return $this->article;
     }
 
-    public function addArticle(Article $article): static
+    public function setArticle(?Article $article): static
     {
-        if (!$this->article->contains($article)) {
-            $this->article->add($article);
-            $article->setDemandeDetails($this);
-        }
-
-        return $this;
-    }
-
-    public function removeArticle(Article $article): static
-    {
-        if ($this->article->removeElement($article)) {
-            // set the owning side to null (unless already changed)
-            if ($article->getDemandeDetails() === $this) {
-                $article->setDemandeDetails(null);
-            }
-        }
+        $this->article = $article;
 
         return $this;
     }

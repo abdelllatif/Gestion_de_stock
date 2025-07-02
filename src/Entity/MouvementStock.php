@@ -16,17 +16,10 @@ class MouvementStock
     #[ORM\Column]
     private ?int $id = null;
 
-    /**
-     * @var Collection<int, Article>
-     */
-    #[ORM\OneToMany(targetEntity: Article::class, mappedBy: 'mouvementStock')]
-    private Collection $article;
 
-    /**
-     * @var Collection<int, Machine>
-     */
-    #[ORM\OneToMany(targetEntity: Machine::class, mappedBy: 'mouvementStock')]
-    private Collection $machine;
+
+    
+    
 
     #[ORM\Column(length: 255)]
     private ?string $recepteur = null;
@@ -49,76 +42,25 @@ class MouvementStock
     #[ORM\ManyToOne(inversedBy: 'mouvementStocks')]
     private ?Chantier $chantier = null;
 
-    public function __construct()
-    {
-        $this->article = new ArrayCollection();
-        $this->machine = new ArrayCollection();
-    }
+    #[ORM\ManyToOne(inversedBy: 'mouvementStocks')]
+    private ?Article $article = null;
+
+    #[ORM\Column(type: Types::DATE_MUTABLE)]
+    private ?\DateTime $date = null;
+
+    #[ORM\ManyToOne(inversedBy: 'mouvementStocks')]
+    private ?Machine $machine = null;
+
+   
+
+
+   
 
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    /**
-     * @return Collection<int, Article>
-     */
-    public function getArticle(): Collection
-    {
-        return $this->article;
-    }
-
-    public function addArticle(Article $article): static
-    {
-        if (!$this->article->contains($article)) {
-            $this->article->add($article);
-            $article->setMouvementStock($this);
-        }
-
-        return $this;
-    }
-
-    public function removeArticle(Article $article): static
-    {
-        if ($this->article->removeElement($article)) {
-            // set the owning side to null (unless already changed)
-            if ($article->getMouvementStock() === $this) {
-                $article->setMouvementStock(null);
-            }
-        }
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, Machine>
-     */
-    public function getMachine(): Collection
-    {
-        return $this->machine;
-    }
-
-    public function addMachine(Machine $machine): static
-    {
-        if (!$this->machine->contains($machine)) {
-            $this->machine->add($machine);
-            $machine->setMouvementStock($this);
-        }
-
-        return $this;
-    }
-
-    public function removeMachine(Machine $machine): static
-    {
-        if ($this->machine->removeElement($machine)) {
-            // set the owning side to null (unless already changed)
-            if ($machine->getMouvementStock() === $this) {
-                $machine->setMouvementStock(null);
-            }
-        }
-
-        return $this;
-    }
 
     public function getRecepteur(): ?string
     {
@@ -203,4 +145,42 @@ class MouvementStock
 
         return $this;
     }
+
+    public function getArticle(): ?Article
+    {
+        return $this->article;
+    }
+
+    public function setArticle(?Article $article): static
+    {
+        $this->article = $article;
+
+        return $this;
+    }
+
+    public function getDate(): ?\DateTime
+    {
+        return $this->date;
+    }
+
+    public function setDate(\DateTime $date): static
+    {
+        $this->date = $date;
+
+        return $this;
+    }
+
+    public function getMachine(): ?Machine
+    {
+        return $this->machine;
+    }
+
+    public function setMachine(?Machine $machine): static
+    {
+        $this->machine = $machine;
+
+        return $this;
+    }
+
+
 }

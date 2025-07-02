@@ -18,12 +18,7 @@ class Chantier
     #[ORM\Column(length: 255)]
     private ?string $nom = null;
 
-    /**
-     * Le responsable de ce chantier
-     */
-    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'chantiers')]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?User $responsable = null;
+    
 
     #[ORM\Column(length: 255)]
     private ?string $tele_responsable = null;
@@ -46,10 +41,27 @@ class Chantier
     #[ORM\OneToMany(targetEntity: MouvementStock::class, mappedBy: 'chantier')]
     private Collection $mouvementStocks;
 
+    /**
+     * @var Collection<int, User>
+     */
+    #[ORM\ManyToMany(targetEntity: User::class, mappedBy: 'chantiersAssignes')]
+    private Collection $users;
+
+    #[ORM\Column(length: 255)]
+    private ?string $responsable = null;
+
+    /**
+     * @var Collection<int, Bon>
+     */
+    #[ORM\OneToMany(targetEntity: Bon::class, mappedBy: 'chantier')]
+    private Collection $bons;
+
     public function __construct()
     {
         $this->stocks = new ArrayCollection();
         $this->mouvementStocks = new ArrayCollection();
+        $this->users = new ArrayCollection();
+        $this->bons = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -69,17 +81,7 @@ class Chantier
         return $this;
     }
 
-    public function getResponsable(): ?User
-    {
-        return $this->responsable;
-    }
 
-    public function setResponsable(?User $responsable): static
-    {
-        $this->responsable = $responsable;
-
-        return $this;
-    }
 
     public function getTeleResponsable(): ?string
     {
@@ -171,6 +173,75 @@ class Chantier
             // set the owning side to null (unless already changed)
             if ($mouvementStock->getChantier() === $this) {
                 $mouvementStock->setChantier(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function getResponsable(): ?string
+    {
+        return $this->responsable;
+    }
+
+    public function setResponsable(string $responsable): static
+    {
+        $this->responsable = $responsable;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, User>
+     */
+    public function getUsers(): Collection
+    {
+        return $this->users;
+    }
+
+    public function addUser(User $user): static
+    {
+        if (!$this->users->contains($user)) {
+            $this->users->add($user);
+            $user->addChantierAssigne($this);
+        }
+
+        return $this;
+    }
+
+    public function removeUser(User $user): static
+    {
+        if ($this->users->removeElement($user)) {
+            $user->removeChantierAssigne($this);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Bon>
+     */
+    public function getBons(): Collection
+    {
+        return $this->bons;
+    }
+
+    public function addBon(Bon $bon): static
+    {
+        if (!$this->bons->contains($bon)) {
+            $this->bons->add($bon);
+            $bon->setChantier($this);
+        }
+
+        return $this;
+    }
+
+    public function removeBon(Bon $bon): static
+    {
+        if ($this->bons->removeElement($bon)) {
+            // set the owning side to null (unless already changed)
+            if ($bon->getChantier() === $this) {
+                $bon->setChantier(null);
             }
         }
 

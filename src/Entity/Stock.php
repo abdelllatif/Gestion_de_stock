@@ -33,16 +33,14 @@ class Stock
     #[ORM\ManyToOne(inversedBy: 'stocks')]
     private ?Chantier $chantier = null;
 
-    /**
-     * @var Collection<int, Machine>
-     */
-    #[ORM\OneToMany(targetEntity: Machine::class, mappedBy: 'stock')]
-    private Collection $machine;
+    #[ORM\ManyToOne(inversedBy: 'stocks')]
+    private ?Machine $machine = null;
+
+   
 
     public function __construct()
     {
         $this->article = new ArrayCollection();
-        $this->machine = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -128,33 +126,16 @@ class Stock
         return $this;
     }
 
-    /**
-     * @return Collection<int, Machine>
-     */
-    public function getMachine(): Collection
+    public function getMachine(): ?Machine
     {
         return $this->machine;
     }
 
-    public function addMachine(Machine $machine): static
+    public function setMachine(?Machine $machine): static
     {
-        if (!$this->machine->contains($machine)) {
-            $this->machine->add($machine);
-            $machine->setStock($this);
-        }
+        $this->machine = $machine;
 
         return $this;
     }
 
-    public function removeMachine(Machine $machine): static
-    {
-        if ($this->machine->removeElement($machine)) {
-            // set the owning side to null (unless already changed)
-            if ($machine->getStock() === $this) {
-                $machine->setStock(null);
-            }
-        }
-
-        return $this;
-    }
 }

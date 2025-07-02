@@ -63,11 +63,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(targetEntity: Chantier::class, mappedBy: 'responsable')]
     private Collection $chantiers;
 
+    /**
+     * @var Collection<int, Chantier>
+     */
+    #[ORM\ManyToMany(targetEntity: Chantier::class, inversedBy: 'users')]
+    #[ORM\JoinTable(name: 'user_chantier')]
+    private Collection $chantiersAssignes;
+
     public function __construct()
     {
         $this->roles = new ArrayCollection();
         $this->demandeAchats = new ArrayCollection();
         $this->chantiers = new ArrayCollection();
+        $this->chantiersAssignes = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -287,7 +295,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         if (!$this->chantiers->contains($chantier)) {
             $this->chantiers->add($chantier);
-            $chantier->setResponsable($this);
+            $chantier->setResponsable($this->getNom() . ' ' . $this->getPrenom());
         }
 
         return $this;
@@ -297,10 +305,34 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         if ($this->chantiers->removeElement($chantier)) {
             // set the owning side to null (unless already changed)
-            if ($chantier->getResponsable() === $this) {
+            if ($chantier->getResponsable() === ($this->getNom() . ' ' . $this->getPrenom())) {
                 $chantier->setResponsable(null);
             }
         }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Chantier>
+     */
+    public function getChantiersAssignes(): Collection
+    {
+        return $this->chantiersAssignes;
+    }
+
+    public function addChantierAssigne(Chantier $chantier): static
+    {
+        if (!$this->chantiersAssignes->contains($chantier)) {
+            $this->chantiersAssignes->add($chantier);
+        }
+
+        return $this;
+    }
+
+    public function removeChantierAssigne(Chantier $chantier): static
+    {
+        $this->chantiersAssignes->removeElement($chantier);
 
         return $this;
     }

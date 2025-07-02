@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\ArticleRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ArticleRepository::class)]
@@ -40,14 +42,30 @@ class Article
     #[ORM\Column(length: 255)]
     private ?string $type = null;
 
-    #[ORM\ManyToOne(inversedBy: 'article')]
-    private ?DemandeDetails $demandeDetails = null;
+    /**
+     * @var Collection<int, DemandeDetails>
+     */
+    #[ORM\OneToMany(targetEntity: DemandeDetails::class, mappedBy: 'article')]
+    private Collection $demandeDetails;
 
-    #[ORM\ManyToOne(inversedBy: 'article')]
-    private ?Stock $stock = null;
+    /**
+     * @var Collection<int, MouvementStock>
+     */
+    #[ORM\OneToMany(targetEntity: MouvementStock::class, mappedBy: 'article')]
+    private Collection $mouvementStocks;
 
-    #[ORM\ManyToOne(inversedBy: 'article')]
-    private ?MouvementStock $mouvementStock = null;
+
+
+
+    
+
+   
+
+    public function __construct()
+    {
+        $this->demandeDetails = new ArrayCollection();
+        $this->mouvementStocks = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -162,39 +180,67 @@ class Article
         return $this;
     }
 
-    public function getDemandeDetails(): ?DemandeDetails
+    /**
+     * @return Collection<int, DemandeDetails>
+     */
+    public function getDemandeDetails(): Collection
     {
         return $this->demandeDetails;
     }
 
-    public function setDemandeDetails(?DemandeDetails $demandeDetails): static
+    public function addDemandeDetail(DemandeDetails $demandeDetail): static
     {
-        $this->demandeDetails = $demandeDetails;
+        if (!$this->demandeDetails->contains($demandeDetail)) {
+            $this->demandeDetails->add($demandeDetail);
+            $demandeDetail->setArticle($this);
+        }
 
         return $this;
     }
 
-    public function getStock(): ?Stock
+    public function removeDemandeDetail(DemandeDetails $demandeDetail): static
     {
-        return $this->stock;
-    }
-
-    public function setStock(?Stock $stock): static
-    {
-        $this->stock = $stock;
+        if ($this->demandeDetails->removeElement($demandeDetail)) {
+            if ($demandeDetail->getArticle() === $this) {
+                $demandeDetail->setArticle(null);
+            }
+        }
 
         return $this;
     }
 
-    public function getMouvementStock(): ?MouvementStock
+    /**
+     * @return Collection<int, MouvementStock>
+     */
+    public function getMouvementStocks(): Collection
     {
-        return $this->mouvementStock;
+        return $this->mouvementStocks;
     }
 
-    public function setMouvementStock(?MouvementStock $mouvementStock): static
+    public function addMouvementStock(MouvementStock $mouvementStock): static
     {
-        $this->mouvementStock = $mouvementStock;
+        if (!$this->mouvementStocks->contains($mouvementStock)) {
+            $this->mouvementStocks->add($mouvementStock);
+            $mouvementStock->setArticle($this);
+        }
 
         return $this;
     }
+
+    public function removeMouvementStock(MouvementStock $mouvementStock): static
+    {
+        if ($this->mouvementStocks->removeElement($mouvementStock)) {
+            // set the owning side to null (unless already changed)
+            if ($mouvementStock->getArticle() === $this) {
+                $mouvementStock->setArticle(null);
+            }
+        }
+
+        return $this;
+    }
+
+
+
+  
+    
 }
