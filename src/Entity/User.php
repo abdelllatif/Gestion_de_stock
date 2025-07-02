@@ -51,9 +51,23 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\ManyToMany(targetEntity: Role::class, inversedBy: 'users')]
     private Collection $roles;
 
+    /**
+     * @var Collection<int, DemandeAchat>
+     */
+    #[ORM\OneToMany(targetEntity: DemandeAchat::class, mappedBy: 'uilisateur')]
+    private Collection $demandeAchats;
+
+    /**
+     * @var Collection<int, Chantier>
+     */
+    #[ORM\OneToMany(targetEntity: Chantier::class, mappedBy: 'responsable')]
+    private Collection $chantiers;
+
     public function __construct()
     {
         $this->roles = new ArrayCollection();
+        $this->demandeAchats = new ArrayCollection();
+        $this->chantiers = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -230,4 +244,64 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     /**
      * @see UserInterface
      */
+
+    /**
+     * @return Collection<int, DemandeAchat>
+     */
+    public function getDemandeAchats(): Collection
+    {
+        return $this->demandeAchats;
+    }
+
+    public function addDemandeAchat(DemandeAchat $demandeAchat): static
+    {
+        if (!$this->demandeAchats->contains($demandeAchat)) {
+            $this->demandeAchats->add($demandeAchat);
+            $demandeAchat->setUilisateur($this);
+        }
+
+        return $this;
+    }
+
+    public function removeDemandeAchat(DemandeAchat $demandeAchat): static
+    {
+        if ($this->demandeAchats->removeElement($demandeAchat)) {
+            // set the owning side to null (unless already changed)
+            if ($demandeAchat->getUilisateur() === $this) {
+                $demandeAchat->setUilisateur(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Chantier>
+     */
+    public function getChantiers(): Collection
+    {
+        return $this->chantiers;
+    }
+
+    public function addChantier(Chantier $chantier): static
+    {
+        if (!$this->chantiers->contains($chantier)) {
+            $this->chantiers->add($chantier);
+            $chantier->setResponsable($this);
+        }
+
+        return $this;
+    }
+
+    public function removeChantier(Chantier $chantier): static
+    {
+        if ($this->chantiers->removeElement($chantier)) {
+            // set the owning side to null (unless already changed)
+            if ($chantier->getResponsable() === $this) {
+                $chantier->setResponsable(null);
+            }
+        }
+
+        return $this;
+    }
 }
