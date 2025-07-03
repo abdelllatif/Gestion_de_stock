@@ -12,14 +12,16 @@ final class UtilisateurController extends AbstractController
     public function index(): Response
     {
         return $this->render('utilisateur/index.html.twig', [
-            'controller_name' => 'UtilisateurController',
+            'activeLink' => 'utilisateur',
         ]);
     }
 
     #[Route('/utilisateur/new', name: 'app_utilisateur_new', methods: ['GET'])]
     public function new(): Response
     {
-        return $this->render('utilisateur/new.html.twig');
+        return $this->render('utilisateur/new.html.twig', [
+            'activeLink' => 'utilisateur',
+        ]);
     }
 
     #[Route('/utilisateur/{id}/edit', name: 'app_utilisateur_edit', methods: ['GET'])]
@@ -28,6 +30,7 @@ final class UtilisateurController extends AbstractController
         // TODO: Fetch the user by $id and pass to the template if needed
         return $this->render('utilisateur/edit.html.twig', [
             'user_id' => $id,
+            'activeLink' => 'utilisateur',
         ]);
     }
 }

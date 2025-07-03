@@ -8,11 +8,11 @@ use Symfony\Component\Routing\Attribute\Route;
 
 final class DasheboreedController extends AbstractController
 {
-    #[Route('/', name: 'app_dasheboreed')]
+    #[Route('/', name: 'dashboard', methods: ['GET'])]
     public function index(): Response
     {
         return $this->render('dasheboreed/index.html.twig', [
-            'controller_name' => 'DasheboreedController',
+            'activeLink' => 'dashboard',
         ]);
     }
 }
