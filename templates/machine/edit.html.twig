@@ -1,0 +1,57 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier la machine{% endblock %}
+
+{% block body %}
+<div class="container-fluid py-5 px-4" style="min-height: calc(100vh - 60px);">
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <h1 class="mb-0" style="color: #232946; font-family: 'Segoe UI', sans-serif; font-weight: bold; letter-spacing: 1px;">Modifier la machine</h1>
+        <a href="/machine" class="btn btn-outline-dark btn-lg d-flex align-items-center gap-2" style="border-radius: 10px; padding: 0.75rem 1.5rem;">
+            <i class="bi bi-arrow-left"></i> Retour à la liste
+        </a>
+    </div>
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10">
+            <div class="card p-5" style="border: none; border-radius: 16px; background: #f8fafc; min-height: 600px;">
+                <form>
+                    <div class="row g-4 mb-5">
+                        <div class="col-md-6">
+                            <label for="nom" class="form-label fw-bold" style="color: #232946; font-size: 1.1rem;">Nom</label>
+                            <input type="text" class="form-control form-control-lg" id="nom" placeholder="Modifier le nom de la machine" required style="border-radius: 10px; padding: 0.75rem; font-size: 1.1rem;">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="type" class="form-label fw-bold" style="color: #232946; font-size: 1.1rem;">Type</label>
+                            <input type="text" class="form-control form-control-lg" id="type" placeholder="Modifier le type" required style="border-radius: 10px; padding: 0.75rem; font-size: 1.1rem;">
+                        </div>
+                    </div>
+                    <div class="row g-4 mb-5">
+                        <div class="col-md-6">
+                            <label for="marque" class="form-label fw-bold" style="color: #232946; font-size: 1.1rem;">Marque</label>
+                            <input type="text" class="form-control form-control-lg" id="marque" placeholder="Modifier la marque" required style="border-radius: 10px; padding: 0.75rem; font-size: 1.1rem;">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="modele" class="form-label fw-bold" style="color: #232946; font-size: 1.1rem;">Modèle</label>
+                            <input type="text" class="form-control form-control-lg" id="modele" placeholder="Modifier le modèle" required style="border-radius: 10px; padding: 0.75rem; font-size: 1.1rem;">
+                        </div>
+                    </div>
+                    <div class="row g-4 mb-5">
+                        <div class="col-md-6">
+                            <label for="numero_serie" class="form-label fw-bold" style="color: #232946; font-size: 1.1rem;">Numéro de série</label>
+                            <input type="text" class="form-control form-control-lg" id="numero_serie" placeholder="Modifier le numéro de série" required style="border-radius: 10px; padding: 0.75rem; font-size: 1.1rem;">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="annee" class="form-label fw-bold" style="color: #232946; font-size: 1.1rem;">Année</label>
+                            <input type="number" class="form-control form-control-lg" id="annee" placeholder="Modifier l'année" required style="border-radius: 10px; padding: 0.75rem; font-size: 1.1rem;">
+                        </div>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); border: none; border-radius: 10px; padding: 0.75rem; font-size: 1.2rem; transition: transform 0.2s, opacity 0.2s;">
+                            Enregistrer les modifications
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

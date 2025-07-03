@@ -12,7 +12,24 @@ final class ChauffeurController extends AbstractController
     public function index(): Response
     {
         return $this->render('chauffeur/index.html.twig', [
-            'controller_name' => 'ChauffeurController',
+            'activeLink' => 'chauffeur',
+        ]);
+    }
+
+    #[Route('/chauffeur/new', name: 'app_chauffeur_new', methods: ['GET'])]
+    public function new(): Response
+    {
+        return $this->render('chauffeur/new.html.twig', [
+            'activeLink' => 'chauffeur',
+        ]);
+    }
+
+    #[Route('/chauffeur/{id}/edit', name: 'app_chauffeur_edit', methods: ['GET'])]
+    public function edit(int $id): Response
+    {
+        return $this->render('chauffeur/edit.html.twig', [
+            'chauffeur_id' => $id,
+            'activeLink' => 'chauffeur',
         ]);
     }
 }

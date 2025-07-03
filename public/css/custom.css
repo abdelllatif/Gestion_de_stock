@@ -1,5 +1,6 @@
 body {
     font-family: 'Segoe UI', sans-serif;
+    background-color: #f4f7fe;
 }
 
 .sidebar {
@@ -8,7 +9,7 @@ body {
     bottom: 0;
     left: 0;
     z-index: 100;
-    width: 200px;
+    width: 250px;
     transition: transform 0.3s ease-in-out;
 }
 
@@ -31,48 +32,66 @@ main {
 
 @media (min-width: 768px) {
     main {
-        margin-left: 200px;
+        margin-left: 250px;
     }
+}
+
+.navbar-dark {
+    background-color: #1a2035 !important;
+}
+
+.navbar-brand {
+    font-size: 1.5rem;
+    color: #ffffff !important;
+}
+
+.dropdown-menu {
+    background-color: #2a3147;
+    border: none;
+}
+
+.dropdown-item {
+    color: #ffffff;
+}
+
+.dropdown-item:hover {
+    background-color: #3a86ff;
+    color: #ffffff;
+}
+
+.dashboard-card {
+    background-color: #ffffff;
+    border-radius: 10px;
+    transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .dashboard-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
 }
 
-.btn-outline-primary, .btn-outline-info, .btn-outline-success, .btn-outline-warning, .btn-outline-danger, .btn-outline-dark, .btn-outline-secondary {
-    transition: background-color 0.3s, color 0.3s;
-}
-
-.btn-outline-primary:hover, .btn-outline-info:hover, .btn-outline-success:hover, .btn-outline-warning:hover, .btn-outline-danger:hover, .btn-outline-dark:hover, .btn-outline-secondary:hover {
-    color: #fff;
+.btn-outline-primary, .btn-outline-danger, .btn-outline-success, .btn-outline-info {
+    border-radius: 5px;
+    font-size: 0.9rem;
+    padding: 0.3rem 0.8rem;
 }
 
 .btn-outline-primary:hover {
     background-color: #393e46;
-}
-
-.btn-outline-info:hover {
-    background-color: #3a86ff;
-}
-
-.btn-outline-success:hover {
-    background-color: #43aa8b;
-}
-
-.btn-outline-warning:hover {
-    background-color: #ffd166;
-    color: #232946;
+    color: #ffffff;
 }
 
 .btn-outline-danger:hover {
     background-color: #ef476f;
+    color: #ffffff;
 }
 
-.btn-outline-dark:hover {
-    background-color: #232946;
+.btn-outline-success:hover {
+    background-color: #43aa8b;
+    color: #ffffff;
 }
 
-.btn-outline-secondary:hover {
-    background-color: #6c757d;
+.btn-outline-info:hover {
+    background-color: #3a86ff;
+    color: #ffffff;
 }

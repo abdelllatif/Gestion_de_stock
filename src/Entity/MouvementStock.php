@@ -18,9 +18,6 @@ class MouvementStock
 
 
 
-    
-    
-
     #[ORM\Column(length: 255)]
     private ?string $recepteur = null;
 

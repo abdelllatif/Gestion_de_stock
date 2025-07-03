@@ -1,0 +1,56 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier le mouvement de stock{% endblock %}
+
+{% block body %}
+<div class="container-fluid py-5 px-4" style="min-height: calc(100vh - 60px);">
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <h1 class="mb-0" style="color: #232946; font-family: 'Segoe UI', sans-serif; font-weight: bold; letter-spacing: 1px;">Modifier le mouvement de stock</h1>
+        <a href="/stock_movement" class="btn btn-outline-dark btn-lg d-flex align-items-center gap-2" style="border-radius: 10px; padding: 0.75rem 1.5rem;">
+            <i class="bi bi-arrow-left"></i> Retour à la liste
+        </a>
+    </div>
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10">
+            <div class="card p-5" style="border: none; border-radius: 16px; background: #f8fafc; min-height: 400px;">
+                <form>
+                    <div class="row g-4 mb-5">
+                        <div class="col-md-4">
+                            <label for="type" class="form-label fw-bold" style="color: #232946; font-size: 1.1rem;">Type</label>
+                            <select id="type" class="form-control form-control-lg" required style="border-radius: 10px; padding: 0.75rem; font-size: 1.1rem;">
+                                <option value="">Sélectionnez le type</option>
+                                <option value="entree">Entrée</option>
+                                <option value="sortie">Sortie</option>
+                                <option value="transfert">Transfert</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="date" class="form-label fw-bold" style="color: #232946; font-size: 1.1rem;">Date</label>
+                            <input type="date" class="form-control form-control-lg" id="date" required style="border-radius: 10px; padding: 0.75rem; font-size: 1.1rem;">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="article" class="form-label fw-bold" style="color: #232946; font-size: 1.1rem;">Article</label>
+                            <input type="text" class="form-control form-control-lg" id="article" placeholder="Modifier l'article" required style="border-radius: 10px; padding: 0.75rem; font-size: 1.1rem;">
+                        </div>
+                    </div>
+                    <div class="row g-4 mb-5">
+                        <div class="col-md-6">
+                            <label for="quantite" class="form-label fw-bold" style="color: #232946; font-size: 1.1rem;">Quantité</label>
+                            <input type="number" class="form-control form-control-lg" id="quantite" placeholder="Modifier la quantité" required style="border-radius: 10px; padding: 0.75rem; font-size: 1.1rem;">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="lieu" class="form-label fw-bold" style="color: #232946; font-size: 1.1rem;">Dépôt/Chantier</label>
+                            <input type="text" class="form-control form-control-lg" id="lieu" placeholder="Modifier le dépôt ou chantier" required style="border-radius: 10px; padding: 0.75rem; font-size: 1.1rem;">
+                        </div>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); border: none; border-radius: 10px; padding: 0.75rem; font-size: 1.2rem; transition: transform 0.2s, opacity 0.2s;">
+                            Enregistrer les modifications
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

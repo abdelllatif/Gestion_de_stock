@@ -12,7 +12,24 @@ final class MachineController extends AbstractController
     public function index(): Response
     {
         return $this->render('machine/index.html.twig', [
-            'controller_name' => 'MachineController',
+            'activeLink' => 'machine',
+        ]);
+    }
+
+    #[Route('/machine/new', name: 'app_machine_new', methods: ['GET'])]
+    public function new(): Response
+    {
+        return $this->render('machine/new.html.twig', [
+            'activeLink' => 'machine',
+        ]);
+    }
+
+    #[Route('/machine/{id}/edit', name: 'app_machine_edit', methods: ['GET'])]
+    public function edit(int $id): Response
+    {
+        return $this->render('machine/edit.html.twig', [
+            'machine_id' => $id,
+            'activeLink' => 'machine',
         ]);
     }
 }
