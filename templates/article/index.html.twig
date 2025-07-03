@@ -1,20 +1,599 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Hello ArticleController!{% endblock %}
+{% block title %}Articles{% endblock %}
 
 {% block body %}
-<style>
-    .example-wrapper { margin: 1em auto; max-width: 800px; width: 95%; font: 18px/1.5 sans-serif; }
-    .example-wrapper code { background: #F5F5F5; padding: 2px 6px; }
-</style>
+<link rel="stylesheet" href="https://cdn.datatables.net/2.0.7/css/dataTables.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/2.0.7/css/dataTables.bootstrap5.min.css">
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/2.0.7/js/dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/2.0.7/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
-<div class="example-wrapper">
-    <h1>Hello {{ controller_name }}! ✅</h1>
-
-    This friendly message is coming from:
-    <ul>
-        <li>Your controller at <code>C:/My projects/Gestion_des_materielles/src/Controller/ArticleController.php</code></li>
-        <li>Your template at <code>C:/My projects/Gestion_des_materielles/templates/article/index.html.twig</code></li>
-    </ul>
+<!-- Modal d'ajout d'article -->
+<div class="modal fade" id="addArticleModal" tabindex="-1" aria-labelledby="addArticleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); color: white;">
+        <h5 class="modal-title" id="addArticleModalLabel"><i class="bi bi-plus-circle me-2"></i>Ajouter un nouvel article</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="addArticleForm">
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="article_type" class="form-label">Type d'article*</label>
+              <input type="text" class="form-control" id="article_type" name="type" required>
+            </div>
+            <div class="col-md-6">
+              <label for="article_nom" class="form-label">Nom*</label>
+              <input type="text" class="form-control" id="article_nom" name="nom" required>
+            </div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="article_reference" class="form-label">Référence*</label>
+              <input type="text" class="form-control" id="article_reference" name="reference" required>
+            </div>
+            <div class="col-md-6">
+              <label for="article_marque" class="form-label">Marque*</label>
+              <input type="text" class="form-control" id="article_marque" name="marque" required>
+            </div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-4">
+              <label for="article_unite" class="form-label">Unité*</label>
+              <select class="form-select" id="article_unite" name="unite" required>
+                <option value="" disabled selected>Choisir...</option>
+                <option value="Pièce">Pièce</option>
+                <option value="Boîte">Boîte</option>
+                <option value="Sachet">Sachet</option>
+                <option value="Unité">Unité</option>
+                <option value="Lot">Lot</option>
+                <option value="Mètre">Mètre</option>
+                <option value="Litre">Litre</option>
+                <option value="Kg">Kg</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label for="article_prix" class="form-label">Prix* (€)</label>
+              <input type="number" step="0.01" min="0" class="form-control" id="article_prix" name="prix" required>
+            </div>
+            <div class="col-md-4">
+              <label for="article_numero" class="form-label">Numéro*</label>
+              <input type="number" class="form-control" id="article_numero" name="numero" required>
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <label for="article_description" class="form-label">Description</label>
+            <textarea class="form-control" id="article_description" name="description" rows="3"></textarea>
+          </div>
+          
+          <div class="alert alert-danger d-none" id="form-errors"></div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button type="button" class="btn btn-primary" id="saveArticleBtn" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); border: none;">
+            <i class="bi bi-save me-1"></i> Enregistrer
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
+
+<!-- Modal de modification d'article -->
+<div class="modal fade" id="editArticleModal" tabindex="-1" aria-labelledby="editArticleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); color: white;">
+        <h5 class="modal-title" id="editArticleModalLabel"><i class="bi bi-pencil-square me-2"></i>Modifier l'article</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="editArticleForm">
+          <input type="hidden" id="edit_article_id" name="id">
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="edit_article_type" class="form-label">Type d'article*</label>
+              <input type="text" class="form-control" id="edit_article_type" name="type" required>
+            </div>
+            <div class="col-md-6">
+              <label for="edit_article_nom" class="form-label">Nom*</label>
+              <input type="text" class="form-control" id="edit_article_nom" name="nom" required>
+            </div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="edit_article_reference" class="form-label">Référence*</label>
+              <input type="text" class="form-control" id="edit_article_reference" name="reference" required>
+            </div>
+            <div class="col-md-6">
+              <label for="edit_article_marque" class="form-label">Marque*</label>
+              <input type="text" class="form-control" id="edit_article_marque" name="marque" required>
+            </div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-4">
+              <label for="edit_article_unite" class="form-label">Unité*</label>
+              <select class="form-select" id="edit_article_unite" name="unite" required>
+                <option value="" disabled>Choisir...</option>
+                <option value="Pièce">Pièce</option>
+                <option value="Boîte">Boîte</option>
+                <option value="Sachet">Sachet</option>
+                <option value="Unité">Unité</option>
+                <option value="Lot">Lot</option>
+                <option value="Mètre">Mètre</option>
+                <option value="Litre">Litre</option>
+                <option value="Kg">Kg</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label for="edit_article_prix" class="form-label">Prix* (€)</label>
+              <input type="number" step="0.01" min="0" class="form-control" id="edit_article_prix" name="prix" required>
+            </div>
+            <div class="col-md-4">
+              <label for="edit_article_numero" class="form-label">Numéro*</label>
+              <input type="number" class="form-control" id="edit_article_numero" name="numero" required>
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <label for="edit_article_description" class="form-label">Description</label>
+            <textarea class="form-control" id="edit_article_description" name="description" rows="3"></textarea>
+          </div>
+          
+          <div class="alert alert-danger d-none" id="edit-form-errors"></div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button type="button" class="btn btn-primary" id="updateArticleBtn" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); border: none;">
+            <i class="bi bi-save me-1"></i> Mettre à jour
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0" style="color: #232946; font-family: 'Segoe UI', sans-serif; font-weight: bold; letter-spacing: 1px;">Articles</h1>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addArticleModal" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); font-weight: 500; border: none;">
+            <i class="bi bi-plus-lg me-1"></i> Ajouter un article
+        </button>
+    </div>
+    <div class="card shadow-sm p-4">
+        <table id="articlesTable" class="table table-striped" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Nom</th>
+                    <th>Référence</th>
+                    <th>Marque</th>
+                    <th>Unité</th>
+                    <th>Prix</th>
+                    <th>Description</th>
+                    <th>Numéro</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for article in articles %}
+                    <tr>
+                        <td>{{ article.type ?? 'N/A' }}</td>
+                        <td>{{ article.nom }}</td>
+                        <td>{{ article.reference }}</td>
+                        <td>{{ article.marque }}</td>
+                        <td>{{ article.unite }}</td>
+                        <td>{{ article.prix|number_format(2, ',', ' ') }} €</td>
+                        <td>{{ article.description|length > 50 ? article.description|slice(0, 50) ~ '...' : article.description }}</td>
+                        <td>{{ article.numero }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" 
+                                    onclick="openEditModal({{ article.id }})"
+                                    title="Modifier">
+                                <i class="bi bi-pencil"></i> Modifier
+                            </button>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="9" class="text-center text-muted py-4">
+                            <i class="bi bi-inbox display-6 d-block mb-2"></i>
+                            Aucun article trouvé. <a href="/article/new" class="text-decoration-none">Ajouter le premier article</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<script>
+    $(document).ready(function() {
+        var table = $('#articlesTable').DataTable({
+            language: {
+                url: '//cdn.datatables.net/plug-ins/2.0.7/i18n/fr-FR.json'
+            },
+            responsive: true,
+            pageLength: 10,
+            lengthChange: true,
+            info: true,
+            searching: true,
+            order: [[1, 'asc']], // Tri par nom par défaut
+            columnDefs: [
+                { 
+                    targets: [8], // Colonne Actions
+                    orderable: false,
+                    searchable: false
+                },
+                {
+                    targets: [5], // Colonne Prix
+                    type: 'num-fmt'
+                }
+            ],
+            dom: "<'row'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'f>>" +
+                 "<'row'<'col-sm-12'tr>>" +
+                 "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
+        });
+
+        // Personnalisation de la barre de recherche
+        let searchBox = $(table.table().container()).find('div.dataTables_filter input');
+        searchBox.addClass('form-control ps-5').attr('placeholder', 'Rechercher un article...');
+        searchBox.wrap('<div class="position-relative"></div>');
+        searchBox.before('<span class="position-absolute top-50 start-0 translate-middle-y ps-3" style="pointer-events:none;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-search text-secondary" viewBox="0 0 16 16"><path d="M11 6a5 5 0 1 1-10 0 5 5 0 0 1 10 0zm-1.293 6.707a6 6 0 1 0-1.414 1.414l3.85 3.85a1 1 0 0 0 1.415-1.415l-3.85-3.85z"/></svg></span>');
+        searchBox.css({ paddingLeft: '2.5rem', marginBottom: '0.5rem', maxWidth: '300px' });
+
+        // Animation au survol des lignes
+        $('#articlesTable tbody').on('mouseenter', 'tr', function() {
+            $(this).addClass('table-hover-effect');
+        }).on('mouseleave', 'tr', function() {
+            $(this).removeClass('table-hover-effect');
+        });
+        
+        // Traitement du formulaire d'ajout d'article
+        $('#saveArticleBtn').on('click', function() {
+            // Vérifier la validité du formulaire
+            const form = document.getElementById('addArticleForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            
+            // Récupérer les données du formulaire
+            const formData = {
+                type: $('#article_type').val(),
+                nom: $('#article_nom').val(),
+                reference: $('#article_reference').val(),
+                marque: $('#article_marque').val(),
+                unite: $('#article_unite').val(),
+                prix: $('#article_prix').val(),
+                numero: $('#article_numero').val(),
+                description: $('#article_description').val()
+            };
+            
+            // Désactiver le bouton pendant l'envoi
+            $('#saveArticleBtn').prop('disabled', true).html('<i class="spinner-border spinner-border-sm me-1"></i> Traitement en cours...');
+            
+            // Envoi AJAX
+            $.ajax({
+                url: '/article/create',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(formData),
+                success: function(response) {
+                    // Fermer le modal
+                    $('#addArticleModal').modal('hide');
+                    
+                    // Notification de succès
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Article ajouté',
+                        text: 'L\'article a été ajouté avec succès',
+                        timer: 3000,
+                        showConfirmButton: false,
+                        timerProgressBar: true
+                    });
+                    
+                    // Ajouter la nouvelle ligne à la table
+                    const newRow = table.row.add([
+                        response.article.type,
+                        response.article.nom,
+                        response.article.reference,
+                        response.article.marque,
+                        response.article.unite,
+                        response.article.prix.toFixed(2) + ' €',
+                        response.article.description.length > 50 ? 
+                            response.article.description.substring(0, 50) + '...' : 
+                            response.article.description,
+                        response.article.numero,
+                        `<button class="btn btn-sm btn-outline-primary" 
+                            onclick="openEditModal(${response.article.id})"
+                            title="Modifier">
+                            <i class="bi bi-pencil"></i> Modifier
+                        </button>`
+                    ]).draw(false).node();
+                    
+                    // Mettre en évidence la nouvelle ligne
+                    $(newRow).addClass('table-success');
+                    setTimeout(function() {
+                        $(newRow).removeClass('table-success');
+                    }, 3000);
+                    
+                    // Réinitialiser le formulaire
+                    $('#addArticleForm').trigger('reset');
+                },
+                error: function(xhr) {
+                    let errorMessage = 'Une erreur est survenue lors de l\'ajout de l\'article';
+                    
+                    // Afficher les erreurs de validation
+                    if (xhr.responseJSON && xhr.responseJSON.errors) {
+                        errorMessage = xhr.responseJSON.errors.join('<br>');
+                        $('#form-errors').removeClass('d-none').html(errorMessage);
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Erreur',
+                            text: errorMessage
+                        });
+                    }
+                },
+                complete: function() {
+                    // Réactiver le bouton
+                    $('#saveArticleBtn').prop('disabled', false).html('<i class="bi bi-save me-1"></i> Enregistrer');
+                }
+            });
+        });
+        
+        // Traitement du formulaire de modification d'article
+        $('#updateArticleBtn').on('click', function() {
+            // Vérifier la validité du formulaire
+            const form = document.getElementById('editArticleForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            
+            // Récupérer l'ID de l'article et les données du formulaire
+            const articleId = $('#edit_article_id').val();
+            const formData = {
+                type: $('#edit_article_type').val(),
+                nom: $('#edit_article_nom').val(),
+                reference: $('#edit_article_reference').val(),
+                marque: $('#edit_article_marque').val(),
+                unite: $('#edit_article_unite').val(),
+                prix: $('#edit_article_prix').val(),
+                numero: $('#edit_article_numero').val(),
+                description: $('#edit_article_description').val()
+            };
+            
+            // Désactiver le bouton pendant l'envoi
+            $('#updateArticleBtn').prop('disabled', true).html('<i class="spinner-border spinner-border-sm me-1"></i> Mise à jour en cours...');
+            
+            // Envoi AJAX
+            $.ajax({
+                url: `/article/${articleId}/update`,
+                method: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify(formData),
+                success: function(response) {
+                    // Fermer le modal
+                    $('#editArticleModal').modal('hide');
+                    
+                    // Notification de succès
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Article mis à jour',
+                        text: 'L\'article a été mis à jour avec succès',
+                        timer: 2000,
+                        showConfirmButton: false,
+                        timerProgressBar: true
+                    }).then(() => {
+                        // Recharger la page pour voir les changements
+                        location.reload();
+                    });
+                },
+                error: function(xhr) {
+                    let errorMessage = 'Une erreur est survenue lors de la mise à jour de l\'article';
+                    
+                    // Afficher les erreurs de validation
+                    if (xhr.responseJSON && xhr.responseJSON.errors) {
+                        errorMessage = xhr.responseJSON.errors.join('<br>');
+                        $('#edit-form-errors').removeClass('d-none').html(errorMessage);
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Erreur',
+                            text: errorMessage
+                        });
+                    }
+                },
+                complete: function() {
+                    // Réactiver le bouton
+                    $('#updateArticleBtn').prop('disabled', false).html('<i class="bi bi-save me-1"></i> Mettre à jour');
+                }
+            });
+        });
+        
+        // Réinitialiser le formulaire quand le modal est fermé
+        $('#addArticleModal').on('hidden.bs.modal', function() {
+            $('#addArticleForm').trigger('reset');
+            $('#form-errors').addClass('d-none').html('');
+        });
+        
+        // Gérer le bouton de mise à jour d'article
+        $('#updateArticleBtn').on('click', function() {
+            // Vérifier la validité du formulaire
+            const form = document.getElementById('editArticleForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            
+            // Récupérer l'ID de l'article et les données du formulaire
+            const articleId = $('#edit_article_id').val();
+            const formData = {
+                type: $('#edit_article_type').val(),
+                nom: $('#edit_article_nom').val(),
+                reference: $('#edit_article_reference').val(),
+                marque: $('#edit_article_marque').val(),
+                unite: $('#edit_article_unite').val(),
+                prix: $('#edit_article_prix').val(),
+                numero: $('#edit_article_numero').val(),
+                description: $('#edit_article_description').val()
+            };
+            
+            // Désactiver le bouton pendant l'envoi
+            $('#updateArticleBtn').prop('disabled', true).html('<i class="spinner-border spinner-border-sm me-1"></i> Mise à jour en cours...');
+            
+            // Envoi AJAX
+            $.ajax({
+                url: `/article/${articleId}/update`,
+                method: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify(formData),
+                success: function(response) {
+                    // Fermer le modal
+                    $('#editArticleModal').modal('hide');
+                    
+                    // Notification de succès
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Article mis à jour',
+                        text: 'L\'article a été mis à jour avec succès',
+                        timer: 2000,
+                        showConfirmButton: false,
+                        timerProgressBar: true
+                    }).then(() => {
+                        // Recharger la page pour voir les changements
+                        location.reload();
+                    });
+                },
+                error: function(xhr) {
+                    let errorMessage = 'Une erreur est survenue lors de la mise à jour de l\'article';
+                    
+                    // Afficher les erreurs de validation
+                    if (xhr.responseJSON && xhr.responseJSON.errors) {
+                        errorMessage = xhr.responseJSON.errors.join('<br>');
+                        $('#edit-form-errors').removeClass('d-none').html(errorMessage);
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Erreur',
+                            text: errorMessage
+                        });
+                    }
+                },
+                complete: function() {
+                    // Réactiver le bouton
+                    $('#updateArticleBtn').prop('disabled', false).html('<i class="bi bi-save me-1"></i> Mettre à jour');
+                }
+            });
+        });
+    });
+
+    // Fonction pour ouvrir le modal de modification avec les données de l'article
+    function openEditModal(articleId) {
+        // Afficher un indicateur de chargement
+        Swal.fire({
+            title: 'Chargement...',
+            html: 'Récupération des données de l\'article',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+        
+        // Récupérer les données de l'article via AJAX
+        $.ajax({
+            url: `/article/${articleId}`,
+            method: 'GET',
+            success: function(article) {
+                // Remplir le formulaire avec les données de l'article
+                $('#edit_article_id').val(article.id);
+                $('#edit_article_nom').val(article.nom);
+                $('#edit_article_reference').val(article.reference);
+                $('#edit_article_marque').val(article.marque);
+                $('#edit_article_unite').val(article.unite);
+                $('#edit_article_prix').val(article.prix);
+                $('#edit_article_numero').val(article.numero);
+                $('#edit_article_description').val(article.description);
+                $('#edit_article_type').val(article.type);
+                
+                // Fermer l'indicateur et ouvrir le modal
+                Swal.close();
+                $('#editArticleModal').modal('show');
+            },
+            error: function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erreur',
+                    text: 'Impossible de récupérer les données de l\'article'
+                });
+            }
+        });
+    }
+</script>
+
+<style>
+.table-hover-effect {
+    background-color: #f8f9fa !important;
+    transform: scale(1.01);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+}
+
+.dataTables_wrapper .dataTables_length select {
+    padding: 0.375rem 2.25rem 0.375rem 0.75rem;
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+}
+
+.dataTables_wrapper .dataTables_info {
+    padding-top: 0.75rem;
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    padding: 0.375rem 0.75rem;
+    margin: 0 0.125rem;
+    border-radius: 0.375rem;
+    border: 1px solid #dee2e6;
+    background: #fff;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    background: #e9ecef;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current {
+    background: linear-gradient(90deg, #1e3a8a, #3b82f6);
+    color: white !important;
+    border-color: #1e3a8a;
+}
+
+/* Styles pour le modal */
+.modal-header {
+    border-bottom-width: 3px;
+}
+
+.modal-content {
+    border-radius: 0.5rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
+}
+</style>
 {% endblock %}

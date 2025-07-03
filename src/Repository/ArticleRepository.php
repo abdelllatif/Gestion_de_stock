@@ -16,28 +16,40 @@ class ArticleRepository extends ServiceEntityRepository
         parent::__construct($registry, Article::class);
     }
 
-    //    /**
-    //     * @return Article[] Returns an array of Article objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('a')
-    //            ->andWhere('a.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('a.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    /**
+     * Supprimer un article
+     */
+    public function remove(Article $entity, bool $flush = false): void
+    {
+        $this->getEntityManager()->remove($entity);
 
-    //    public function findOneBySomeField($value): ?Article
-    //    {
-    //        return $this->createQueryBuilder('a')
-    //            ->andWhere('a.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
+    }
+
+    /**
+     * Sauvegarder un article
+     */
+    public function save(Article $entity, bool $flush = false): void
+    {
+        $this->getEntityManager()->persist($entity);
+
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
+    }
+
+    /**
+     * Rechercher des articles par nom ou référence
+     */
+    public function findBySearchTerm(string $searchTerm): array
+    {
+        return $this->createQueryBuilder('a')
+            ->where('a.nom LIKE :search OR a.reference LIKE :search')
+            ->setParameter('search', '%' . $searchTerm . '%')
+            ->orderBy('a.nom', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
 }
