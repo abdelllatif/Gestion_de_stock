@@ -3,6 +3,8 @@
 namespace App\Controller;
 
 use App\Entity\Article;
+use App\Entity\ArticleCategorie;
+use App\Repository\ArticleCategorieRepository;
 use App\Repository\ArticleRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -12,13 +14,15 @@ use Symfony\Component\Routing\Attribute\Route;
 final class ArticleController extends AbstractController
 {
     #[Route('/article', name: 'app_article')]
-    public function index(ArticleRepository $articleRepository): Response
+    public function index(ArticleRepository $articleRepository, ArticleCategorieRepository $categoryRepository): Response
     {
         $articles = $articleRepository->findAll();
+        $categories = $categoryRepository->findAll();
         
         return $this->render('article/index.html.twig', [
             'activeLink' => 'article',
             'articles' => $articles,
+            'categories' => $categories,
         ]);
     }
 
@@ -29,7 +33,7 @@ final class ArticleController extends AbstractController
             try {
                 $data = json_decode($request->getContent(), true);
                 
-                // Validation des données
+                
                 $errors = [];
                 if (empty($data['nom'])) $errors[] = 'Le nom est requis';
                 if (empty($data['reference'])) $errors[] = 'La référence est requise';
@@ -43,13 +47,11 @@ final class ArticleController extends AbstractController
                     return $this->json(['success' => false, 'errors' => $errors], 400);
                 }
 
-                // Vérifier si la référence existe déjà
                 $existingArticle = $articleRepository->findOneBy(['reference' => $data['reference']]);
                 if ($existingArticle) {
                     return $this->json(['success' => false, 'errors' => ['Cette référence existe déjà']], 400);
                 }
 
-                // Créer le nouvel article
                 $article = new Article();
                 $article->setNom($data['nom'])
                        ->setReference($data['reference'])
@@ -88,33 +90,14 @@ final class ArticleController extends AbstractController
         ]);
     }
 
-    #[Route('/article/{id}/edit', name: 'app_article_edit', methods: ['GET'])]
-    public function edit(int $id): Response
-    {
-        return $this->render('article/edit.html.twig', [
-            'article_id' => $id,
-            'activeLink' => 'article',
-        ]);
-    }
-
-    #[Route('/article/{id}/delete', name: 'app_article_delete', methods: ['DELETE'])]
-    public function delete(Article $article, ArticleRepository $articleRepository): Response
-    {
-        try {
-            $articleRepository->remove($article, true);
-            return $this->json(['success' => true, 'message' => 'Article supprimé avec succès']);
-        } catch (\Exception $e) {
-            return $this->json(['success' => false, 'message' => 'Erreur lors de la suppression'], 500);
-        }
-    }
+    
     
     #[Route('/article/create', name: 'app_article_create', methods: ['POST'])]
-    public function create(Request $request, ArticleRepository $articleRepository): Response
+    public function create(Request $request, ArticleRepository $articleRepository, ArticleCategorieRepository $categoryRepository): Response
     {
         try {
             $data = json_decode($request->getContent(), true);
             
-            // Validation des données
             $errors = [];
             if (empty($data['nom'])) $errors[] = 'Le nom est requis';
             if (empty($data['reference'])) $errors[] = 'La référence est requise';
@@ -123,18 +106,25 @@ final class ArticleController extends AbstractController
             if (!isset($data['prix']) || !is_numeric($data['prix'])) $errors[] = 'Le prix doit être un nombre';
             if (empty($data['type'])) $errors[] = 'Le type est requis';
             if (!isset($data['numero']) || !is_numeric($data['numero'])) $errors[] = 'Le numéro doit être un nombre';
+            if (empty($data['category'])) $errors[] = 'La catégorie est requise';
 
             if (!empty($errors)) {
                 return $this->json(['success' => false, 'errors' => $errors], 400);
             }
 
-            // Vérifier si la référence existe déjà
             $existingArticle = $articleRepository->findOneBy(['reference' => $data['reference']]);
             if ($existingArticle) {
                 return $this->json(['success' => false, 'errors' => ['Cette référence existe déjà']], 400);
             }
 
-            // Créer le nouvel article
+            $category = null;
+            if (!empty($data['category'])) {
+                $category = $categoryRepository->find($data['category']);
+                if (!$category) {
+                    return $this->json(['success' => false, 'errors' => ['Catégorie non trouvée']], 400);
+                }
+            }
+
             $article = new Article();
             $article->setNom($data['nom'])
                    ->setReference($data['reference'])
@@ -143,7 +133,8 @@ final class ArticleController extends AbstractController
                    ->setPrix((float)$data['prix'])
                    ->setDescription($data['description'] ?? '')
                    ->setType($data['type'])
-                   ->setNumero((int)$data['numero']);
+                   ->setNumero((int)$data['numero'])
+                   ->setCategory($category);
 
             $articleRepository->save($article, true);
 
@@ -159,7 +150,11 @@ final class ArticleController extends AbstractController
                     'prix' => $article->getPrix(),
                     'description' => $article->getDescription(),
                     'type' => $article->getType(),
-                    'numero' => $article->getNumero()
+                    'numero' => $article->getNumero(),
+                    'category' => $article->getCategory() ? [
+                        'id' => $article->getCategory()->getId(),
+                        'nom' => $article->getCategory()->getNom()
+                    ] : null
                 ]
             ]);
 
@@ -180,17 +175,17 @@ final class ArticleController extends AbstractController
             'prix' => $article->getPrix(),
             'description' => $article->getDescription(),
             'type' => $article->getType(),
-            'numero' => $article->getNumero()
+            'numero' => $article->getNumero(),
+            'category' => $article->getCategory() ? $article->getCategory()->getId() : null
         ]);
     }
     
     #[Route('/article/{id}/update', name: 'app_article_update', methods: ['PUT'])]
-    public function update(Request $request, Article $article, ArticleRepository $articleRepository): Response
+    public function update(Request $request, Article $article, ArticleRepository $articleRepository, ArticleCategorieRepository $categoryRepository): Response
     {
         try {
             $data = json_decode($request->getContent(), true);
             
-            // Validation des données
             $errors = [];
             if (empty($data['nom'])) $errors[] = 'Le nom est requis';
             if (empty($data['reference'])) $errors[] = 'La référence est requise';
@@ -199,6 +194,7 @@ final class ArticleController extends AbstractController
             if (!isset($data['prix']) || !is_numeric($data['prix'])) $errors[] = 'Le prix doit être un nombre';
             if (empty($data['type'])) $errors[] = 'Le type est requis';
             if (!isset($data['numero']) || !is_numeric($data['numero'])) $errors[] = 'Le numéro doit être un nombre';
+            if (empty($data['category'])) $errors[] = 'La catégorie est requise';
 
             if (!empty($errors)) {
                 return $this->json(['success' => false, 'errors' => $errors], 400);
@@ -209,6 +205,15 @@ final class ArticleController extends AbstractController
             if ($existingArticle && $existingArticle->getId() !== $article->getId()) {
                 return $this->json(['success' => false, 'errors' => ['Cette référence existe déjà']], 400);
             }
+            
+            // Récupérer la catégorie
+            $category = null;
+            if (!empty($data['category'])) {
+                $category = $categoryRepository->find($data['category']);
+                if (!$category) {
+                    return $this->json(['success' => false, 'errors' => ['Catégorie non trouvée']], 400);
+                }
+            }
 
             // Mettre à jour l'article
             $article->setNom($data['nom'])
@@ -218,7 +223,8 @@ final class ArticleController extends AbstractController
                    ->setPrix((float)$data['prix'])
                    ->setDescription($data['description'] ?? '')
                    ->setType($data['type'])
-                   ->setNumero((int)$data['numero']);
+                   ->setNumero((int)$data['numero'])
+                   ->setCategory($category);
 
             $articleRepository->save($article, true);
 
@@ -234,7 +240,11 @@ final class ArticleController extends AbstractController
                     'prix' => $article->getPrix(),
                     'description' => $article->getDescription(),
                     'type' => $article->getType(),
-                    'numero' => $article->getNumero()
+                    'numero' => $article->getNumero(),
+                    'category' => $article->getCategory() ? [
+                        'id' => $article->getCategory()->getId(),
+                        'nom' => $article->getCategory()->getNom()
+                    ] : null
                 ]
             ]);
 
