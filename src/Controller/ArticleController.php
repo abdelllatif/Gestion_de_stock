@@ -12,7 +12,24 @@ final class ArticleController extends AbstractController
     public function index(): Response
     {
         return $this->render('article/index.html.twig', [
-            'controller_name' => 'ArticleController',
+            'activeLink' => 'article',
+        ]);
+    }
+
+    #[Route('/article/new', name: 'app_article_new', methods: ['GET'])]
+    public function new(): Response
+    {
+        return $this->render('article/new.html.twig', [
+            'activeLink' => 'article',
+        ]);
+    }
+
+    #[Route('/article/{id}/edit', name: 'app_article_edit', methods: ['GET'])]
+    public function edit(int $id): Response
+    {
+        return $this->render('article/edit.html.twig', [
+            'article_id' => $id,
+            'activeLink' => 'article',
         ]);
     }
 }

@@ -1,8 +1,27 @@
 <style>
-
-    .mouvement:hover {
-        color: #ef476f;
-    }
+.submenu-link {
+    font-size: 0.88em;
+    margin-left: 0.5rem;
+    padding-left: 2.2rem;
+    color: #b9c6e0;
+    background: none;
+    border-radius: 6px;
+    transition: background 0.2s, color 0.2s;
+}
+.submenu-link:hover, .submenu-link.active {
+    background: linear-gradient(90deg, #1e3a8a, #3b82f6);
+    color: #fff !important;
+}
+.stock-movement-btn {
+    color: #b9c6e0;
+    background: none;
+    border-radius: 8px;
+    transition: background 0.2s, color 0.2s;
+}
+.stock-movement-btn.active {
+    background: linear-gradient(90deg, #1e3a8a, #3b82f6);
+    color: #fff !important;
+}
 </style>
 <div class="d-flex flex-column h-100 justify-content-between " style="height: calc(100vh - 60px); padding-top: 60px; background-color: #232946;">
     <div style="overflow-y: auto; max-height: calc(100vh - 20px); scrollbar-width: thin;">
@@ -20,13 +39,13 @@
                 </a>
             </li>
             <li class="nav-item mb-2">
-                <button type="button" id="stockMovementToggle" class="nav-link w-100 text-start {% if activeLink == 'stock_movement' %}text-white{% endif %}" style="{% if activeLink == 'stock_movement' %}background: linear-gradient(90deg, #1e3a8a, #3b82f6); border-radius: 8px;{% else %}border-radius: 8px;{% endif %} display: flex; align-items: center; justify-content: space-between;">
+                <button type="button" id="stockMovementToggle" class="nav-link w-100 text-start stock-movement-btn{% if activeLink == 'stock_movement' %} active{% endif %}" style="display: flex; align-items: center; justify-content: space-between;">
                     <span><i class="bi bi-box-seam me-2"></i> Mouvements de stock</span>
                     <span id="chevron" style="transition: transform 0.2s;">&#8250;</span>
                 </button>
-                <div id="stockMovementSubmenu" style="display: none; margin-left: 2.2rem;">
-                    <a href="/stock/movement" class="d-block mb-1 mouvement" style="color:rgb(165, 177, 202); font-size: 0.80em; background: none;">Mouvement des articles</a>
-                    <a href="/stock_movement/machine" class="d-block mouvement" style="color: rgb(165, 177, 202); font-size: 0.80em; background: none;">Mouvement des machines</a>
+                <div id="stockMovementSubmenu" style="display: none;">
+                    <a href="/stock/movement" class="nav-link submenu-link mb-1{% if app.request.getRequestUri() starts with '/stock/movement' %} active{% endif %}">Mouvement des articles</a>
+                    <a href="/stock_movement/machine" class="nav-link submenu-link{% if app.request.getRequestUri() starts with '/stock_movement/machine' %} active{% endif %}">Mouvement des machines</a>
                 </div>
             </li>
             <li class="nav-item mb-2">
