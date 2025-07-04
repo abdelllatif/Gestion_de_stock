@@ -31,7 +31,6 @@ final class MachineController extends AbstractController
     {
         $data = json_decode($request->getContent(), true);
         
-        // Validation basique
         $errors = [];
         if (empty($data['nom'])) {
             $errors[] = "Le nom est requis";
@@ -108,7 +107,6 @@ final class MachineController extends AbstractController
         
         $data = json_decode($request->getContent(), true);
         
-        // Validation basique
         $errors = [];
         if (empty($data['nom'])) {
             $errors[] = "Le nom est requis";
@@ -128,7 +126,6 @@ final class MachineController extends AbstractController
         $machine->setCode($data['code']);
         $machine->setNbr($data['nbr']);
         
-        // Gestion de la catégorie
         if (!empty($data['categorie'])) {
             $categorie = $categorieRepository->find($data['categorie']);
             if ($categorie) {
@@ -163,18 +160,15 @@ final class MachineController extends AbstractController
         ]);
     }
     
-    // Neutralisation des anciennes méthodes non utilisées
     #[Route('/machine/new', name: 'app_machine_new', methods: ['GET'])]
     public function new(): Response
     {
-        // Redirection vers la page index avec les modals
         return $this->redirectToRoute('app_machine');
     }
 
     #[Route('/machine/{id}/edit', name: 'app_machine_edit', methods: ['GET'])]
     public function edit(int $id): Response
     {
-        // Redirection vers la page index avec les modals
         return $this->redirectToRoute('app_machine');
     }
 }
