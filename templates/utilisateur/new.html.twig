@@ -48,49 +48,36 @@
                     </div>
                     <div class="mb-5">
                         <label class="form-label fw-bold mb-3" style="color: #232946; font-size: 1.1rem;">Rôles de l'utilisateur</label>
-                        <div class="row g-3">
-                            <div class="col-md-4">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="checkbox" name="roles[]" id="role_admin" value="ROLE_ADMIN" style="width: 1.5rem; height: 1.5rem;">
-                                    <label class="form-check-label" for="role_admin" style="font-size: 1rem;">Administrateur</label>
+                        <div class="accordion" id="roleAccordion">
+                            {% for group, roles in groupedRoles %}
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="heading-{{ loop.index }}">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ loop.index }}" aria-expanded="false" aria-controls="collapse-{{ loop.index }}">
+                                            {{ group|capitalize }}
+                                        </button>
+                                    </h2>
+                                    <div id="collapse-{{ loop.index }}" class="accordion-collapse collapse" aria-labelledby="heading-{{ loop.index }}" data-bs-parent="#roleAccordion">
+                                        <div class="accordion-body">
+                                            {% if roles|length > 0 %}
+                                                <div class="row">
+                                                    {% for role in roles %}
+                                                        <div class="col-md-4 mb-2">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" name="roles[]" value="{{ role.id }}" id="role-{{ role.id }}">
+                                                                <label class="form-check-label" for="role-{{ role.id }}">
+                                                                    {{ role.nom|replace({'_': ' '})|capitalize }}
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    {% endfor %}
+                                                </div>
+                                            {% else %}
+                                                <span class="text-muted">No roles available</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="checkbox" name="roles[]" id="role_admin" value="ROLE_ADMIN" style="width: 1.5rem; height: 1.5rem;">
-                                    <label class="form-check-label" for="role_admin" style="font-size: 1rem;">Administrateur</label>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="checkbox" name="roles[]" id="role_admin" value="ROLE_ADMIN" style="width: 1.5rem; height: 1.5rem;">
-                                    <label class="form-check-label" for="role_admin" style="font-size: 1rem;">Administrateur</label>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="checkbox" name="roles[]" id="role_admin" value="ROLE_ADMIN" style="width: 1.5rem; height: 1.5rem;">
-                                    <label class="form-check-label" for="role_admin" style="font-size: 1rem;">Administrateur</label>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="checkbox" name="roles[]" id="role_admin" value="ROLE_ADMIN" style="width: 1.5rem; height: 1.5rem;">
-                                    <label class="form-check-label" for="role_admin" style="font-size: 1rem;">Administrateur</label>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="checkbox" name="roles[]" id="role_user" value="ROLE_USER" style="width: 1.5rem; height: 1.5rem;">
-                                    <label class="form-check-label" for="role_user" style="font-size: 1rem;">Utilisateur</label>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="checkbox" name="roles[]" id="role_manager" value="ROLE_MANAGER" style="width: 1.5rem; height: 1.5rem;">
-                                    <label class="form-check-label" for="role_manager" style="font-size: 1rem;">Manager</label>
-                                </div>
-                            </div>
+                            {% endfor %}
                         </div>
                     </div>
                     <div class="d-grid">

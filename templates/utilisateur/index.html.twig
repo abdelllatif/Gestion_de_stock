@@ -13,7 +13,7 @@
 <div class="container py-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="mb-0" style="color: #232946; font-family: 'Segoe UI', sans-serif; font-weight: bold; letter-spacing: 1px;">Utilisateurs</h1>
-        <a href="/utilisateur/new" class="btn btn-primary" style="font-weight: 500;">Créer nouvel utilisateur</a>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal" style="font-weight: 500;">Créer utilisateur</button>
     </div>
     <div class="card shadow-sm p-4">
         <table id="utilisateursTable" class="table table-striped" style="width:100%">
@@ -28,73 +28,419 @@
                 </tr>
             </thead>
             <tbody>
-                <tr><td>Jean</td><td>Dupont</td><td>jean.dupont@email.com</td><td>0601020304</td><td>2024-06-01</td><td>
-                <a href="#" class="btn btn-sm btn-outline-dark me-1" title="Afficher"><i class="bi bi-eye"></i></a>
-                    <a href="/utilisateur/1/edit" class="btn btn-sm btn-outline-primary me-1" title="Modifier"><i class="bi bi-pencil"></i></a>
-                    <a href="#" class="btn btn-sm btn-outline-danger" title="Supprimer"><i class="bi bi-trash"></i></a>
-                </td></tr>
-                <tr><td>Marie</td><td>Curie</td><td>marie.curie@email.com</td><td>0605060708</td><td>2024-05-28</td><td>
-                <a href="#" class="btn btn-sm btn-outline-dark me-1" title="Afficher"><i class="bi bi-eye"></i></a>
-                    <a href="/utilisateur/1/edit" class="btn btn-sm btn-outline-primary me-1" title="Modifier"><i class="bi bi-pencil"></i></a>
-                    <a href="#" class="btn btn-sm btn-outline-danger" title="Supprimer"><i class="bi bi-trash"></i></a>
-                </td></tr>
-                <tr><td>Paul</td><td>Martin</td><td>paul.martin@email.com</td><td>0611223344</td><td>2024-05-20</td><td>
-                <a href="#" class="btn btn-sm btn-outline-dark me-1" title="Afficher"><i class="bi bi-eye"></i></a>
-                    <a href="/utilisateur/1/edit" class="btn btn-sm btn-outline-primary me-1" title="Modifier"><i class="bi bi-pencil"></i></a>
-                    <a href="#" class="btn btn-sm btn-outline-danger" title="Supprimer"><i class="bi bi-trash"></i></a>
-                </td></tr>
-                <tr><td>Lucie</td><td>Lefevre</td><td>lucie.lefevre@email.com</td><td>0622334455</td><td>2024-05-15</td><td>
-                <a href="#" class="btn btn-sm btn-outline-dark me-1" title="Afficher"><i class="bi bi-eye"></i></a>
-                    <a href="/utilisateur/1/edit" class="btn btn-sm btn-outline-primary me-1" title="Modifier"><i class="bi bi-pencil"></i></a>
-                    <a href="#" class="btn btn-sm btn-outline-danger" title="Supprimer"><i class="bi bi-trash"></i></a>
-                </td></tr>
-                <tr><td>Ahmed</td><td>Benali</td><td>ahmed.benali@email.com</td><td>0633445566</td><td>2024-05-10</td><td>
-                <a href="#" class="btn btn-sm btn-outline-dark me-1" title="Afficher"><i class="bi bi-eye"></i></a>
-                    <a href="/utilisateur/1/edit" class="btn btn-sm btn-outline-primary me-1" title="Modifier"><i class="bi bi-pencil"></i></a>
-                    <a href="#" class="btn btn-sm btn-outline-danger" title="Supprimer"><i class="bi bi-trash"></i></a>
-                </td></tr>
-                <tr><td>Sophie</td><td>Durand</td><td>sophie.durand@email.com</td><td>0644556677</td><td>2024-05-05</td><td>
-                <a href="#" class="btn btn-sm btn-outline-dark me-1" title="Afficher"><i class="bi bi-eye"></i></a>
-                    <a href="/utilisateur/1/edit" class="btn btn-sm btn-outline-primary me-1" title="Modifier"><i class="bi bi-pencil"></i></a>
-                    <a href="#" class="btn btn-sm btn-outline-danger" title="Supprimer"><i class="bi bi-trash"></i></a>
-                </td></tr>
-                <tr><td>Karim</td><td>Bouaziz</td><td>karim.bouaziz@email.com</td><td>0655667788</td><td>2024-05-01</td><td>
+                <tr data-user='{"prenom":"Jean","nom":"Dupont","email":"jean.dupont@email.com","numero":"0601020304","is_admin":true,"permissions":[]}'><td>Jean</td><td>Dupont</td><td>jean.dupont@email.com</td><td>0601020304</td><td>2024-06-01</td><td>
                     <a href="#" class="btn btn-sm btn-outline-dark me-1" title="Afficher"><i class="bi bi-eye"></i></a>
-                    <a href="/utilisateur/1/edit" class="btn btn-sm btn-outline-primary me-1" title="Modifier"><i class="bi bi-pencil"></i></a>
+                    <button type="button" class="btn btn-sm btn-outline-primary me-1 edit-user-btn" title="Modifier" data-bs-toggle="modal" data-bs-target="#editUserModal"><i class="bi bi-pencil"></i></button>
                     <a href="#" class="btn btn-sm btn-outline-danger" title="Supprimer"><i class="bi bi-trash"></i></a>
                 </td></tr>
-                <tr><td>Emma</td><td>Petit</td><td>emma.petit@email.com</td><td>0666778899</td><td>2024-04-28</td><td>
+                <tr data-user='{"prenom":"Marie","nom":"Curie","email":"marie.curie@email.com","numero":"0605060708","is_admin":false,"permissions":["ROLE_USER"]}'><td>Marie</td><td>Curie</td><td>marie.curie@email.com</td><td>0605060708</td><td>2024-05-28</td><td>
                     <a href="#" class="btn btn-sm btn-outline-dark me-1" title="Afficher"><i class="bi bi-eye"></i></a>
-                    <a href="/utilisateur/1/edit" class="btn btn-sm btn-outline-primary me-1" title="Modifier"><i class="bi bi-pencil"></i></a>
+                    <button type="button" class="btn btn-sm btn-outline-primary me-1 edit-user-btn" title="Modifier" data-bs-toggle="modal" data-bs-target="#editUserModal"><i class="bi bi-pencil"></i></button>
+                    <a href="#" class="btn btn-sm btn-outline-danger" title="Supprimer"><i class="bi bi-trash"></i></a>
+                </td></tr>
+                <tr data-user='{"prenom":"Paul","nom":"Martin","email":"paul.martin@email.com","numero":"0611223344","is_admin":false,"permissions":["ROLE_MANAGER"]}'><td>Paul</td><td>Martin</td><td>paul.martin@email.com</td><td>0611223344</td><td>2024-05-20</td><td>
+                    <a href="#" class="btn btn-sm btn-outline-dark me-1" title="Afficher"><i class="bi bi-eye"></i></a>
+                    <button type="button" class="btn btn-sm btn-outline-primary me-1 edit-user-btn" title="Modifier" data-bs-toggle="modal" data-bs-target="#editUserModal"><i class="bi bi-pencil"></i></button>
+                    <a href="#" class="btn btn-sm btn-outline-danger" title="Supprimer"><i class="bi bi-trash"></i></a>
+                </td></tr>
+                <tr data-user='{"prenom":"Lucie","nom":"Lefevre","email":"lucie.lefevre@email.com","numero":"0622334455","is_admin":false,"permissions":["ROLE_VIEWER"]}'><td>Lucie</td><td>Lefevre</td><td>lucie.lefevre@email.com</td><td>0622334455</td><td>2024-05-15</td><td>
+                    <a href="#" class="btn btn-sm btn-outline-dark me-1" title="Afficher"><i class="bi bi-eye"></i></a>
+                    <button type="button" class="btn btn-sm btn-outline-primary me-1 edit-user-btn" title="Modifier" data-bs-toggle="modal" data-bs-target="#editUserModal"><i class="bi bi-pencil"></i></button>
+                    <a href="#" class="btn btn-sm btn-outline-danger" title="Supprimer"><i class="bi bi-trash"></i></a>
+                </td></tr>
+                <tr data-user='{"prenom":"Ahmed","nom":"Benali","email":"ahmed.benali@email.com","numero":"0633445566","is_admin":true,"permissions":[]}'><td>Ahmed</td><td>Benali</td><td>ahmed.benali@email.com</td><td>0633445566</td><td>2024-05-10</td><td>
+                    <a href="#" class="btn btn-sm btn-outline-dark me-1" title="Afficher"><i class="bi bi-eye"></i></a>
+                    <button type="button" class="btn btn-sm btn-outline-primary me-1 edit-user-btn" title="Modifier" data-bs-toggle="modal" data-bs-target="#editUserModal"><i class="bi bi-pencil"></i></button>
+                    <a href="#" class="btn btn-sm btn-outline-danger" title="Supprimer"><i class="bi bi-trash"></i></a>
+                </td></tr>
+                <tr data-user='{"prenom":"Sophie","nom":"Durand","email":"sophie.durand@email.com","numero":"0644556677","is_admin":false,"permissions":["ROLE_USER","ROLE_MANAGER"]}'><td>Sophie</td><td>Duraver</td><td>sophie.durand@email.com</td><td>0644556677</td><td>2024-05-05</td><td>
+                    <a href="#" class="btn btn-sm btn-outline-dark me-1" title="Afficher"><i class="bi bi-eye"></i></a>
+                    <button type="button" class="btn btn-sm btn-outline-primary me-1 edit-user-btn" title="Modifier" data-bs-toggle="modal" data-bs-target="#editUserModal"><i class="bi bi-pencil"></i></button>
+                    <a href="#" class="btn btn-sm btn-outline-danger" title="Supprimer"><i class="bi bi-trash"></i></a>
+                </td></tr>
+                <tr data-user='{"prenom":"Karim","nom":"Bouaziz","email":"karim.bouaziz@email.com","numero":"0655667788","is_admin":false,"permissions":[]}'><td>Karim</td><td>Bouaziz</td><td>karim.bouaziz@email.com</td><td>0655667788</td><td>2024-05-01</td><td>
+                    <a href="#" class="btn btn-sm btn-outline-dark me-1" title="Afficher"><i class="bi bi-eye"></i></a>
+                    <button type="button" class="btn btn-sm btn-outline-primary me-1 edit-user-btn" title="Modifier" data-bs-toggle="modal" data-bs-target="#editUserModal"><i class="bi bi-pencil"></i></button>
+                    <a href="#" class="btn btn-sm btn-outline-danger" title="Supprimer"><i class="bi bi-trash"></i></a>
+                </td></tr>
+                <tr data-user='{"prenom":"Emma","nom":"Petit","email":"emma.petit@email.com","numero":"0666778899","is_admin":false,"permissions":["ROLE_USER","ROLE_VIEWER"]}'><td>Emma</td><td>Petit</td><td>emma.petit@email.com</td><td>0666778899</td><td>2024-04-28</td><td>
+                    <a href="#" class="btn btn-sm btn-outline-dark me-1" title="Afficher"><i class="bi bi-eye"></i></a>
+                    <button type="button" class="btn btn-sm btn-outline-primary me-1 edit-user-btn" title="Modifier" data-bs-toggle="modal" data-bs-target="#editUserModal"><i class="bi bi-pencil"></i></button>
                     <a href="#" class="btn btn-sm btn-outline-danger" title="Supprimer"><i class="bi bi-trash"></i></a>
                 </td></tr>
             </tbody>
         </table>
     </div>
 </div>
-<script>
-    $(document).ready(function() {
-        var table = $('#utilisateursTable').DataTable({
-            language: {
-                url: '//cdn.datatables.net/plug-ins/2.0.7/i18n/fr-FR.json'
-            },
-            responsive: true,
-            pageLength: 8,
-            lengthChange: true,
-            info: true,
-            searching: true,
-            order: [[4, 'desc']], // Sort by date desc by default
-            columnDefs: [
-                { targets: 4, type: 'date' }
-            ]
-        });
 
-        // Custom search input with icon
-        let searchBox = $(table.table().container()).find('div.dataTables_filter input');
-        searchBox.addClass('form-control ps-5').attr('placeholder', 'Rechercher...');
-        searchBox.wrap('<div class="position-relative"></div>');
-        searchBox.before('<span class="position-absolute top-50 start-0 translate-middle-y ps-3" style="pointer-events:none;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-search text-secondary" viewBox="0 0 16 16"><path d="M11 6a5 5 0 1 1-10 0 5 5 0 0 1 10 0zm-1.293 6.707a6 6 0 1 0-1.414 1.414l3.85 3.85a1 1 0 0 0 1.415-1.415l-3.85-3.85z"/></svg></span>');
-        searchBox.css({ paddingLeft: '2.5rem', marginBottom: '0.5rem', maxWidth: '300px' });
+<!-- Add User Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addUserModalLabel">Créer un utilisateur</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="addUserForm">
+          <div class="row g-4 mb-3">
+            <div class="col-md-6">
+              <label for="add_prenom" class="form-label fw-bold">Prénom</label>
+              <input type="text" class="form-control" id="add_prenom" name="prenom" required>
+            </div>
+            <div class="col-md-6">
+              <label for="add_nom" class="form-label fw-bold">Nom</label>
+              <input type="text" class="form-control" id="add_nom" name="nom" required>
+            </div>
+          </div>
+          <div class="row g-4 mb-3">
+            <div class="col-md-6">
+              <label for="add_email" class="form-label fw-bold">Email</label>
+              <input type="email" class="form-control" id="add_email" name="email" required>
+            </div>
+            <div class="col-md-6">
+              <label for="add_numero" class="form-label fw-bold">Numéro</label>
+              <input type="text" class="form-control" id="add_numero" name="numero" required>
+            </div>
+          </div>
+          <div class="row g-4 mb-3">
+            <div class="col-md-6">
+              <label for="add_motdepasse" class="form-label fw-bold">Mot de passe</label>
+              <input type="password" class="form-control" id="add_motdepasse" name="motdepasse">
+            </div>
+            <div class="col-md-6">
+              <label for="add_confirmermotdepasse" class="form-label fw-bold">Confirmer le mot de passe</label>
+              <input type="password" class="form-control" id="add_confirmermotdepasse" name="confirmermotdepasse">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold mb-2">Type d'utilisateur</label>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="add_is_admin" id="add_adminRadio" value="1">
+              <label class="form-check-label" for="add_adminRadio">Admin</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="add_is_admin" id="add_userRadio" value="0" checked>
+              <label class="form-check-label" for="add_userRadio">Utilisateur avec permissions</label>
+            </div>
+          </div>
+          <div id="add_permissionsSection" class="mb-4">
+            <label class="form-label fw-bold mb-2">Permissions</label>
+            <div class="container-fluid">
+              <div class="row">
+                {% set groupCount = 0 %}
+                {% for group, roles in groupedRoles %}
+                  {% if groupCount % 4 == 0 and groupCount > 0 %}</div><div class="row">{% endif %}
+                  <div class="col-md-3 mb-3" style="min-width: 260px;">
+                    <div class="border rounded p-3 h-100">
+                      <div class="d-flex align-items-center mb-2 group-header" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#add-roles-{{ loop.index }}" aria-expanded="false" aria-controls="add-roles-{{ loop.index }}">
+                        <input class="form-check-input group-checkbox me-2" type="checkbox" id="add-group-{{ loop.index }}" data-group="add-group-{{ loop.index }}">
+                        <label class="form-check-label fw-bold me-2" for="add-group-{{ loop.index }}" style="font-size: 1.1rem;">
+                          {{ group|capitalize }}
+                        </label>
+                        <span class="ms-auto chevron" style="transition: transform 0.2s;">›</span>
+                      </div>
+                      <div class="collapse" id="add-roles-{{ loop.index }}">
+                        <div>
+                          {% if roles|length > 0 %}
+                            {% for role in roles %}
+                              <div class="form-check ms-3">
+                                <input class="form-check-input add-group-{{ loop.parent.loop.index }}-checkbox role-checkbox" type="checkbox" name="roles[]" value="{{ role.id }}" id="add-role-{{ role.id }}">
+                                <label class="form-check-label" for="add-role-{{ role.id }}">
+                                  {{ role.nom|replace({'_': ' '})|capitalize }}
+                                </label>
+                              </div>
+                            {% endfor %}
+                          {% else %}
+                            <span class="text-muted">No roles</span>
+                          {% endif %}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  {% set groupCount = groupCount + 1 %}
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+          <div class="d-grid">
+            <button type="submit" class="btn btn-primary btn-lg">Ajouter</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit User Modal -->
+<div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editUserModalLabel">Modifier un utilisateur</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="editUserForm">
+          <div class="row g-4 mb-3">
+            <div class="col-md-6">
+              <label for="edit_prenom" class="form-label fw-bold">Prénom</label>
+              <input type="text" class="form-control" id="edit_prenom" name="prenom" required>
+            </div>
+            <div class="col-md-6">
+              <label for="edit_nom" class="form-label fw-bold">Nom</label>
+              <input type="text" class="form-control" id="edit_nom" name="nom" required>
+            </div>
+          </div>
+          <div class="row g-4 mb-3">
+            <div class="col-md-6">
+              <label for="edit_email" class="form-label fw-bold">Email</label>
+              <input type="email" class="form-control" id="edit_email" name="email" required>
+            </div>
+            <div class="col-md-6">
+              <label for="edit_numero" class="form-label fw-bold">Numéro</label>
+              <input type="text" class="form-control" id="edit_numero" name="numero" required>
+            </div>
+          </div>
+          <div class="row g-4 mb-3">
+            <div class="col-md-6">
+              <label for="edit_motdepasse" class="form-label fw-bold">Mot de passe</label>
+              <input type="password" class="form-control" id="edit_motdepasse" name="motdepasse">
+            </div>
+            <div class="col-md-6">
+              <label for="edit_confirmermotdepasse" class="form-label fw-bold">Confirmer le mot de passe</label>
+              <input type="password" class="form-control" id="edit_confirmermotdepasse" name="confirmermotdepasse">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold mb-2">Type d'utilisateur</label>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="edit_is_admin" id="edit_adminRadio" value="1">
+              <label class="form-check-label" for="edit_adminRadio">Admin</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="edit_is_admin" id="edit_userRadio" value="0" checked>
+              <label class="form-check-label" for="edit_userRadio">Utilisateur avec permissions</label>
+            </div>
+          </div>
+          <div id="edit_permissionsSection" class="mb-4">
+            <label class="form-label fw-bold mb-2">Permissions</label>
+            <div class="container-fluid">
+              <div class="row">
+                {% set groupCount = 0 %}
+                {% for group, roles in groupedRoles %}
+                  {% if groupCount % 4 == 0 and groupCount > 0 %}</div><div class="row">{% endif %}
+                  <div class="col-md-3 mb-3" style="min-width: 260px;">
+                    <div class="border rounded p-3 h-100">
+                      <div class="d-flex align-items-center mb-2 group-header" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#edit-roles-{{ loop.index }}" aria-expanded="false" aria-controls="edit-roles-{{ loop.index }}">
+                        <input class="form-check-input group-checkbox me-2" type="checkbox" id="edit-group-{{ loop.index }}" data-group="edit-group-{{ loop.index }}">
+                        <label class="form-check-label fw-bold me-2" for="edit-group-{{ loop.index }}" style="font-size: 1.1rem;">
+                          {{ group|capitalize }}
+                        </label>
+                        <span class="ms-auto chevron" style="transition: transform 0.2s;">›</span>
+                      </div>
+                      <div class="collapse" id="edit-roles-{{ loop.index }}">
+                        <div>
+                          {% if roles|length > 0 %}
+                            {% for role in roles %}
+                              <div class="form-check ms-3">
+                                <input class="form-check-input edit-group-{{ loop.parent.loop.index }}-checkbox role-checkbox" type="checkbox" name="roles[]" value="{{ role.id }}" id="edit-role-{{ role.id }}">
+                                <label class="form-check-label" for="edit-role-{{ role.id }}">
+                                  {{ role.nom|replace({'_': ' '})|capitalize }}
+                                </label>
+                              </div>
+                            {% endfor %}
+                          {% else %}
+                            <span class="text-muted">No roles</span>
+                          {% endif %}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  {% set groupCount = groupCount + 1 %}
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+          <div class="d-grid">
+            <button type="submit" class="btn btn-primary btn-lg">Enregistrer</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="assets/js/components/alert.js"></script>
+<script>
+$(document).ready(function() {
+  // Initialisation DataTables avec langue FR
+  var table = $('#utilisateursTable').DataTable({
+    language: {
+      decimal: ",",
+      thousands: " ",
+      search: "Rechercher :",
+      lengthMenu: "Afficher _MENU_ entrées",
+      info: "Affichage de _START_ à _END_ sur _TOTAL_ entrées",
+      infoEmpty: "Affichage de 0 à 0 sur 0 entrées",
+      infoFiltered: "(filtré de _MAX_ entrées totales)",
+      loadingRecords: "Chargement...",
+      zeroRecords: "Aucun enregistrement correspondant trouvé",
+      emptyTable: "Aucune donnée disponible dans le tableau",
+      paginate: {
+        first: '<i class="bi bi-chevron-bar-left"></i>',
+        previous: '<i class="bi bi-chevron-left"></i>',
+        next: '<i class="bi bi-chevron-right"></i>',
+        last: '<i class="bi bi-chevron-bar-right"></i>'
+      }
+    }
+  });
+
+  // Toggle permissions dans Add User Modal
+  function toggleAddPermissions() {
+    var isAdmin = $('#add_adminRadio').is(':checked');
+    $('#add_permissionsSection').toggle(!isAdmin);
+  }
+  $('#add_adminRadio, #add_userRadio').on('change', toggleAddPermissions);
+  toggleAddPermissions();
+
+  // Toggle permissions dans Edit User Modal
+  function toggleEditPermissions() {
+    var isAdmin = $('#edit_adminRadio').is(':checked');
+    $('#edit_permissionsSection').toggle(!isAdmin);
+  }
+  $('#edit_adminRadio, #edit_userRadio').on('change', toggleEditPermissions);
+  toggleEditPermissions();
+
+  // Remplir formulaire édition avec données utilisateur
+  $('.edit-user-btn').on('click', function() {
+    var user = $(this).closest('tr').data('user');
+    if (!user) return;
+    $('#edit_prenom').val(user.prenom);
+    $('#edit_nom').val(user.nom);
+    $('#edit_email').val(user.email);
+    $('#edit_numero').val(user.numero);
+    $('#edit_motdepasse').val('');
+    $('#edit_confirmermotdepasse').val('');
+    if (user.is_admin) {
+      $('#edit_adminRadio').prop('checked', true);
+      $('#edit_userRadio').prop('checked', false);
+    } else {
+      $('#edit_adminRadio').prop('checked', false);
+      $('#edit_userRadio').prop('checked', true);
+    }
+    $('#edit_permissionsSection input[type=checkbox]').prop('checked', false);
+    if (user.permissions && user.permissions.length) {
+      user.permissions.forEach(function(perm) {
+        $('#edit_permissionsSection input[value="'+perm+'"]').prop('checked', true);
+      });
+    }
+    // Update group checkboxes based on role checkboxes
+    $('#edit_permissionsSection .group-checkbox').each(function() {
+      var groupClass = $(this).data('group') + '-checkbox';
+      var checkboxes = $('.' + groupClass);
+      $(this).prop('checked', checkboxes.length > 0 && checkboxes.filter(':checked').length === checkboxes.length);
     });
+    toggleEditPermissions();
+  });
+
+  document.addEventListener('DOMContentLoaded', function() {
+    // Initialize all role sections as hidden by default
+    document.querySelectorAll('.collapse').forEach(function(collapseEl) {
+      var bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false });
+      bsCollapse.hide();
+    });
+
+    // Toggle chevron direction on collapse show/hide
+    document.querySelectorAll('.group-header').forEach(function(header) {
+      var chevron = header.querySelector('.chevron');
+      var targetId = header.getAttribute('data-bs-target');
+      var collapseEl = document.querySelector(targetId);
+      if (collapseEl) {
+        collapseEl.addEventListener('show.bs.collapse', function() {
+          chevron.style.transform = 'rotate(90deg)';
+        });
+        collapseEl.addEventListener('hide.bs.collapse', function() {
+          chevron.style.transform = 'rotate(0deg)';
+        });
+      }
+      // Also open/close collapse when clicking label or chevron
+      header.querySelectorAll('label, .chevron').forEach(function(el) {
+        el.addEventListener('click', function(e) {
+          e.stopPropagation();
+          header.click();
+        });
+      });
+    });
+
+    // Group checkbox toggles all roles in group and expands/collapses
+    document.querySelectorAll('.group-checkbox').forEach(function(groupCb) {
+      groupCb.addEventListener('change', function(e) {
+        e.stopPropagation();
+        var groupClass = this.getAttribute('data-group') + '-checkbox';
+        var checkboxes = document.querySelectorAll('.' + groupClass);
+        var collapseId = '#' + (this.id.startsWith('add-') ? 'add-roles-' : 'edit-roles-') + this.id.split('-')[2];
+        var collapseEl = document.querySelector(collapseId);
+        checkboxes.forEach(cb => cb.checked = this.checked);
+        var bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseEl);
+        if (this.checked) {
+          bsCollapse.show();
+        } else {
+          bsCollapse.hide();
+        }
+      });
+    });
+    document.querySelectorAll('.role-checkbox').forEach(function(roleCb) {
+      roleCb.addEventListener('change', function() {
+        var groupClasses = Array.from(this.classList).filter(c => c.endsWith('-checkbox'));
+        groupClasses.forEach(function(groupClass) {
+          var groupCheckbox = document.querySelector('.group-checkbox[data-group="' + groupClass.replace('-checkbox','') + '"]');
+          var checkboxes = document.querySelectorAll('.' + groupClass);
+          var allChecked = Array.from(checkboxes).every(cb => cb.checked);
+          groupCheckbox.checked = allChecked;
+        });
+      });
+    });
+  });
+});
+
+
+
+
+
+
+
+
+//hna randiro wahed l'ajax bax nzido l'utilisateur fl entité dyal user wsf
+
+ $('#addUserForm').on('submit', function(e) {
+    e.preventDefault();
+
+    const formData = {
+      prenom: $('#add_prenom').val(),
+      nom: $('#add_nom').val(),
+      email: $('#add_email').val(),
+      numero: $('#add_numero').val(),
+      password: $('#add_motdepasse').val(),
+      confirm_password: $('#add_confirmermotdepasse').val(),
+      is_admin: $('input[name="add_is_admin"]:checked').val(),
+      roles: $('input[name="roles[]"]:checked').map(function() {
+        return $(this).val();
+      }).get()
+    };
+
+    $.ajax({
+      url: '/utilisateur/new', 
+      method: 'POST',
+      data: formData,
+      success: function(response) {
+        showSuccess(response.message); //  hna ran3ito  3la SweetAlert li f js/components/alert.js
+        location.reload();
+      },
+      error: function(xhr) {
+        const response = xhr.responseJSON;
+        showError(response.message); //  hna ran3ito  3la SweetAlert li f js/components/alert.js
+      }
+    });
+  });
 </script>
 {% endblock %}
