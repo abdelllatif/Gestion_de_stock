@@ -252,4 +252,21 @@ final class ArticleController extends AbstractController
             return $this->json(['success' => false, 'errors' => ['Erreur lors de la mise à jour: ' . $e->getMessage()]], 500);
         }
     }
+    
+    #[Route('/article/{id}/show', name: 'app_article_show', methods: ['GET'])]
+    public function show(int $id, ArticleRepository $articleRepository, ArticleCategorieRepository $categoryRepository): Response
+    {
+        $article = $articleRepository->find($id);
+        
+        if (!$article) {
+            $this->addFlash('error', 'Article non trouvé');
+            return $this->redirectToRoute('app_article');
+        }
+        
+        return $this->render('article/show.html.twig', [
+            'activeLink' => 'article',
+            'article' => $article,
+            'categories' => $categoryRepository->findAll()
+        ]);
+    }
 }

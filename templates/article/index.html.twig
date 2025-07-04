@@ -217,11 +217,18 @@
                         <td>{{ article.description|length > 50 ? article.description|slice(0, 50) ~ '...' : article.description }}</td>
                         <td>{{ article.numero }}</td>
                         <td>
-                            <button class="btn btn-sm btn-outline-primary" 
-                                    onclick="openEditModal({{ article.id }})"
-                                    title="Modifier">
-                                <i class="bi bi-pencil"></i> Modifier
-                            </button>
+                            <div class="btn-group" role="group">
+                                <a href="{{ path('app_article_show', {'id': article.id}) }}" 
+                                   class="btn btn-sm btn-outline-info me-2" 
+                                   title="Voir les détails">
+                                    <i class="bi bi-eye"></i> Détails
+                                </a>
+                                <button class="btn btn-sm btn-outline-primary" 
+                                        onclick="openEditModal({{ article.id }})"
+                                        title="Modifier">
+                                    <i class="bi bi-pencil"></i> Modifier
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 {% else %}
