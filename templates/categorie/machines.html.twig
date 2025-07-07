@@ -31,11 +31,10 @@
             <textarea class="form-control" id="categorie_description" name="description" rows="3"></textarea>
           </div>
           <div class="mb-3">
-            <label for="categorie_typeCons" class="form-label">Type de consommation</label>
+            <label for="categorie_typeCons" class="form-label">Unité de mesure de consommation</label>
             <select class="form-select" id="categorie_typeCons" name="typeCons">
-              <option value="0">Standard</option>
-              <option value="1">Haute consommation</option>
-              <option value="2">Basse consommation</option>
+              <option value="0">Par heures</option>
+              <option value="1">Par kilomètres</option>
             </select>
           </div>
           <div class="alert alert-danger d-none" id="form-errors"></div>
@@ -71,11 +70,10 @@
             <textarea class="form-control" id="edit_categorie_description" name="description" rows="3"></textarea>
           </div>
           <div class="mb-3">
-            <label for="edit_categorie_typeCons" class="form-label">Type de consommation</label>
+            <label for="edit_categorie_typeCons" class="form-label">Unité de mesure de consommation</label>
             <select class="form-select" id="edit_categorie_typeCons" name="typeCons">
-              <option value="0">Standard</option>
-              <option value="1">Haute consommation</option>
-              <option value="2">Basse consommation</option>
+              <option value="0">Par heures</option>
+              <option value="1">Par kilomètres</option>
             </select>
           </div>
           <div class="alert alert-danger d-none" id="edit-form-errors"></div>
@@ -104,7 +102,7 @@
                 <tr>
                     <th>Nom</th>
                     <th>Description</th>
-                    <th>Type de consommation</th>
+                    <th>Unité de consommation</th>
                     <th>Nombre de machines</th>
                     <th>Actions</th>
                 </tr>
@@ -116,11 +114,9 @@
                         <td>{{ categorie.description|slice(0, 100) ~ (categorie.description|length > 100 ? '...' : '') }}</td>
                         <td>
                             {% if categorie.typeCons == 0 %}
-                                <span class="badge bg-secondary">Standard</span>
+                                <span class="badge bg-info">Par heures</span>
                             {% elseif categorie.typeCons == 1 %}
-                                <span class="badge bg-danger">Haute consommation</span>
-                            {% elseif categorie.typeCons == 2 %}
-                                <span class="badge bg-success">Basse consommation</span>
+                                <span class="badge bg-primary">Par kilomètres</span>
                             {% endif %}
                         </td>
                         <td>{{ categorie.machines|length }}</td>

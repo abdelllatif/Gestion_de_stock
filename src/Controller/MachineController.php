@@ -59,6 +59,11 @@ final class MachineController extends AbstractController
             $machine->setModele($data['modele']);
         }
         if (!empty($data['anneeFabriq'])) {
+            // Vérification que l'année est un nombre entier
+            if (!is_numeric($data['anneeFabriq']) || strpos($data['anneeFabriq'], '.') !== false) {
+                $errors[] = "L'année de fabrication doit être un nombre entier";
+                return $this->json(['errors' => $errors], 400);
+            }
             $machine->setAnneeFabriq($data['anneeFabriq']);
         }
         
@@ -147,8 +152,15 @@ final class MachineController extends AbstractController
         if (isset($data['modele'])) {
             $machine->setModele($data['modele']);
         }
-        if (isset($data['anneeFabriq'])) {
+        if (isset($data['anneeFabriq']) && $data['anneeFabriq'] !== '') {
+            // Vérification que l'année est un nombre entier
+            if (!is_numeric($data['anneeFabriq']) || strpos($data['anneeFabriq'], '.') !== false) {
+                $errors[] = "L'année de fabrication doit être un nombre entier";
+                return $this->json(['errors' => $errors], 400);
+            }
             $machine->setAnneeFabriq($data['anneeFabriq']);
+        } else if (isset($data['anneeFabriq']) && $data['anneeFabriq'] === '') {
+            $machine->setAnneeFabriq(null);
         }
         
         if (!empty($data['categorie'])) {
