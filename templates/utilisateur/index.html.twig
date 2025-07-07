@@ -23,7 +23,7 @@
                     <th>Nom</th>
                     <th>Email</th>
                     <th>Numéro</th>
-                    <th>Status</th>
+                    <th>Rôles</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -34,7 +34,17 @@
                         <td>{{ user.nom }}</td>
                         <td>{{ user.email }}</td>
                         <td>{{ user.tele }}</td>
-                        <td>{{ user.isAdmin ? 'Admin' : 'Utilisateur' }}</td>
+                        <td>
+                            {% if user.isAdmin %}
+                                Admin
+                            {% else %}
+                                {% set roleNames = [] %}
+                                {% for role in user.roleEntities is defined ? user.roleEntities : (user.getRoleEntities is defined ? user.getRoleEntities() : user.roles) %}
+                                    {% set roleNames = roleNames|merge([role.nom|replace({'_': ' '})|capitalize]) %}
+                                {% endfor %}
+                                {{ roleNames|join(', ') }}
+                            {% endif %}
+                        </td>
                         <td>
                             <a href="#" class="btn btn-sm btn-outline-dark me-1" title="Afficher"><i class="bi bi-eye"></i></a>
                             <a href="{{ path('app_utilisateur_edit', {'id': user.id}) }}" class="btn btn-sm btn-outline-primary me-1 edit-user" title="Modifier" data-bs-toggle="modal" data-bs-target="#editUserModal" data-id="{{ user.id }}"><i class="bi bi-pencil"></i></a>
@@ -60,6 +70,7 @@
             </div>
             <div class="modal-body">
                 <form id="addUserForm">
+                    <input type="hidden" id="add_csrf_token" name="_token" value="{{ csrf_token('add_user') }}">
                     <div class="row g-4 mb-3">
                         <div class="col-md-6">
                             <label for="add_username" class="form-label fw-bold">Nom d'utilisateur</label>
@@ -162,6 +173,7 @@
             </div>
             <div class="modal-body">
                 <form id="editUserForm">
+                    <input type="hidden" id="edit_csrf_token" name="_token" value="{{ csrf_token('edit_user') }}">
                     <input type="hidden" name="id" id="edit_id">
                     <div class="row g-4 mb-3">
                         <div class="col-md-6">
@@ -322,7 +334,7 @@ $(document).ready(function() {
         $.ajax({
             url: '{{ path('app_verify_username') }}',
             method: 'POST',
-            data: { username: $(this).val() },
+            data: { username: $(this).val(), _token: $('#add_csrf_token').val() },
             success: function(response) {
                 if (response) {
                     $('#add_username').addClass('is-invalid');
@@ -332,9 +344,10 @@ $(document).ready(function() {
                     $('#add_username_error').text('');
                 }
             },
-            error: function() {
+            error: function(xhr) {
                 $('#add_username').addClass('is-invalid');
-                $('#add_username_error').text('Erreur lors de la vérification.');
+                $('#add_username_error').text('Erreur lors de la vérification: ' + xhr.responseText);
+                console.log('Verification Error:', xhr.responseText);
             }
         });
     });
@@ -343,7 +356,7 @@ $(document).ready(function() {
         $.ajax({
             url: '{{ path('app_verify_email') }}',
             method: 'POST',
-            data: { email: $(this).val() },
+            data: { email: $(this).val(), _token: $('#add_csrf_token').val() },
             success: function(response) {
                 if (response) {
                     $('#add_email').addClass('is-invalid');
@@ -353,9 +366,10 @@ $(document).ready(function() {
                     $('#add_email_error').text('');
                 }
             },
-            error: function() {
+            error: function(xhr) {
                 $('#add_email').addClass('is-invalid');
-                $('#add_email_error').text('Erreur lors de la vérification.');
+                $('#add_email_error').text('Erreur lors de la vérification: ' + xhr.responseText);
+                console.log('Verification Error:', xhr.responseText);
             }
         });
     });
@@ -366,7 +380,8 @@ $(document).ready(function() {
             method: 'POST',
             data: { 
                 username: $(this).val(),
-                exclude: $('#edit_id').val()
+                exclude: $('#edit_id').val(),
+                _token: $('#edit_csrf_token').val()
             },
             success: function(response) {
                 if (response) {
@@ -377,9 +392,10 @@ $(document).ready(function() {
                     $('#edit_username_error').text('');
                 }
             },
-            error: function() {
+            error: function(xhr) {
                 $('#edit_username').addClass('is-invalid');
-                $('#edit_username_error').text('Erreur lors de la vérification.');
+                $('#edit_username_error').text('Erreur lors de la vérification: ' + xhr.responseText);
+                console.log('Verification Error:', xhr.responseText);
             }
         });
     });
@@ -390,7 +406,8 @@ $(document).ready(function() {
             method: 'POST',
             data: { 
                 email: $(this).val(),
-                exclude: $('#edit_id').val()
+                exclude: $('#edit_id').val(),
+                _token: $('#edit_csrf_token').val()
             },
             success: function(response) {
                 if (response) {
@@ -401,9 +418,10 @@ $(document).ready(function() {
                     $('#edit_email_error').text('');
                 }
             },
-            error: function() {
+            error: function(xhr) {
                 $('#edit_email').addClass('is-invalid');
-                $('#edit_email_error').text('Erreur lors de la vérification.');
+                $('#edit_email_error').text('Erreur lors de la vérification: ' + xhr.responseText);
+                console.log('Verification Error:', xhr.responseText);
             }
         });
     });
@@ -434,7 +452,11 @@ $(document).ready(function() {
         $form.find('input[name="roles[]"]:checked').each(function() {
             roles.push($(this).val());
         });
-        data.push({ name: 'roles', value: roles });
+        // Always send roles as an array, even if only one is selected
+        for (let i = 0; i < roles.length; i++) {
+            data.push({ name: 'roles[]', value: roles[i] });
+        }
+        data.push({ name: '_token', value: $('#add_csrf_token').val() });
         const $btn = $('#addUserSubmit');
         $btn.prop('disabled', true).text('Chargement...');
         $.ajax({
@@ -452,11 +474,17 @@ $(document).ready(function() {
                 window.location.reload();
             },
             error: function(xhr) {
+                console.log('AJAX Error:', {
+                    status: xhr.status,
+                    statusText: xhr.statusText,
+                    responseText: xhr.responseText,
+                    responseJSON: xhr.responseJSON
+                });
                 let response = xhr.responseJSON || {};
                 Swal.fire({
                     icon: 'error',
                     title: 'Erreur',
-                    text: response.message || 'Une erreur est survenue.'
+                    text: response.message || 'Une erreur est survenue: ' + xhr.responseText
                 });
             },
             complete: function() {
@@ -491,7 +519,11 @@ $(document).ready(function() {
         $form.find('input[name="roles[]"]:checked').each(function() {
             roles.push($(this).val());
         });
-        data.push({ name: 'roles', value: roles });
+        // Always send roles as an array, even if only one is selected
+        for (let i = 0; i < roles.length; i++) {
+            data.push({ name: 'roles[]', value: roles[i] });
+        }
+        data.push({ name: '_token', value: $('#edit_csrf_token').val() });
         const $btn = $('#editUserSubmit');
         $btn.prop('disabled', true).text('Chargement...');
         $.ajax({
@@ -509,11 +541,17 @@ $(document).ready(function() {
                 window.location.reload();
             },
             error: function(xhr) {
+                console.log('AJAX Error:', {
+                    status: xhr.status,
+                    statusText: xhr.statusText,
+                    responseText: xhr.responseText,
+                    responseJSON: xhr.responseJSON
+                });
                 let response = xhr.responseJSON || {};
                 Swal.fire({
                     icon: 'error',
                     title: 'Erreur',
-                    text: response.message || 'Une erreur est survenue.'
+                    text: response.message || 'Une erreur est survenue: ' + xhr.responseText
                 });
             },
             complete: function() {
@@ -551,16 +589,17 @@ $(document).ready(function() {
                 $('#edit_numero').val(user.tele);
                 $('#edit_' + (user.isAdmin ? 'adminRadio' : 'userRadio')).prop('checked', true);
                 $('#edit_adminRadio, #edit_userRadio').trigger('change');
+                // Uncheck all roles first
                 $('#edit_permissionsSection input[name="roles[]"]').prop('checked', false);
+                // Check only the user's roles
                 user.roles.forEach(roleId => {
                     $('#edit_permissionsSection input[value="' + roleId + '"]').prop('checked', true);
                 });
-                document.querySelectorAll('.role-checkbox').forEach(cb => {
-                    Array.from(cb.classList).filter(c => c.endsWith('-checkbox')).forEach(groupClass => {
-                        const checkboxes = document.querySelectorAll('.' + groupClass);
-                        const groupCheckbox = document.querySelector('.group-checkbox[data-group="' + groupClass.replace('-checkbox','') + '"]');
-                        groupCheckbox.checked = Array.from(checkboxes).every(c => c.checked);
-                    });
+                // Update group checkboxes to reflect the state of their children
+                document.querySelectorAll('.group-checkbox').forEach(groupCheckbox => {
+                    const groupClass = groupCheckbox.getAttribute('data-group') + '-checkbox';
+                    const checkboxes = document.querySelectorAll('.' + groupClass);
+                    groupCheckbox.checked = Array.from(checkboxes).length > 0 && Array.from(checkboxes).every(c => c.checked);
                 });
                 $('#edit_username_error, #edit_email_error').text('');
                 $('#edit_username, #edit_email').removeClass('is-invalid');
@@ -570,8 +609,9 @@ $(document).ready(function() {
                 Swal.fire({
                     icon: 'error',
                     title: 'Erreur',
-                    text: response.message || 'Impossible de charger les données de l\'utilisateur.'
+                    text: response.message || 'Impossible de charger les données de l\'utilisateur: ' + xhr.responseText
                 });
+                console.log('API Error:', xhr.responseText);
             }
         });
     }));

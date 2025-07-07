@@ -122,13 +122,33 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     /**
-     * @param list<string> $roles
+     * Set the roles for the user (overwrites existing roles).
+     * Accepts an array of Role entities or IDs.
+     * @param array $roles
      */
     public function setRoles(array $roles): static
     {
-        // $this->roles = $roles;
-
+        $this->roles->clear();
+        foreach ($roles as $role) {
+            if ($role instanceof Role) {
+                $this->addRole($role);
+            }
+        }
         return $this;
+    }
+
+    /**
+     * Returns the user's roles as an array of role IDs.
+     * Useful for forms and APIs.
+     * @return int[]
+     */
+    public function getRolesArray(): array
+    {
+        $ids = [];
+        foreach ($this->roles as $role) {
+            $ids[] = $role->getId();
+        }
+        return $ids;
     }
 
     /**

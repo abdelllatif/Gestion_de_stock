@@ -100,12 +100,14 @@ final class UtilisateurController extends AbstractController
         $user->setIsAdmin($isAdmin);
 
         if (!$isAdmin) {
+            $roles = [];
             foreach ($roleIds as $roleId) {
                 $role = $roleRepository->find($roleId);
                 if ($role) {
-                    $user->addRole($role);
+                    $roles[] = $role;
                 }
             }
+            $user->setRoles($roles);
         }
 
         try {
@@ -135,11 +137,19 @@ final class UtilisateurController extends AbstractController
         UserPasswordHasherInterface $passwordHasher
     ): Response
     {
+        $currentUser = $this->getUser();
+        if (!$currentUser) {
+            return $this->returnErrorResponse($request, 'Vous devez être connecté.', 403);
+        }
+        $isAdmin = method_exists($currentUser, 'isAdmin') ? $currentUser->isAdmin() : false;
+        // Non-admins can only edit their own profile
+        if (!$isAdmin && $currentUser->getId() !== $id) {
+            return $this->returnErrorResponse($request, 'Accès refusé.', 403);
+        }
         $user = $userRepository->find($id);
         if (!$user) {
             return $this->returnErrorResponse($request, 'Utilisateur non trouvé.', 404);
         }
-
         $prenom = trim($request->request->get('prenom', ''));
         $nom = trim($request->request->get('nom', ''));
         $email = trim($request->request->get('email', ''));
@@ -147,64 +157,61 @@ final class UtilisateurController extends AbstractController
         $username = trim($request->request->get('username', ''));
         $password = $request->request->get('motdepasse', '');
         $confirmPassword = $request->request->get('confirmermotdepasse', '');
-        $isAdmin = $request->request->getBoolean('edit_is_admin', false);
-        $roleIds = $request->request->all('roles') ?? [];
-
+        // Only admins can change roles and admin status
+        $editIsAdmin = $isAdmin ? $request->request->getBoolean('edit_is_admin', false) : $user->isAdmin();
+        $roleIds = $isAdmin ? ($request->request->all('roles') ?? []) : [];
         if (empty($prenom) || empty($nom) || empty($email) || empty($numero) || empty($username)) {
             return $this->returnErrorResponse($request, 'Tous les champs sont obligatoires (sauf le mot de passe si non modifié).', 400);
         }
-
         if ($password && $password !== $confirmPassword) {
             return $this->returnErrorResponse($request, 'Les mots de passe ne correspondent pas.', 400);
         }
-
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return $this->returnErrorResponse($request, 'L\'email n\'est pas valide.', 400);
         }
-
         if (strlen($prenom) > 255 || strlen($nom) > 255 || strlen($email) > 255 || strlen($numero) > 255 || strlen($username) > 180) {
             return $this->returnErrorResponse($request, 'Un ou plusieurs champs dépassent la longueur maximale (255 caractères, 180 pour le nom d\'utilisateur).', 400);
         }
-
         $existingUser = $userRepository->findOneBy(['username' => $username]);
         if ($existingUser && $existingUser->getId() !== $id) {
             return $this->returnErrorResponse($request, 'Ce nom d\'utilisateur existe déjà.', 400);
         }
-
         $existingEmail = $userRepository->findOneBy(['email' => $email]);
         if ($existingEmail && $existingEmail->getId() !== $id) {
             return $this->returnErrorResponse($request, 'Cet email existe déjà.', 400);
         }
-
-        if (!$isAdmin && empty($roleIds)) {
-            return $this->returnErrorResponse($request, 'Veuillez sélectionner au moins un rôle pour un utilisateur non-admin.', 400);
+        // If not admin, skip role check
+        if ($isAdmin === true) {
+            if (!$editIsAdmin && empty($roleIds)) {
+                return $this->returnErrorResponse($request, 'Veuillez sélectionner au moins un rôle pour un utilisateur non-admin.', 400);
+            }
         }
-
         $user->setPrenom($prenom);
         $user->setNom($nom);
         $user->setEmail($email);
         $user->setTele($numero);
         $user->setUsername($username);
-
         if ($password) {
             $user->setPassword($passwordHasher->hashPassword($user, $password));
         }
-
-        $user->setIsAdmin($isAdmin);
-
-        foreach ($user->getRoleEntities() as $role) {
-            $user->removeRole($role);
-        }
-
-        if (!$isAdmin) {
-            foreach ($roleIds as $roleId) {
-                $role = $roleRepository->find($roleId);
-                if ($role) {
-                    $user->addRole($role);
+        // Only admin can change admin status and roles
+        if ($isAdmin) {
+            $user->setIsAdmin($editIsAdmin);
+            // Remove all roles first
+            foreach ($user->getRoleEntities() as $role) {
+                $user->removeRole($role);
+            }
+            if (!$editIsAdmin) {
+                $roles = [];
+                foreach ($roleIds as $roleId) {
+                    $role = $roleRepository->find($roleId);
+                    if ($role) {
+                        $roles[] = $role;
+                    }
                 }
+                $user->setRoles($roles);
             }
         }
-
         try {
             $em->persist($user);
             $em->flush();
@@ -238,11 +245,6 @@ final class UtilisateurController extends AbstractController
             return new JsonResponse(['message' => 'Utilisateur non trouvé.'], 404);
         }
 
-        $roleIds = [];
-        foreach ($user->getRoleEntities() as $role) {
-            $roleIds[] = $role->getId();
-        }
-
         return new JsonResponse([
             'id' => $user->getId(),
             'username' => $user->getUsername(),
@@ -251,7 +253,7 @@ final class UtilisateurController extends AbstractController
             'email' => $user->getEmail(),
             'tele' => $user->getTele(),
             'isAdmin' => $user->isAdmin(),
-            'roles' => $roleIds
+            'roles' => $user->getRolesArray()
         ], 200);
     }
 
@@ -292,4 +294,25 @@ final class UtilisateurController extends AbstractController
         $exists = $qb->getQuery()->getOneOrNullResult() !== null;
         return new JsonResponse($exists);
     }
+
+    #[Route('/profile', name: 'app_profile')]
+    public function profile(): Response
+    {
+        $user = $this->getUser();
+        if (!$user) {
+            return $this->redirectToRoute('app_login');
+        }
+        return $this->render('utilisateur/profile.html.twig', [
+            'user' => $user,
+            'activeLink' => 'utilisateur',
+        ]);
+    }
+
+    #[Route('/hash-password', name: 'app_generate_hash')]
+public function generatePassword(UserPasswordHasherInterface $passwordHasher): Response
+{
+    $user = new User();
+    $hashedPassword = $passwordHasher->hashPassword($user, 'farabi');
+    return new Response($hashedPassword);
+}
 }

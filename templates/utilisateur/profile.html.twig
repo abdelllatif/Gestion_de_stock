@@ -1,0 +1,271 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Profil{% endblock %}
+
+{% block body %}
+<style>
+    .profile-bg {
+        background: linear-gradient(120deg, #f4f6f9 60%, #e0e7ef 100%);
+        min-height: 100vh;
+        padding: 3rem 0;
+    }
+    .profile-card {
+        background: #fff;
+        border-radius: 1rem;
+        border: 1.5px solid #1e3a8a;
+        box-shadow: 0 6px 32px 0 rgba(30,58,138,0.10);
+        max-width: 480px;
+        margin: 0 auto;
+        overflow: hidden;
+        position: relative;
+    }
+    .profile-cover {
+        height: 120px;
+        background: linear-gradient(90deg, #1e3a8a 60%, #3b82f6 100%);
+        position: relative;
+    }
+    .profile-avatar {
+        width: 110px;
+        height: 110px;
+        border: 4px solid #fff;
+        background: #232946;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        left: 50%;
+        bottom: -55px;
+        transform: translateX(-50%);
+        box-shadow: 0 2px 12px 0 rgba(30,58,138,0.10);
+    }
+    .profile-avatar i {
+        font-size: 64px;
+        color: #fff;
+    }
+    .profile-info {
+        padding: 4.5rem 2rem 2rem 2rem;
+        text-align: center;
+    }
+    .profile-name {
+        color: #1e3a8a;
+        font-size: 1.7rem;
+        font-weight: 700;
+        margin-bottom: 0.2rem;
+    }
+    .profile-username {
+        color: #6b7280;
+        font-size: 1.05rem;
+        margin-bottom: 1.5rem;
+    }
+    .profile-details {
+        margin: 0 auto 1.5rem auto;
+        max-width: 320px;
+    }
+    .profile-detail {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.7rem 0;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    .profile-detail:last-child {
+        border-bottom: none;
+    }
+    .profile-detail-label {
+        color: #6b7280;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .profile-detail-value {
+        color: #232946;
+        font-weight: 600;
+        font-size: 1rem;
+        word-break: break-all;
+    }
+    .profile-actions {
+        margin-top: 1.5rem;
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+    }
+    .btn-profile {
+        background: linear-gradient(90deg, #1e3a8a, #3b82f6);
+        color: #fff;
+        border: none;
+        border-radius: 0.5rem;
+        padding: 0.5rem 1.5rem;
+        font-weight: 600;
+        transition: background 0.2s;
+    }
+    .btn-profile:hover {
+        background: linear-gradient(90deg, #3b82f6, #1e3a8a);
+        color: #fff;
+    }
+    .btn-logout {
+        background: #dc2626;
+        color: #fff;
+        border: none;
+        border-radius: 0.5rem;
+        padding: 0.5rem 1.5rem;
+        font-weight: 600;
+        transition: background 0.2s;
+    }
+    .btn-logout:hover {
+        background: #b91c1c;
+        color: #fff;
+    }
+    .modal-content {
+        border-radius: 1rem;
+        border: none;
+    }
+</style>
+
+<div class="profile-bg">
+    <div class="profile-card">
+        <div class="profile-cover">
+            <div class="profile-avatar">
+                <i class="bi bi-person-circle"></i>
+            </div>
+        </div>
+        <div class="profile-info">
+            <div class="profile-name">{{ user.prenom }} {{ user.nom }}</div>
+            <div class="profile-username">@{{ user.username }}</div>
+            <div class="profile-details">
+                <div class="profile-detail">
+                    <span class="profile-detail-label"><i class="bi bi-envelope"></i> Email</span>
+                    <span class="profile-detail-value">{{ user.email }}</span>
+                </div>
+                <div class="profile-detail">
+                    <span class="profile-detail-label"><i class="bi bi-telephone"></i> Numéro</span>
+                    <span class="profile-detail-value">{{ user.tele }}</span>
+                </div>
+            </div>
+            <div class="profile-actions">
+                <button class="btn-profile" data-bs-toggle="modal" data-bs-target="#editProfileModal"><i class="bi bi-pencil me-2"></i>Modifier</button>
+                <button class="btn-logout" data-bs-toggle="modal" data-bs-target="#logoutModal"><i class="bi bi-box-arrow-right me-2"></i>Déconnexion</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Profile Modal -->
+<div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold" id="editProfileModalLabel">Modifier le profil</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editProfileForm" method="post" action="/utilisateur/{{ user.id }}/edit">
+                    <input type="hidden" name="_token" value="{{ csrf_token('profile_edit') }}">
+                    <div class="row mb-3">
+                        <div class="col">
+                            <input type="text" class="form-control" id="nom" name="nom" value="{{ user.nom }}" placeholder="Nom" required>
+                        </div>
+                        <div class="col">
+                            <input type="text" class="form-control" id="prenom" name="prenom" value="{{ user.prenom }}" placeholder="Prénom" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="username" name="username" value="{{ user.username }}" placeholder="Nom d'utilisateur" required>
+                    </div>
+                    <div class="mb-3">
+                        <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" placeholder="Email" required>
+                    </div>
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="numero" name="numero" value="{{ user.tele }}" placeholder="Numéro" required>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <input type="password" class="form-control" id="motdepasse" name="motdepasse" placeholder="Nouveau mot de passe ">
+                        </div>
+                        <div class="col">
+                            <input type="password" class="form-control" id="confirmermotdepasse" name="confirmermotdepasse" placeholder="Confirmer le nouveau mot de passe">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="submit" form="editProfileForm" class="btn btn-primary">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Logout Modal -->
+<div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold" id="logoutModalLabel">Déconnexion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Êtes-vous sûr de vouloir vous déconnecter ?
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <a href="{{ path('app_logout') }}" class="btn btn-danger">Déconnexion</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/js/components/alert.js"></script>
+<!-- Include SweetAlert2 if not already included -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('editProfileForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(form);
+            fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message && (data.message.toLowerCase().includes('succès') || data.message.toLowerCase().includes('modifié'))) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Succès',
+                        text: data.message,
+                        timer: 1200,
+                        showConfirmButton: false
+                    });
+                    // Close modal after short delay
+                    setTimeout(() => {
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('editProfileModal'));
+                        if (modal) modal.hide();
+                        window.location.reload();
+                    }, 1200);
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erreur',
+                        text: data.message || 'Erreur lors de la mise à jour du profil.'
+                    });
+                }
+            })
+            .catch(err => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erreur',
+                    text: 'Erreur lors de la mise à jour du profil.'
+                });
+            });
+        });
+    }
+});
+</script>
+{% endblock %}
