@@ -13,6 +13,7 @@ final class CommandeClientController extends AbstractController
     {
         return $this->render('commande_client/index.html.twig', [
             'controller_name' => 'CommandeClientController',
+            'activeLink' => 'commande_client',
         ]);
     }
 }

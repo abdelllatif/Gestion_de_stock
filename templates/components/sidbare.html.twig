@@ -12,21 +12,19 @@
     background: linear-gradient(90deg, #1e3a8a, #3b82f6);
     color: #fff !important;
 }
-.stock-movement-btn {
+.stock-movement-btn, .categories-btn {
     color: #b9c6e0;
     background: none;
     border-radius: 8px;
     transition: background 0.2s, color 0.2s;
 }
-.stock-movement-btn.active {
+.stock-movement-btn.active, .categories-btn.active {
     background: linear-gradient(90deg, #1e3a8a, #3b82f6);
     color: #fff !important;
 }
 </style>
 <div class="d-flex flex-column h-100 justify-content-between " style="height: calc(100vh - 60px); padding-top: 60px; background-color: #232946;">
     <div style="overflow-y: auto; max-height: calc(100vh - 20px); scrollbar-width: thin;">
-      <!--
-      <h2 class="text-white text-center mb-4" style="font-family: 'Segoe UI', sans-serif; letter-spacing: 2px;">Dashboard</h2> -->
         <ul class="nav nav-pills flex-column mb-auto">
             <li class="nav-item mb-2">
                 <a href="/" class="nav-link {% if activeLink == 'dashboard' %}text-white{% endif %}" style="{% if activeLink == 'dashboard' %}background: linear-gradient(90deg, #1e3a8a, #3b82f6); border-radius: 8px;{% else %}border-radius: 8px;{% endif %}">
@@ -41,11 +39,21 @@
             <li class="nav-item mb-2">
                 <button type="button" id="stockMovementToggle" class="nav-link w-100 text-start stock-movement-btn{% if activeLink == 'stock_movement' %} active{% endif %}" style="display: flex; align-items: center; justify-content: space-between;">
                     <span><i class="bi bi-box-seam me-2"></i> Mouvements de stock</span>
-                    <span id="chevron" style="transition: transform 0.2s;">&#8250;</span>
+                    <span id="chevronStock" style="transition: transform 0.2s;">›</span>
                 </button>
                 <div id="stockMovementSubmenu" style="display: none;">
                     <a href="/stock/movement" class="nav-link submenu-link mb-1{% if app.request.getRequestUri() starts with '/stock/movement' %} active{% endif %}">Mouvement des articles</a>
                     <a href="/stock_movement/machine" class="nav-link submenu-link{% if app.request.getRequestUri() starts with '/stock_movement/machine' %} active{% endif %}">Mouvement des machines</a>
+                </div>
+            </li>
+            <li class="nav-item mb-2">
+                <button type="button" id="categoriesToggle" class="nav-link w-100 text-start categories-btn{% if activeLink == 'categories' %} active{% endif %}" style="display: flex; align-items: center; justify-content: space-between;">
+                    <span><i class="bi bi-tags me-2"></i> Catégories</span>
+                    <span id="chevronCategories" style="transition: transform 0.2s;">›</span>
+                </button>
+                <div id="categoriesSubmenu" style="display: none;">
+                    <a href="/categories/articles" class="nav-link submenu-link mb-1{% if app.request.getRequestUri() starts with '/categories/articles' %} active{% endif %}">Catégories des articles</a>
+                    <a href="/categories/machines" class="nav-link submenu-link{% if app.request.getRequestUri() starts with '/categories/machines' %} active{% endif %}">Catégories des machines</a>
                 </div>
             </li>
             <li class="nav-item mb-2">
@@ -74,7 +82,7 @@
                 </a>
             </li>
             <li class="nav-item mb-2">
-                <a href="/chauffeur" class="nav-link {% if activeLink == 'chauffeur' %}text-white{% endif %}" style="{% if activeLink == 'chauffeur' %}background: linear-gradient(90deg, #1e3a8a, #3b82f6); border-radius: 8px;{% else %}border-radius: 8px;{% endif %}">
+                <a href="/chauffeur" class="nav-link {% if activeLink == 'chauffeur' %}text-white{% endif %}" style="{% if activeLink == 'chauffeur' %}text-white{% endif %}" style="{% if activeLink == 'chauffeur' %}background: linear-gradient(90deg, #1e3a8a, #3b82f6); border-radius: 8px;{% else %}border-radius: 8px;{% endif %}">
                     <i class="bi bi-truck me-2"></i> Chauffeurs
                 </a>
             </li>
@@ -95,31 +103,70 @@
             </li>
         </ul>
     </div>
-    <div class="text-center text-secondary small mt-4">
-        <span>© {{ "now"|date("Y") }} Big Enterprise</span>
-    </div>
+
+    <div class="mt-4" style="border-top: 1px solid #b9c6e0; margin-top: 2rem; padding-top: 1rem;">
+    <ul class="nav flex-column">
+        <li class="nav-item mb-2">
+            <a href="/profile" class="nav-link d-block text-secondary" style="border-radius: 8px; padding: 8px 12px;">
+                <i class="bi bi-person-circle me-2"></i> Profil
+            </a>
+        </li>
+        <li class="nav-item mb-2">
+            <a href="/logout" class="nav-link d-block text-danger" style="border-radius: 8px; padding: 8px 12px;">
+                <i class="bi bi-box-arrow-right me-2"></i> Déconnexion
+            </a>
+        </li>
+        <li class="nav-item">
+            <span class="d-block" style="border-radius: 8px; padding: 8px 12px; color:rgb(37, 85, 181);">
+                © {{ "now"|date("Y") }} Enterprise
+            </span>
+        </li>
+    </ul>
+</div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    var toggle = document.getElementById('stockMovementToggle');
-    var submenu = document.getElementById('stockMovementSubmenu');
-    var chevron = document.getElementById('chevron');
-    if (toggle) {
-        toggle.addEventListener('click', function() {
-            if (submenu.style.display === 'none' || submenu.style.display === '') {
-                submenu.style.display = 'block';
-                chevron.style.transform = 'rotate(90deg)';
+    // Stock Movement Toggle
+    var stockToggle = document.getElementById('stockMovementToggle');
+    var stockSubmenu = document.getElementById('stockMovementSubmenu');
+    var stockChevron = document.getElementById('chevronStock');
+    if (stockToggle) {
+        stockToggle.addEventListener('click', function() {
+            if (stockSubmenu.style.display === 'none' || stockSubmenu.style.display === '') {
+                stockSubmenu.style.display = 'block';
+                stockChevron.style.transform = 'rotate(90deg)';
             } else {
-                submenu.style.display = 'none';
-                chevron.style.transform = 'rotate(0deg)';
+                stockSubmenu.style.display = 'none';
+                stockChevron.style.transform = 'rotate(0deg)';
             }
         });
     }
-    // Optionally, open submenu if activeLink is stock_movement
+    // Open stock submenu if active
     {% if activeLink == 'stock_movement' %}
-    submenu.style.display = 'block';
-    chevron.style.transform = 'rotate(90deg)';
+    stockSubmenu.style.display = 'block';
+    stockChevron.style.transform = 'rotate(90deg)';
+    {% endif %}
+
+    // Categories Toggle
+    var categoriesToggle = document.getElementById('categoriesToggle');
+    var categoriesSubmenu = document.getElementById('categoriesSubmenu');
+    var categoriesChevron = document.getElementById('chevronCategories');
+    if (categoriesToggle) {
+        categoriesToggle.addEventListener('click', function() {
+            if (categoriesSubmenu.style.display === 'none' || categoriesSubmenu.style.display === '') {
+                categoriesSubmenu.style.display = 'block';
+                categoriesChevron.style.transform = 'rotate(90deg)';
+            } else {
+                categoriesSubmenu.style.display = 'none';
+                categoriesChevron.style.transform = 'rotate(0deg)';
+            }
+        });
+    }
+    // Open categories submenu if active
+    {% if activeLink == 'categories' %}
+    categoriesSubmenu.style.display = 'block';
+    categoriesChevron.style.transform = 'rotate(90deg)';
     {% endif %}
 });
 </script>

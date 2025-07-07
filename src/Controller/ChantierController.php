@@ -13,6 +13,7 @@ final class ChantierController extends AbstractController
     {
         return $this->render('chantier/index.html.twig', [
             'controller_name' => 'ChantierController',
+            'activeLink' => 'chantier',
         ]);
     }
 }

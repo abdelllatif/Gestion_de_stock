@@ -13,6 +13,7 @@ final class BonController extends AbstractController
     {
         return $this->render('bon/index.html.twig', [
             'controller_name' => 'BonController',
+            'activeLink' => 'bon',
         ]);
     }
 }
