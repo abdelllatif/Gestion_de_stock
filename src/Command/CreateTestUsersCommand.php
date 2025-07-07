@@ -60,7 +60,6 @@ class CreateTestUsersCommand extends Command
         
         $io->success('Rôles créés ou vérifiés avec succès');
 
-        // Créer des utilisateurs test avec différents rôles
         $usersData = [
             [
                 'username' => 'admin',
