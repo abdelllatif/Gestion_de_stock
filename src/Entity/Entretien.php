@@ -39,6 +39,10 @@ class Entretien
     #[ORM\ManyToOne(inversedBy: 'entretiens')]
     private ?Machine $machine = null;
 
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Chantier $chantier = null;
+
     public function __construct()
     {
         $this->reparations = new ArrayCollection();
@@ -154,6 +158,18 @@ class Entretien
     public function setMachine(?Machine $machine): static
     {
         $this->machine = $machine;
+
+        return $this;
+    }
+
+    public function getChantier(): ?Chantier
+    {
+        return $this->chantier;
+    }
+
+    public function setChantier(?Chantier $chantier): static
+    {
+        $this->chantier = $chantier;
 
         return $this;
     }

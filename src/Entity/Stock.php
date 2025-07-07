@@ -30,6 +30,9 @@ class Stock
     #[ORM\Column]
     private ?int $mauvais_etat = null;
 
+    #[ORM\Column]
+    private ?int $feraille_etat = null;
+
     #[ORM\ManyToOne(inversedBy: 'stocks')]
     private ?Chantier $chantier = null;
 
@@ -110,6 +113,18 @@ class Stock
     public function setMauvaisEtat(int $mauvais_etat): static
     {
         $this->mauvais_etat = $mauvais_etat;
+
+        return $this;
+    }
+
+    public function getFerailleEtat(): ?int
+    {
+        return $this->feraille_etat;
+    }
+
+    public function setFerailleEtat(int $feraille_etat): static
+    {
+        $this->feraille_etat = $feraille_etat;
 
         return $this;
     }

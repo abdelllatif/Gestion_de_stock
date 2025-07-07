@@ -8,41 +8,265 @@
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/2.0.7/js/dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/2.0.7/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+<!-- Modal d'ajout d'article -->
+<div class="modal fade" id="addArticleModal" tabindex="-1" aria-labelledby="addArticleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); color: white;">
+        <h5 class="modal-title" id="addArticleModalLabel"><i class="bi bi-plus-circle me-2"></i>Ajouter un nouvel article</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="addArticleForm">
+          <!-- Première ligne: Catégorie et Type -->
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="article_category" class="form-label">Catégorie*</label>
+              <select class="form-select" id="article_category" name="category" required>
+                <option value="" disabled selected>Choisir une catégorie...</option>
+                {% for category in categories %}
+                <option value="{{ category.id }}">{{ category.nom }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label d-block">Type d'article*</label>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="type" id="type_consommation" value="Consommation" required>
+                <label class="form-check-label" for="type_consommation">Article de consommation</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="type" id="type_non_consommation" value="NonConsommable" required>
+                <label class="form-check-label" for="type_non_consommation">Non consommable</label>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Deuxième ligne: Nom et Marque -->
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="article_nom" class="form-label">Designation*</label>
+              <input type="text" class="form-control" id="article_nom" name="nom" required>
+            </div>
+            <div class="col-md-6">
+              <label for="article_marque" class="form-label">Marque*</label>
+              <input type="text" class="form-control" id="article_marque" name="marque" required>
+            </div>
+          </div>
+          
+          <!-- Troisième ligne: Référence et Unité -->
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="article_reference" class="form-label">Référence*</label>
+              <input type="text" class="form-control" id="article_reference" name="reference" required>
+            </div>
+            <div class="col-md-6">
+              <label for="article_unite" class="form-label">Unité*</label>
+              <select class="form-select" id="article_unite" name="unite" required>
+                <option value="" disabled selected>Choisir...</option>
+                <option value="Pièce">Pièce</option>
+                <option value="Boîte">Boîte</option>
+                <option value="Sachet">Sachet</option>
+                <option value="Unité">Unité</option>
+                <option value="Lot">Lot</option>
+                <option value="Mètre">Mètre</option>
+                <option value="Litre">Litre</option>
+                <option value="Kg">Kg</option>
+              </select>
+            </div>
+          </div>
+          
+          <!-- Quatrième ligne: Prix et Numéro -->
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="article_prix" class="form-label">Prix* (DH)</label>
+              <input type="number" step="0.01" min="0" class="form-control" id="article_prix" name="prix" required>
+            </div>
+            <div class="col-md-6">
+              <label for="article_numero" class="form-label">Numéro</label>
+              <input type="number" class="form-control" id="article_numero" name="numero">
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <label for="article_description" class="form-label">Description</label>
+            <textarea class="form-control" id="article_description" name="description" rows="3"></textarea>
+          </div>
+          
+          <div class="alert alert-danger d-none" id="form-errors"></div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button type="button" class="btn btn-primary" id="saveArticleBtn" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); border: none;">
+            <i class="bi bi-save me-1"></i> Enregistrer
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de modification d'article -->
+<div class="modal fade" id="editArticleModal" tabindex="-1" aria-labelledby="editArticleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); color: white;">
+        <h5 class="modal-title" id="editArticleModalLabel"><i class="bi bi-pencil-square me-2"></i>Modifier l'article</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="editArticleForm">
+          <input type="hidden" id="edit_article_id" name="id">
+          <!-- Première ligne: Catégorie et Type -->
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="edit_article_category" class="form-label">Catégorie*</label>
+              <select class="form-select" id="edit_article_category" name="category" required>
+                <option value="" disabled>Choisir une catégorie...</option>
+                {% for category in categories %}
+                <option value="{{ category.id }}">{{ category.nom }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label d-block">Type d'article*</label>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="type" id="edit_type_consommation" value="Consommation" required>
+                <label class="form-check-label" for="edit_type_consommation">Article de consommation</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="type" id="edit_type_non_consommation" value="NonConsommable" required>
+                <label class="form-check-label" for="edit_type_non_consommation">Non consommable</label>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Deuxième ligne: Nom et Marque -->
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="edit_article_nom" class="form-label">Designation*</label>
+              <input type="text" class="form-control" id="edit_article_nom" name="nom" required>
+            </div>
+            <div class="col-md-6">
+              <label for="edit_article_marque" class="form-label">Marque*</label>
+              <input type="text" class="form-control" id="edit_article_marque" name="marque" required>
+            </div>
+          </div>
+          
+          <!-- Troisième ligne: Référence et Unité -->
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="edit_article_reference" class="form-label">Référence*</label>
+              <input type="text" class="form-control" id="edit_article_reference" name="reference" required>
+            </div>
+            <div class="col-md-6">
+              <label for="edit_article_unite" class="form-label">Unité*</label>
+              <select class="form-select" id="edit_article_unite" name="unite" required>
+                <option value="" disabled>Choisir...</option>
+                <option value="Pièce">Pièce</option>
+                <option value="Boîte">Boîte</option>
+                <option value="Sachet">Sachet</option>
+                <option value="Unité">Unité</option>
+                <option value="Lot">Lot</option>
+                <option value="Mètre">Mètre</option>
+                <option value="Litre">Litre</option>
+                <option value="Kg">Kg</option>
+              </select>
+            </div>
+          </div>
+          
+          <!-- Quatrième ligne: Prix et Numéro -->
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="edit_article_prix" class="form-label">Prix* (DH)</label>
+              <input type="number" step="0.01" min="0" class="form-control" id="edit_article_prix" name="prix" required>
+            </div>
+            <div class="col-md-6">
+              <label for="edit_article_numero" class="form-label">Numéro</label>
+              <input type="number" class="form-control" id="edit_article_numero" name="numero">
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <label for="edit_article_description" class="form-label">Description</label>
+            <textarea class="form-control" id="edit_article_description" name="description" rows="3"></textarea>
+          </div>
+          
+          <div class="alert alert-danger d-none" id="edit-form-errors"></div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button type="button" class="btn btn-primary" id="updateArticleBtn" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); border: none;">
+            <i class="bi bi-save me-1"></i> Mettre à jour
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div class="container py-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="mb-0" style="color: #232946; font-family: 'Segoe UI', sans-serif; font-weight: bold; letter-spacing: 1px;">Articles</h1>
-        <a href="/article/new" class="btn btn-primary" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); font-weight: 500; border: none;">Ajouter un article</a>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addArticleModal" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); font-weight: 500; border: none;">
+            <i class="bi bi-plus-lg me-1"></i> Ajouter un article
+        </button>
     </div>
     <div class="card shadow-sm p-4">
         <table id="articlesTable" class="table table-striped" style="width:100%">
             <thead>
                 <tr>
                     <th>Type</th>
-                    <th>Nom</th>
+                    <th>Designation</th>
                     <th>Référence</th>
                     <th>Marque</th>
                     <th>Unité</th>
                     <th>Prix</th>
+                    <th>Catégorie</th>
                     <th>Description</th>
                     <th>Numéro</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
-                <tr><td>Clou</td><td>Clou acier</td><td>CL001</td><td>Acme</td><td>Boîte</td><td>5.00</td><td>Clou pour charpente</td><td>1001</td><td>
-                    <a href="/article/1/edit" class="btn btn-sm btn-outline-primary me-1" title="Modifier"><i class="bi bi-pencil"></i></a>
-                    <a href="#" class="btn btn-sm btn-outline-danger" title="Supprimer"><i class="bi bi-trash"></i></a>
-                </td></tr>
-                <tr><td>Vis</td><td>Vis bois</td><td>VS002</td><td>Fixit</td><td>Sachet</td><td>3.50</td><td>Vis pour bois</td><td>1002</td><td>
-                    <a href="/article/2/edit" class="btn btn-sm btn-outline-primary me-1" title="Modifier"><i class="bi bi-pencil"></i></a>
-                    <a href="#" class="btn btn-sm btn-outline-danger" title="Supprimer"><i class="bi bi-trash"></i></a>
-                </td></tr>
-                <tr><td>Boulon</td><td>Boulon M8</td><td>BL003</td><td>StrongBolt</td><td>Pièce</td><td>1.20</td><td>Boulon pour assemblage</td><td>1003</td><td>
-                    <a href="/article/3/edit" class="btn btn-sm btn-outline-primary me-1" title="Modifier"><i class="bi bi-pencil"></i></a>
-                    <a href="#" class="btn btn-sm btn-outline-danger" title="Supprimer"><i class="bi bi-trash"></i></a>
-                </td></tr>
+                {% for article in articles %}
+                    <tr>
+                        <td>{{ article.type ?? 'N/A' }}</td>
+                        <td>{{ article.nom }}</td>
+                        <td>{{ article.reference }}</td>
+                        <td>{{ article.marque }}</td>
+                        <td>{{ article.unite }}</td>
+                        <td>{{ article.prix|number_format(2, ',', ' ') }} €</td>
+                        <td>{{ article.category ? article.category.nom : 'N/A' }}</td>
+                        <td>{{ article.description|length > 50 ? article.description|slice(0, 50) ~ '...' : article.description }}</td>
+                        <td>{{ article.numero }}</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="{{ path('app_article_show', {'id': article.id}) }}" 
+                                   class="btn btn-sm btn-outline-dark me-1" 
+                                   title="Afficher">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <button class="btn btn-sm btn-outline-primary me-1" 
+                                        onclick="openEditModal({{ article.id }})"
+                                        title="Modifier">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="9" class="text-center text-muted py-4">
+                            <i class="bi bi-inbox display-6 d-block mb-2"></i>
+                            Aucun article trouvé. <a href="/article/new" class="text-decoration-none">Ajouter le premier article</a>
+                        </td>
+                    </tr>
+                {% endfor %}
             </tbody>
         </table>
     </div>
@@ -51,20 +275,295 @@
     $(document).ready(function() {
         var table = $('#articlesTable').DataTable({
             language: {
-                url: '//cdn.datatables.net/plug-ins/2.0.7/i18n/fr-FR.json'
+                url: 'https://cdn.datatables.net/plug-ins/2.0.7/i18n/fr-FR.json'
             },
             responsive: true,
-            pageLength: 8,
+            pageLength: 10,
             lengthChange: true,
             info: true,
             searching: true,
-            order: [[0, 'asc']],
+            order: [[1, 'asc']], 
+            columnDefs: [
+                { 
+                    targets: [9],
+                    orderable: false,
+                    searchable: false
+                },
+                {
+                    targets: [5],
+                    type: 'num-fmt'
+                }
+            ],
+            dom: "<'row'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'f>>" +
+                 "<'row'<'col-sm-12'tr>>" +
+                 "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
         });
+
+      
         let searchBox = $(table.table().container()).find('div.dataTables_filter input');
-        searchBox.addClass('form-control ps-5').attr('placeholder', 'Rechercher...');
+        searchBox.addClass('form-control ps-5').attr('placeholder', 'Rechercher un article...');
         searchBox.wrap('<div class="position-relative"></div>');
         searchBox.before('<span class="position-absolute top-50 start-0 translate-middle-y ps-3" style="pointer-events:none;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-search text-secondary" viewBox="0 0 16 16"><path d="M11 6a5 5 0 1 1-10 0 5 5 0 0 1 10 0zm-1.293 6.707a6 6 0 1 0-1.414 1.414l3.85 3.85a1 1 0 0 0 1.415-1.415l-3.85-3.85z"/></svg></span>');
         searchBox.css({ paddingLeft: '2.5rem', marginBottom: '0.5rem', maxWidth: '300px' });
+
+        $('#articlesTable tbody').on('mouseenter', 'tr', function() {
+            $(this).addClass('table-hover-effect');
+        }).on('mouseleave', 'tr', function() {
+            $(this).removeClass('table-hover-effect');
+        });
+        
+        $('#saveArticleBtn').on('click', function() {
+            const form = document.getElementById('addArticleForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            
+            const formData = {
+                type: $('input[name="type"]:checked').val(),
+                nom: $('#article_nom').val(),
+                reference: $('#article_reference').val(),
+                marque: $('#article_marque').val(),
+                unite: $('#article_unite').val(),
+                prix: $('#article_prix').val(),
+                numero: $('#article_numero').val(),
+                description: $('#article_description').val(),
+                category: $('#article_category').val()
+            };
+            
+            $('#saveArticleBtn').prop('disabled', true).html('<i class="spinner-border spinner-border-sm me-1"></i> Traitement en cours...');
+            
+            $.ajax({
+                url: '/article/create',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(formData),
+                success: function(response) {
+                    $('#addArticleModal').modal('hide');
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Article ajouté',
+                        text: 'L\'article a été ajouté avec succès',
+                        timer: 3000,
+                        showConfirmButton: false,
+                        timerProgressBar: true
+                    });
+                    
+                    const newRow = table.row.add([
+                        response.article.type,
+                        response.article.nom,
+                        response.article.reference,
+                        response.article.marque,
+                        response.article.unite,
+                        response.article.prix.toFixed(2) + ' €',
+                        response.article.category ? response.article.category.nom : 'N/A',
+                        response.article.description.length > 50 ? 
+                            response.article.description.substring(0, 50) + '...' : 
+                            response.article.description,
+                        response.article.numero,
+                        `<button class="btn btn-sm btn-outline-primary" 
+                            onclick="openEditModal(${response.article.id})"
+                            title="Modifier">
+                            <i class="bi bi-pencil"></i> Modifier
+                        </button>`
+                    ]).draw(false).node();
+                    
+                    $(newRow).addClass('table-success');
+                    setTimeout(function() {
+                        $(newRow).removeClass('table-success');
+                    }, 3000);
+                    
+                    $('#addArticleForm').trigger('reset');
+                },
+                error: function(xhr) {
+                    let errorMessage = 'Une erreur est survenue lors de l\'ajout de l\'article';
+                    
+                    if (xhr.responseJSON && xhr.responseJSON.errors) {
+                        errorMessage = xhr.responseJSON.errors.join('<br>');
+                        $('#form-errors').removeClass('d-none').html(errorMessage);
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Erreur',
+                            text: errorMessage
+                        });
+                    }
+                },
+                complete: function() {
+                    $('#saveArticleBtn').prop('disabled', false).html('<i class="bi bi-save me-1"></i> Enregistrer');
+                }
+            });
+        });
+        
+        $('#updateArticleBtn').on('click', function() {
+            const form = document.getElementById('editArticleForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            
+            const articleId = $('#edit_article_id').val();
+            const formData = {
+                type: $('input[name="type"]:checked').val(),
+                nom: $('#edit_article_nom').val(),
+                reference: $('#edit_article_reference').val(),
+                marque: $('#edit_article_marque').val(),
+                unite: $('#edit_article_unite').val(),
+                prix: $('#edit_article_prix').val(),
+                numero: $('#edit_article_numero').val(),
+                description: $('#edit_article_description').val(),
+                category: $('#edit_article_category').val()
+            };
+            
+            $('#updateArticleBtn').prop('disabled', true).html('<i class="spinner-border spinner-border-sm me-1"></i> Mise à jour en cours...');
+            
+            $.ajax({
+                url: `/article/${articleId}/update`,
+                method: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify(formData),
+                success: function(response) {
+                    $('#editArticleModal').modal('hide');
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Article mis à jour',
+                        text: 'L\'article a été mis à jour avec succès',
+                        timer: 2000,
+                        showConfirmButton: false,
+                        timerProgressBar: true
+                    }).then(() => {
+                        location.reload();
+                    });
+                },
+                error: function(xhr) {
+                    let errorMessage = 'Une erreur est survenue lors de la mise à jour de l\'article';
+                    
+                    if (xhr.responseJSON && xhr.responseJSON.errors) {
+                        errorMessage = xhr.responseJSON.errors.join('<br>');
+                        $('#edit-form-errors').removeClass('d-none').html(errorMessage);
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Erreur',
+                            text: errorMessage
+                        });
+                    }
+                },
+                complete: function() {
+                    $('#updateArticleBtn').prop('disabled', false).html('<i class="bi bi-save me-1"></i> Mettre à jour');
+                }
+            });
+        });
+        
+        $('#addArticleModal').on('hidden.bs.modal', function() {
+            $('#addArticleForm').trigger('reset');
+            $('#form-errors').addClass('d-none').html('');
+        });
+        
+        $('#editArticleModal').on('hidden.bs.modal', function() {
+            $('#editArticleForm').trigger('reset');
+            $('#edit-form-errors').addClass('d-none').html('');
+        });
     });
+    
+    window.openEditModal = function(articleId) {
+        Swal.fire({
+            title: 'Chargement...',
+            html: 'Récupération des données de l\'article',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+        
+        $.ajax({
+            url: `/article/${articleId}`,
+            method: 'GET',
+            success: function(article) {
+                $('#edit_article_id').val(article.id);
+                $('#edit_article_nom').val(article.nom);
+                $('#edit_article_reference').val(article.reference);
+                $('#edit_article_marque').val(article.marque);
+                $('#edit_article_unite').val(article.unite);
+                $('#edit_article_prix').val(article.prix);
+                $('#edit_article_numero').val(article.numero);
+                $('#edit_article_description').val(article.description);
+                $('#edit_article_category').val(article.category);
+                
+                // Sélection du type d'article (bouton radio)
+                if (article.type === 'Consommation') {
+                    $('#edit_type_consommation').prop('checked', true);
+                } else {
+                    $('#edit_type_non_consommation').prop('checked', true);
+                }
+                
+                Swal.close();
+                $('#editArticleModal').modal('show');
+            },
+            error: function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erreur',
+                    text: 'Impossible de récupérer les données de l\'article'
+                });
+            }
+        });
+    };
 </script>
+
+<style>
+.table-hover-effect {
+    background-color: #f8f9fa !important;
+    transform: scale(1.01);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+}
+
+.dataTables_wrapper .dataTables_length select {
+    padding: 0.375rem 2.25rem 0.375rem 0.75rem;
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+}
+
+.dataTables_wrapper .dataTables_info {
+    padding-top: 0.75rem;
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    padding: 0.375rem 0.75rem;
+    margin: 0 0.125rem;
+    border-radius: 0.375rem;
+    border: 1px solid #dee2e6;
+    background: #fff;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    background: #e9ecef;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current {
+    background: linear-gradient(90deg, #1e3a8a, #3b82f6);
+    color: white !important;
+    border-color: #1e3a8a;
+}
+
+.modal-header {
+    border-bottom-width: 3px;
+}
+
+.modal-content {
+    border-radius: 0.5rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
+}
+</style>
 {% endblock %}

@@ -19,6 +19,9 @@ class Chauffeur
     #[ORM\Column(length: 255)]
     private ?string $licence = null;
 
+    #[ORM\Column(length: 255)]
+    private ?string $tele = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -44,6 +47,18 @@ class Chauffeur
     public function setLicence(string $licence): static
     {
         $this->licence = $licence;
+
+        return $this;
+    }
+
+    public function getTele(): ?string
+    {
+        return $this->tele;
+    }
+
+    public function setTele(string $tele): static
+    {
+        $this->tele = $tele;
 
         return $this;
     }

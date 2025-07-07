@@ -15,6 +15,41 @@ class MachineRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Machine::class);
     }
+    
+    public function save(Machine $machine, bool $flush = true): void
+    {
+        $this->getEntityManager()->persist($machine);
+        
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
+    }
+    
+    public function remove(Machine $machine, bool $flush = true): void
+    {
+        $this->getEntityManager()->remove($machine);
+        
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
+    }
+    
+    /**
+     * @return Machine[] Returns an array of Machine objects
+     */
+    public function findBySearchTerm(string $searchTerm): array
+    {
+        return $this->createQueryBuilder('m')
+            ->leftJoin('m.categorie', 'c')
+            ->where('m.nom LIKE :searchTerm')
+            ->orWhere('m.code LIKE :searchTerm')
+            ->orWhere('c.nom LIKE :searchTerm')
+            ->setParameter('searchTerm', '%'.$searchTerm.'%')
+            ->orderBy('m.nom', 'ASC')
+            ->getQuery()
+            ->getResult()
+        ;
+    }
 
 //    /**
 //     * @return Machine[] Returns an array of Machine objects

@@ -28,6 +28,9 @@ class MachineCategorie
     #[ORM\OneToMany(targetEntity: Machine::class, mappedBy: 'categorie')]
     private Collection $machines;
 
+    #[ORM\Column]
+    private ?int $typeCons = null;
+
     public function __construct()
     {
         $this->machines = new ArrayCollection();
@@ -88,6 +91,18 @@ class MachineCategorie
                 $machine->setCategorie(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getTypeCons(): ?int
+    {
+        return $this->typeCons;
+    }
+
+    public function setTypeCons(int $typeCons): static
+    {
+        $this->typeCons = $typeCons;
 
         return $this;
     }

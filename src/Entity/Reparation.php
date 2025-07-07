@@ -29,6 +29,9 @@ class Reparation
     #[ORM\ManyToOne(inversedBy: 'reparations')]
     private ?Entretien $entretien = null;
 
+    #[ORM\Column]
+    private ?float $consomation = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -90,6 +93,18 @@ class Reparation
     public function setEntretien(?Entretien $entretien): static
     {
         $this->entretien = $entretien;
+
+        return $this;
+    }
+
+    public function getConsomation(): ?float
+    {
+        return $this->consomation;
+    }
+
+    public function setConsomation(float $consomation): static
+    {
+        $this->consomation = $consomation;
 
         return $this;
     }

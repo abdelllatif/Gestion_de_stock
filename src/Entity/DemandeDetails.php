@@ -34,6 +34,9 @@ class DemandeDetails
     #[ORM\Column]
     private ?float $prix_unitaire = null;
 
+    #[ORM\Column]
+    private ?float $prixTotal = null;
+
 
     public function getId(): ?int
     {
@@ -99,6 +102,18 @@ class DemandeDetails
     public function setPrixUnitaire(float $prix_unitaire): static
     {
         $this->prix_unitaire = $prix_unitaire;
+
+        return $this;
+    }
+
+    public function getPrixTotal(): ?float
+    {
+        return $this->prixTotal;
+    }
+
+    public function setPrixTotal(float $prixTotal): static
+    {
+        $this->prixTotal = $prixTotal;
 
         return $this;
     }
