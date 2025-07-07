@@ -51,6 +51,17 @@ final class MachineController extends AbstractController
         $machine->setCode($data['code']);
         $machine->setNbr($data['nbr']);
         
+        // Ajout des nouveaux champs
+        if (!empty($data['marque'])) {
+            $machine->setMarque($data['marque']);
+        }
+        if (!empty($data['modele'])) {
+            $machine->setModele($data['modele']);
+        }
+        if (!empty($data['anneeFabriq'])) {
+            $machine->setAnneeFabriq($data['anneeFabriq']);
+        }
+        
         // Gestion de la catégorie
         if (!empty($data['categorie'])) {
             $categorie = $categorieRepository->find($data['categorie']);
@@ -92,6 +103,9 @@ final class MachineController extends AbstractController
             'nom' => $machine->getNom(),
             'code' => $machine->getCode(),
             'nbr' => $machine->getNbr(),
+            'marque' => $machine->getMarque(),
+            'modele' => $machine->getModele(),
+            'anneeFabriq' => $machine->getAnneeFabriq(),
             'categorie' => $machine->getCategorie() ? $machine->getCategorie()->getId() : null
         ]);
     }
@@ -125,6 +139,17 @@ final class MachineController extends AbstractController
         $machine->setNom($data['nom']);
         $machine->setCode($data['code']);
         $machine->setNbr($data['nbr']);
+        
+        // Mise à jour des nouveaux champs
+        if (isset($data['marque'])) {
+            $machine->setMarque($data['marque']);
+        }
+        if (isset($data['modele'])) {
+            $machine->setModele($data['modele']);
+        }
+        if (isset($data['anneeFabriq'])) {
+            $machine->setAnneeFabriq($data['anneeFabriq']);
+        }
         
         if (!empty($data['categorie'])) {
             $categorie = $categorieRepository->find($data['categorie']);

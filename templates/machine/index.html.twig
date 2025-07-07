@@ -49,6 +49,21 @@
             </div>
           </div>
           
+          <div class="row mb-3">
+            <div class="col-md-4">
+              <label for="machine_marque" class="form-label">Marque</label>
+              <input type="text" class="form-control" id="machine_marque" name="marque">
+            </div>
+            <div class="col-md-4">
+              <label for="machine_modele" class="form-label">Modèle</label>
+              <input type="text" class="form-control" id="machine_modele" name="modele">
+            </div>
+            <div class="col-md-4">
+              <label for="machine_anneeFabriq" class="form-label">Année de fabrication</label>
+              <input type="text" class="form-control" id="machine_anneeFabriq" name="anneeFabriq">
+            </div>
+          </div>
+          
           <div class="alert alert-danger d-none" id="form-errors"></div>
         </form>
       </div>
@@ -100,6 +115,21 @@
             </div>
           </div>
           
+          <div class="row mb-3">
+            <div class="col-md-4">
+              <label for="edit_machine_marque" class="form-label">Marque</label>
+              <input type="text" class="form-control" id="edit_machine_marque" name="marque">
+            </div>
+            <div class="col-md-4">
+              <label for="edit_machine_modele" class="form-label">Modèle</label>
+              <input type="text" class="form-control" id="edit_machine_modele" name="modele">
+            </div>
+            <div class="col-md-4">
+              <label for="edit_machine_anneeFabriq" class="form-label">Année de fabrication</label>
+              <input type="text" class="form-control" id="edit_machine_anneeFabriq" name="anneeFabriq">
+            </div>
+          </div>
+          
           <div class="alert alert-danger d-none" id="edit-form-errors"></div>
         </form>
       </div>
@@ -127,6 +157,9 @@
                     <th>Nom</th>
                     <th>Code</th>
                     <th>Numéro</th>
+                    <th>Marque</th>
+                    <th>Modèle</th>
+                    <th>Année</th>
                     <th>Catégorie</th>
                     <th>Actions</th>
                 </tr>
@@ -137,6 +170,9 @@
                         <td>{{ machine.nom }}</td>
                         <td>{{ machine.code }}</td>
                         <td>{{ machine.nbr }}</td>
+                        <td>{{ machine.marque ?? 'N/A' }}</td>
+                        <td>{{ machine.modele ?? 'N/A' }}</td>
+                        <td>{{ machine.anneeFabriq ?? 'N/A' }}</td>
                         <td>{{ machine.categorie ? machine.categorie.nom : 'N/A' }}</td>
                         <td>
                             <div class="btn-group" role="group">
@@ -176,10 +212,10 @@
             lengthChange: true,
             info: true,
             searching: true,
-            order: [[0, 'asc']], // Tri par nom par défaut
+            order: [[0, 'asc']], 
             columnDefs: [
                 { 
-                    targets: [4], // Colonne Actions
+                    targets: [4],
                     orderable: false,
                     searchable: false
                 }
@@ -189,51 +225,45 @@
                  "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
         });
 
-        // Personnalisation de la barre de recherche
         let searchBox = $(table.table().container()).find('div.dataTables_filter input');
         searchBox.addClass('form-control ps-5').attr('placeholder', 'Rechercher une machine...');
         searchBox.wrap('<div class="position-relative"></div>');
         searchBox.before('<span class="position-absolute top-50 start-0 translate-middle-y ps-3" style="pointer-events:none;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-search text-secondary" viewBox="0 0 16 16"><path d="M11 6a5 5 0 1 1-10 0 5 5 0 0 1 10 0zm-1.293 6.707a6 6 0 1 0-1.414 1.414l3.85 3.85a1 1 0 0 0 1.415-1.415l-3.85-3.85z"/></svg></span>');
         searchBox.css({ paddingLeft: '2.5rem', marginBottom: '0.5rem', maxWidth: '300px' });
 
-        // Animation au survol des lignes
         $('#machinesTable tbody').on('mouseenter', 'tr', function() {
             $(this).addClass('table-hover-effect');
         }).on('mouseleave', 'tr', function() {
             $(this).removeClass('table-hover-effect');
         });
         
-        // Traitement du formulaire d'ajout de machine
         $('#saveMachineBtn').on('click', function() {
-            // Vérifier la validité du formulaire
             const form = document.getElementById('addMachineForm');
             if (!form.checkValidity()) {
                 form.reportValidity();
                 return;
             }
             
-            // Récupérer les données du formulaire
             const formData = {
                 nom: $('#machine_nom').val(),
                 code: $('#machine_code').val(),
                 nbr: $('#machine_nbr').val(),
+                marque: $('#machine_marque').val(),
+                modele: $('#machine_modele').val(),
+                anneeFabriq: $('#machine_anneeFabriq').val(),
                 categorie: $('#machine_categorie').val()
             };
             
-            // Désactiver le bouton pendant l'envoi
             $('#saveMachineBtn').prop('disabled', true).html('<i class="spinner-border spinner-border-sm me-1"></i> Traitement en cours...');
             
-            // Envoi AJAX
             $.ajax({
                 url: '/machine/create',
                 method: 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify(formData),
                 success: function(response) {
-                    // Fermer le modal
                     $('#addMachineModal').modal('hide');
                     
-                    // Notification de succès
                     Swal.fire({
                         icon: 'success',
                         title: 'Machine ajoutée',
@@ -243,11 +273,13 @@
                         timerProgressBar: true
                     });
                     
-                    // Ajouter la nouvelle ligne à la table
                     const newRow = table.row.add([
                         response.machine.nom,
                         response.machine.code,
                         response.machine.nbr,
+                        response.machine.marque || 'N/A',
+                        response.machine.modele || 'N/A',
+                        response.machine.anneeFabriq || 'N/A',
                         response.machine.categorie ? response.machine.categorie.nom : 'N/A',
                         `<button class="btn btn-sm btn-outline-primary" 
                             onclick="openEditModal(${response.machine.id})"
@@ -256,19 +288,16 @@
                         </button>`
                     ]).draw(false).node();
                     
-                    // Mettre en évidence la nouvelle ligne
                     $(newRow).addClass('table-success');
                     setTimeout(function() {
                         $(newRow).removeClass('table-success');
                     }, 3000);
                     
-                    // Réinitialiser le formulaire
                     $('#addMachineForm').trigger('reset');
                 },
                 error: function(xhr) {
                     let errorMessage = 'Une erreur est survenue lors de l\'ajout de la machine';
                     
-                    // Afficher les erreurs de validation
                     if (xhr.responseJSON && xhr.responseJSON.errors) {
                         errorMessage = xhr.responseJSON.errors.join('<br>');
                         $('#form-errors').removeClass('d-none').html(errorMessage);
@@ -281,44 +310,39 @@
                     }
                 },
                 complete: function() {
-                    // Réactiver le bouton
                     $('#saveMachineBtn').prop('disabled', false).html('<i class="bi bi-save me-1"></i> Enregistrer');
                 }
             });
         });
         
-        // Traitement du formulaire de modification de machine
         $('#updateMachineBtn').on('click', function() {
-            // Vérifier la validité du formulaire
             const form = document.getElementById('editMachineForm');
             if (!form.checkValidity()) {
                 form.reportValidity();
                 return;
             }
             
-            // Récupérer l'ID de la machine et les données du formulaire
             const machineId = $('#edit_machine_id').val();
             const formData = {
                 nom: $('#edit_machine_nom').val(),
                 code: $('#edit_machine_code').val(),
                 nbr: $('#edit_machine_nbr').val(),
+                marque: $('#edit_machine_marque').val(),
+                modele: $('#edit_machine_modele').val(),
+                anneeFabriq: $('#edit_machine_anneeFabriq').val(),
                 categorie: $('#edit_machine_categorie').val()
             };
             
-            // Désactiver le bouton pendant l'envoi
             $('#updateMachineBtn').prop('disabled', true).html('<i class="spinner-border spinner-border-sm me-1"></i> Mise à jour en cours...');
             
-            // Envoi AJAX
             $.ajax({
                 url: `/machine/${machineId}/update`,
                 method: 'PUT',
                 contentType: 'application/json',
                 data: JSON.stringify(formData),
                 success: function(response) {
-                    // Fermer le modal
                     $('#editMachineModal').modal('hide');
                     
-                    // Notification de succès
                     Swal.fire({
                         icon: 'success',
                         title: 'Machine mise à jour',
@@ -327,14 +351,12 @@
                         showConfirmButton: false,
                         timerProgressBar: true
                     }).then(() => {
-                        // Recharger la page pour voir les changements
                         location.reload();
                     });
                 },
                 error: function(xhr) {
                     let errorMessage = 'Une erreur est survenue lors de la mise à jour de la machine';
                     
-                    // Afficher les erreurs de validation
                     if (xhr.responseJSON && xhr.responseJSON.errors) {
                         errorMessage = xhr.responseJSON.errors.join('<br>');
                         $('#edit-form-errors').removeClass('d-none').html(errorMessage);
@@ -347,28 +369,23 @@
                     }
                 },
                 complete: function() {
-                    // Réactiver le bouton
                     $('#updateMachineBtn').prop('disabled', false).html('<i class="bi bi-save me-1"></i> Mettre à jour');
                 }
             });
         });
         
-        // Réinitialiser le formulaire quand le modal est fermé
         $('#addMachineModal').on('hidden.bs.modal', function() {
             $('#addMachineForm').trigger('reset');
             $('#form-errors').addClass('d-none').html('');
         });
         
-        // Réinitialiser le formulaire quand le modal d'édition est fermé
         $('#editMachineModal').on('hidden.bs.modal', function() {
             $('#editMachineForm').trigger('reset');
             $('#edit-form-errors').addClass('d-none').html('');
         });
     });
     
-    // Fonction pour ouvrir le modal de modification avec les données de la machine
     window.openEditModal = function(machineId) {
-        // Afficher un indicateur de chargement
         Swal.fire({
             title: 'Chargement...',
             html: 'Récupération des données de la machine',
@@ -379,19 +396,19 @@
             }
         });
         
-        // Récupérer les données de la machine via AJAX
         $.ajax({
             url: `/machine/${machineId}`,
             method: 'GET',
             success: function(machine) {
-                // Remplir le formulaire avec les données de la machine
                 $('#edit_machine_id').val(machine.id);
                 $('#edit_machine_nom').val(machine.nom);
                 $('#edit_machine_code').val(machine.code);
                 $('#edit_machine_nbr').val(machine.nbr);
+                $('#edit_machine_marque').val(machine.marque || '');
+                $('#edit_machine_modele').val(machine.modele || '');
+                $('#edit_machine_anneeFabriq').val(machine.anneeFabriq || '');
                 $('#edit_machine_categorie').val(machine.categorie);
                 
-                // Fermer l'indicateur et ouvrir le modal
                 Swal.close();
                 $('#editMachineModal').modal('show');
             },

@@ -18,22 +18,16 @@ class Vidange
     private ?\DateTime $date = null;
 
     #[ORM\Column(length: 255)]
-    private ?string $km = null;
+    private ?string $consomation = null;
 
     #[ORM\Column(length: 255)]
     private ?string $type_changment = null;
 
     #[ORM\Column]
-    private ?float $km_prochaine_vidange = null;
+    private ?float $conso_prochaine_vidange = null;
 
     #[ORM\Column]
-    private ?float $huil_filter_change = null;
-
-    #[ORM\Column]
-    private ?float $gasoil_filter_change = null;
-
-    #[ORM\Column]
-    private ?float $air_filter_change = null;
+    private ?float $prochaine_filter_change = null;
 
     #[ORM\Column]
     private ?float $montant_ttc = null;
@@ -58,14 +52,14 @@ class Vidange
         return $this;
     }
 
-    public function getKm(): ?string
+    public function getConsomation(): ?string
     {
-        return $this->km;
+        return $this->consomation;
     }
 
-    public function setKm(string $km): static
+    public function setConsomation(string $consomation): static
     {
-        $this->km = $km;
+        $this->consomation = $consomation;
 
         return $this;
     }
@@ -82,53 +76,30 @@ class Vidange
         return $this;
     }
 
-    public function getKmProchaineVidange(): ?float
+    public function getConsoProchaineVidange(): ?float
     {
-        return $this->km_prochaine_vidange;
+        return $this->conso_prochaine_vidange;
     }
 
-    public function setKmProchaineVidange(float $km_prochaine_vidange): static
+    public function setConsoProchaineVidange(float $conso_prochaine_vidange): static
     {
-        $this->km_prochaine_vidange = $km_prochaine_vidange;
+        $this->conso_prochaine_vidange = $conso_prochaine_vidange;
 
         return $this;
     }
 
-    public function getHuilFilterChange(): ?float
+    public function getProchaineFilterChange(): ?float
     {
-        return $this->huil_filter_change;
+        return $this->prochaine_filter_change;
     }
 
-    public function setHuilFilterChange(float $huil_filter_change): static
+    public function setProchaineFilterChange(float $prochaine_filter_change): static
     {
-        $this->huil_filter_change = $huil_filter_change;
+        $this->prochaine_filter_change = $prochaine_filter_change;
 
         return $this;
     }
 
-    public function getGasoilFilterChange(): ?float
-    {
-        return $this->gasoil_filter_change;
-    }
-
-    public function setGasoilFilterChange(float $gasoil_filter_change): static
-    {
-        $this->gasoil_filter_change = $gasoil_filter_change;
-
-        return $this;
-    }
-
-    public function getAirFilterChange(): ?float
-    {
-        return $this->air_filter_change;
-    }
-
-    public function setAirFilterChange(float $air_filter_change): static
-    {
-        $this->air_filter_change = $air_filter_change;
-
-        return $this;
-    }
 
     public function getMontantTtc(): ?float
     {

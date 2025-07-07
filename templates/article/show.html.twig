@@ -185,16 +185,9 @@
       <div class="modal-body">
         <form id="editArticleForm">
           <input type="hidden" id="edit_article_id" name="id">
+          <!-- Première ligne: Catégorie et Type -->
           <div class="row mb-3">
-            <div class="col-md-4">
-              <label for="edit_article_type" class="form-label">Type d'article*</label>
-              <input type="text" class="form-control" id="edit_article_type" name="type" required>
-            </div>
-            <div class="col-md-4">
-              <label for="edit_article_nom" class="form-label">Nom*</label>
-              <input type="text" class="form-control" id="edit_article_nom" name="nom" required>
-            </div>
-            <div class="col-md-4">
+            <div class="col-md-6">
               <label for="edit_article_category" class="form-label">Catégorie*</label>
               <select class="form-select" id="edit_article_category" name="category" required>
                 <option value="" disabled>Choisir une catégorie...</option>
@@ -203,12 +196,24 @@
                 {% endfor %}
               </select>
             </div>
+            <div class="col-md-6">
+              <label class="form-label d-block">Type d'article*</label>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="type" id="edit_type_consommation" value="Consommation" required>
+                <label class="form-check-label" for="edit_type_consommation">Article de consommation</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="type" id="edit_type_non_consommation" value="NonConsommable" required>
+                <label class="form-check-label" for="edit_type_non_consommation">Non consommable</label>
+              </div>
+            </div>
           </div>
           
+          <!-- Deuxième ligne: Nom et Marque -->
           <div class="row mb-3">
             <div class="col-md-6">
-              <label for="edit_article_reference" class="form-label">Référence*</label>
-              <input type="text" class="form-control" id="edit_article_reference" name="reference" required>
+              <label for="edit_article_nom" class="form-label">Nom*</label>
+              <input type="text" class="form-control" id="edit_article_nom" name="nom" required>
             </div>
             <div class="col-md-6">
               <label for="edit_article_marque" class="form-label">Marque*</label>
@@ -216,8 +221,13 @@
             </div>
           </div>
           
+          <!-- Troisième ligne: Référence et Unité -->
           <div class="row mb-3">
-            <div class="col-md-4">
+            <div class="col-md-6">
+              <label for="edit_article_reference" class="form-label">Référence*</label>
+              <input type="text" class="form-control" id="edit_article_reference" name="reference" required>
+            </div>
+            <div class="col-md-6">
               <label for="edit_article_unite" class="form-label">Unité*</label>
               <select class="form-select" id="edit_article_unite" name="unite" required>
                 <option value="" disabled>Choisir...</option>
@@ -231,13 +241,17 @@
                 <option value="Kg">Kg</option>
               </select>
             </div>
-            <div class="col-md-4">
-              <label for="edit_article_prix" class="form-label">Prix* (€)</label>
+          </div>
+          
+          <!-- Quatrième ligne: Prix et Numéro -->
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="edit_article_prix" class="form-label">Prix* (DH)</label>
               <input type="number" step="0.01" min="0" class="form-control" id="edit_article_prix" name="prix" required>
             </div>
-            <div class="col-md-4">
-              <label for="edit_article_numero" class="form-label">Numéro*</label>
-              <input type="number" class="form-control" id="edit_article_numero" name="numero" required>
+            <div class="col-md-6">
+              <label for="edit_article_numero" class="form-label">Numéro</label>
+              <input type="number" class="form-control" id="edit_article_numero" name="numero">
             </div>
           </div>
           
@@ -291,8 +305,14 @@
                 $('#edit_article_prix').val(article.prix);
                 $('#edit_article_numero').val(article.numero);
                 $('#edit_article_description').val(article.description);
-                $('#edit_article_type').val(article.type);
                 $('#edit_article_category').val(article.category);
+                
+                // Sélection du type d'article (bouton radio)
+                if (article.type === 'Consommation') {
+                    $('#edit_type_consommation').prop('checked', true);
+                } else {
+                    $('#edit_type_non_consommation').prop('checked', true);
+                }
                 
                 // Fermer l'indicateur et ouvrir le modal
                 Swal.close();
@@ -320,7 +340,7 @@
         // Récupérer l'ID de l'article et les données du formulaire
         const articleId = $('#edit_article_id').val();
         const formData = {
-            type: $('#edit_article_type').val(),
+            type: $('input[name="type"]:checked').val(),
             nom: $('#edit_article_nom').val(),
             reference: $('#edit_article_reference').val(),
             marque: $('#edit_article_marque').val(),

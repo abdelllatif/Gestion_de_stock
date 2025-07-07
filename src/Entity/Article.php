@@ -36,7 +36,7 @@ class Article
     #[ORM\Column(length: 255)]
     private ?string $description = null;
 
-    #[ORM\Column]
+    #[ORM\Column(nullable: true)]
     private ?int $numero = null;
 
     #[ORM\Column(length: 255)]
@@ -161,7 +161,7 @@ class Article
         return $this->numero;
     }
 
-    public function setNumero(int $numero): static
+    public function setNumero(?int $numero): static
     {
         $this->numero = $numero;
 

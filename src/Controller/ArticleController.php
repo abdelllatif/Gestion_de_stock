@@ -41,7 +41,8 @@ final class ArticleController extends AbstractController
                 if (empty($data['unite'])) $errors[] = 'L\'unité est requise';
                 if (!isset($data['prix']) || !is_numeric($data['prix'])) $errors[] = 'Le prix doit être un nombre';
                 if (empty($data['type'])) $errors[] = 'Le type est requis';
-                if (!isset($data['numero']) || !is_numeric($data['numero'])) $errors[] = 'Le numéro doit être un nombre';
+                // Le numéro n'est plus obligatoire mais doit être numérique s'il est fourni
+                if (isset($data['numero']) && $data['numero'] !== '' && !is_numeric($data['numero'])) $errors[] = 'Le numéro doit être un nombre';
 
                 if (!empty($errors)) {
                     return $this->json(['success' => false, 'errors' => $errors], 400);
@@ -59,8 +60,14 @@ final class ArticleController extends AbstractController
                        ->setUnite($data['unite'])
                        ->setPrix((float)$data['prix'])
                        ->setDescription($data['description'] ?? '')
-                       ->setType($data['type'])
-                       ->setNumero((int)$data['numero']);
+                       ->setType($data['type']);
+                
+                // Le numéro est maintenant optionnel
+                if (isset($data['numero']) && $data['numero'] !== '') {
+                    $article->setNumero((int)$data['numero']);
+                } else {
+                    $article->setNumero(null);
+                }
 
                 $articleRepository->save($article, true);
 
@@ -105,7 +112,8 @@ final class ArticleController extends AbstractController
             if (empty($data['unite'])) $errors[] = 'L\'unité est requise';
             if (!isset($data['prix']) || !is_numeric($data['prix'])) $errors[] = 'Le prix doit être un nombre';
             if (empty($data['type'])) $errors[] = 'Le type est requis';
-            if (!isset($data['numero']) || !is_numeric($data['numero'])) $errors[] = 'Le numéro doit être un nombre';
+            // Le numéro n'est plus obligatoire mais doit être numérique s'il est fourni
+            if (isset($data['numero']) && $data['numero'] !== '' && !is_numeric($data['numero'])) $errors[] = 'Le numéro doit être un nombre';
             if (empty($data['category'])) $errors[] = 'La catégorie est requise';
 
             if (!empty($errors)) {
@@ -133,8 +141,14 @@ final class ArticleController extends AbstractController
                    ->setPrix((float)$data['prix'])
                    ->setDescription($data['description'] ?? '')
                    ->setType($data['type'])
-                   ->setNumero((int)$data['numero'])
                    ->setCategory($category);
+            
+            // Le numéro est maintenant optionnel
+            if (isset($data['numero']) && $data['numero'] !== '') {
+                $article->setNumero((int)$data['numero']);
+            } else {
+                $article->setNumero(null);
+            }
 
             $articleRepository->save($article, true);
 
@@ -193,7 +207,8 @@ final class ArticleController extends AbstractController
             if (empty($data['unite'])) $errors[] = 'L\'unité est requise';
             if (!isset($data['prix']) || !is_numeric($data['prix'])) $errors[] = 'Le prix doit être un nombre';
             if (empty($data['type'])) $errors[] = 'Le type est requis';
-            if (!isset($data['numero']) || !is_numeric($data['numero'])) $errors[] = 'Le numéro doit être un nombre';
+            // Le numéro n'est plus obligatoire mais doit être numérique s'il est fourni
+            if (isset($data['numero']) && $data['numero'] !== '' && !is_numeric($data['numero'])) $errors[] = 'Le numéro doit être un nombre';
             if (empty($data['category'])) $errors[] = 'La catégorie est requise';
 
             if (!empty($errors)) {
@@ -223,8 +238,14 @@ final class ArticleController extends AbstractController
                    ->setPrix((float)$data['prix'])
                    ->setDescription($data['description'] ?? '')
                    ->setType($data['type'])
-                   ->setNumero((int)$data['numero'])
                    ->setCategory($category);
+                   
+            // Le numéro est maintenant optionnel
+            if (isset($data['numero']) && $data['numero'] !== '') {
+                $article->setNumero((int)$data['numero']);
+            } else {
+                $article->setNumero(null);
+            }
 
             $articleRepository->save($article, true);
 

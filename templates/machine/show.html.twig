@@ -54,6 +54,18 @@
                                 <td>{{ machine.nbr }}</td>
                             </tr>
                             <tr>
+                                <th class="text-muted">Marque</th>
+                                <td>{{ machine.marque ?: 'Non spécifiée' }}</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">Modèle</th>
+                                <td>{{ machine.modele ?: 'Non spécifié' }}</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">Année de fabrication</th>
+                                <td>{{ machine.anneeFabriq ?: 'Non spécifiée' }}</td>
+                            </tr>
+                            <tr>
                                 <th class="text-muted">Catégorie</th>
                                 <td>
                                     {% if machine.categorie %}
@@ -164,6 +176,24 @@
               <input type="text" class="form-control" id="edit_machine_nbr" name="nbr" required>
             </div>
           </div>
+
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="edit_machine_marque" class="form-label">Marque</label>
+              <input type="text" class="form-control" id="edit_machine_marque" name="marque">
+            </div>
+            <div class="col-md-6">
+              <label for="edit_machine_modele" class="form-label">Modèle</label>
+              <input type="text" class="form-control" id="edit_machine_modele" name="modele">
+            </div>
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="edit_machine_anneeFabriq" class="form-label">Année de fabrication</label>
+              <input type="text" class="form-control" id="edit_machine_anneeFabriq" name="anneeFabriq">
+            </div>
+          </div>
           
           <div class="alert alert-danger d-none" id="edit-form-errors"></div>
         </form>
@@ -206,6 +236,9 @@
                 $('#edit_machine_nom').val(machine.nom);
                 $('#edit_machine_code').val(machine.code);
                 $('#edit_machine_nbr').val(machine.nbr);
+                $('#edit_machine_marque').val(machine.marque);
+                $('#edit_machine_modele').val(machine.modele);
+                $('#edit_machine_anneeFabriq').val(machine.anneeFabriq);
                 $('#edit_machine_categorie').val(machine.categorie);
                 
                 // Fermer l'indicateur et ouvrir le modal
@@ -237,7 +270,10 @@
             nom: $('#edit_machine_nom').val(),
             code: $('#edit_machine_code').val(),
             nbr: $('#edit_machine_nbr').val(),
-            categorie: $('#edit_machine_categorie').val()
+            categorie: $('#edit_machine_categorie').val(),
+            marque: $('#edit_machine_marque').val(),
+            modele: $('#edit_machine_modele').val(),
+            anneeFabriq: $('#edit_machine_anneeFabriq').val()
         };
         
         // Désactiver le bouton pendant l'envoi

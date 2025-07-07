@@ -16,14 +16,6 @@ class MouvementStock
     #[ORM\Column]
     private ?int $id = null;
 
-
-
-    #[ORM\Column(length: 255)]
-    private ?string $recepteur = null;
-
-    #[ORM\Column(length: 255)]
-    private ?string $expediteur = null;
-
     #[ORM\Column(type: Types::TEXT)]
     private ?string $observation = null;
 
@@ -37,7 +29,11 @@ class MouvementStock
     private ?string $type = null;
 
     #[ORM\ManyToOne(inversedBy: 'mouvementStocks')]
-    private ?Chantier $chantier = null;
+    private ?Chantier $chantierExp = null;
+
+    #[ORM\ManyToOne(inversedBy: 'mouvementStocks')]
+    private ?Chantier $chantierRec = null;
+
 
     #[ORM\ManyToOne(inversedBy: 'mouvementStocks')]
     private ?Article $article = null;
@@ -58,30 +54,6 @@ class MouvementStock
         return $this->id;
     }
 
-
-    public function getRecepteur(): ?string
-    {
-        return $this->recepteur;
-    }
-
-    public function setRecepteur(string $recepteur): static
-    {
-        $this->recepteur = $recepteur;
-
-        return $this;
-    }
-
-    public function getExpediteur(): ?string
-    {
-        return $this->expediteur;
-    }
-
-    public function setExpediteur(string $expediteur): static
-    {
-        $this->expediteur = $expediteur;
-
-        return $this;
-    }
 
     public function getObservation(): ?string
     {
@@ -131,14 +103,26 @@ class MouvementStock
         return $this;
     }
 
-    public function getChantier(): ?Chantier
+    public function getChantierExp(): ?Chantier
     {
-        return $this->chantier;
+        return $this->chantierExp;
     }
 
-    public function setChantier(?Chantier $chantier): static
+    public function setChantierExp(?Chantier $chantierExp): static
     {
-        $this->chantier = $chantier;
+        $this->chantierExp = $chantierExp;
+
+        return $this;
+    }
+
+    public function getChantierRec(): ?Chantier
+    {
+        return $this->chantierRec;
+    }
+
+    public function setChantierRec(?Chantier $chantierRec): static
+    {
+        $this->chantierRec = $chantierRec;
 
         return $this;
     }

@@ -49,6 +49,15 @@ class Machine
     #[ORM\OneToMany(targetEntity: MouvementStock::class, mappedBy: 'machine')]
     private Collection $mouvementStocks;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $anneeFabriq = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $marque = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $modele = null;
+
     public function __construct()
     {
         $this->stocks = new ArrayCollection();
@@ -198,6 +207,42 @@ class Machine
                 $mouvementStock->setMachine(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getAnneeFabriq(): ?string
+    {
+        return $this->anneeFabriq;
+    }
+
+    public function setAnneeFabriq(?string $anneeFabriq): static
+    {
+        $this->anneeFabriq = $anneeFabriq;
+
+        return $this;
+    }
+
+    public function getMarque(): ?string
+    {
+        return $this->marque;
+    }
+
+    public function setMarque(?string $marque): static
+    {
+        $this->marque = $marque;
+
+        return $this;
+    }
+
+    public function getModele(): ?string
+    {
+        return $this->modele;
+    }
+
+    public function setModele(?string $modele): static
+    {
+        $this->modele = $modele;
 
         return $this;
     }
