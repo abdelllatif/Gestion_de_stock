@@ -15,6 +15,7 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\HttpFoundation\Request;
+use App\Service\cheekRole;
 
 final class UtilisateurController extends AbstractController
 {
@@ -32,6 +33,10 @@ final class UtilisateurController extends AbstractController
     #[Route('/utilisateur', name: 'app_utilisateur')]
     public function index(RoleRepository $roleRepository, UserRepository $userRepository): Response
     {
+        $user = $this->getUser();
+        if (!$user || (!$user->isAdmin() && !$user->hasRole('consulter_utilisateurs'))) {
+            return $this->redirectToRoute('dashboard', ['unauthorized' => 1]);
+        }
         $users = $userRepository->findAll();
         return $this->render('utilisateur/index.html.twig', [
             'activeLink' => 'utilisateur',
@@ -50,6 +55,10 @@ final class UtilisateurController extends AbstractController
         UserPasswordHasherInterface $passwordHasher
     ): Response
     {
+        $user = $this->getUser();
+        if (!$user || (!$user->isAdmin() && !$user->hasRole('ajouter_utilisateurs'))) {
+            return $this->redirectToRoute('dashboard', ['unauthorized' => 1]);
+        }
         $prenom = trim($request->request->get('prenom', ''));
         $nom = trim($request->request->get('nom', ''));
         $email = trim($request->request->get('email', ''));
@@ -137,6 +146,10 @@ final class UtilisateurController extends AbstractController
         UserPasswordHasherInterface $passwordHasher
     ): Response
     {
+        $user = $this->getUser();
+        if (!$user || (!$user->isAdmin() && !$user->hasRole('editer_utilisateurs'))) {
+            return $this->redirectToRoute('dashboard', ['unauthorized' => 1]);
+        }
         $currentUser = $this->getUser();
         if (!$currentUser) {
             return $this->returnErrorResponse($request, 'Vous devez être connecté.', 403);
@@ -183,7 +196,7 @@ final class UtilisateurController extends AbstractController
         // If not admin, skip role check
         if ($isAdmin === true) {
             if (!$editIsAdmin && empty($roleIds)) {
-                return $this->returnErrorResponse($request, 'Veuillez sélectionner au moins un rôle pour un utilisateur non-admin.', 400);
+            return $this->returnErrorResponse($request, 'Veuillez sélectionner au moins un rôle pour un utilisateur non-admin.', 400);
             }
         }
         $user->setPrenom($prenom);
@@ -198,19 +211,19 @@ final class UtilisateurController extends AbstractController
         if ($isAdmin) {
             $user->setIsAdmin($editIsAdmin);
             // Remove all roles first
-            foreach ($user->getRoleEntities() as $role) {
-                $user->removeRole($role);
-            }
+        foreach ($user->getRoleEntities() as $role) {
+            $user->removeRole($role);
+        }
             if (!$editIsAdmin) {
-                $roles = [];
-                foreach ($roleIds as $roleId) {
-                    $role = $roleRepository->find($roleId);
-                    if ($role) {
-                        $roles[] = $role;
-                    }
+            $roles = [];
+            foreach ($roleIds as $roleId) {
+                $role = $roleRepository->find($roleId);
+                if ($role) {
+                    $roles[] = $role;
                 }
-                $user->setRoles($roles);
             }
+            $user->setRoles($roles);
+        }
         }
         try {
             $em->persist($user);

@@ -217,8 +217,6 @@
 </div>
 
 <script src="/js/components/alert.js"></script>
-<!-- Include SweetAlert2 if not already included -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('editProfileForm');
@@ -235,34 +233,26 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(response => response.json())
             .then(data => {
-                if (data.message && (data.message.toLowerCase().includes('succès') || data.message.toLowerCase().includes('modifié'))) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Succès',
-                        text: data.message,
-                        timer: 1200,
-                        showConfirmButton: false
-                    });
+                if (data.message) {
+                    showToast(data.message, 'success', 1600);
                     // Close modal after short delay
                     setTimeout(() => {
                         const modal = bootstrap.Modal.getInstance(document.getElementById('editProfileModal'));
                         if (modal) modal.hide();
-                        window.location.reload();
-                    }, 1200);
+                        setTimeout(() => window.location.reload(), 400);
+                    }, 1600);
                 } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Erreur',
-                        text: data.message || 'Erreur lors de la mise à jour du profil.'
-                    });
+                    showToast('Profil mis à jour.', 'success', 1600);
+                    setTimeout(() => {
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('editProfileModal'));
+                        if (modal) modal.hide();
+                        setTimeout(() => window.location.reload(), 400);
+                    }, 1600);
                 }
             })
             .catch(err => {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Erreur',
-                    text: 'Erreur lors de la mise à jour du profil.'
-                });
+                showToast('Erreur lors de la mise à jour du profil.', 'error', 2000);
+                // Do not close the modal
             });
         });
     }

@@ -3,6 +3,20 @@
 {% block title %}Tableau de bord{% endblock %}
 
 {% block body %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('unauthorized')) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Accès refusé',
+                text: 'Vous n\'avez pas la permission d\'effectuer cette action.',
+                confirmButtonText: 'OK'
+            });
+        }
+    });
+</script>
 <div class="container py-5">
     <h1 class="mb-5 text-center" style="color: #232946; font-family: 'Segoe UI', sans-serif; font-weight: bold; letter-spacing: 1px;">
         Bienvenue sur votre Tableau de bord

@@ -36,3 +36,16 @@
       cancelButtonText: cancelText
     });
   }
+
+// New: Toast/queue style auto-dismiss alert (no button)
+function showToast(message, type = 'success', timer = 1800) {
+  Swal.fire({
+    toast: true,
+    position: 'top-end',
+    icon: type,
+    title: message,
+    showConfirmButton: false,
+    timer: timer,
+    timerProgressBar: true
+  });
+}
