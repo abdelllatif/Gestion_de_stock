@@ -13,6 +13,7 @@ final class FactureController extends AbstractController
     {
         return $this->render('facture/index.html.twig', [
             'controller_name' => 'FactureController',
+            'activeLink' => 'facture',
         ]);
     }
 }

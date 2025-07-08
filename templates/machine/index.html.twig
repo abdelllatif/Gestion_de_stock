@@ -60,7 +60,7 @@
             </div>
             <div class="col-md-4">
               <label for="machine_anneeFabriq" class="form-label">Année de fabrication</label>
-              <input type="text" class="form-control" id="machine_anneeFabriq" name="anneeFabriq">
+              <input type="number" class="form-control" id="machine_anneeFabriq" name="anneeFabriq" min="1900" max="2100" step="1" placeholder="Ex: 2023">
             </div>
           </div>
           
@@ -126,7 +126,7 @@
             </div>
             <div class="col-md-4">
               <label for="edit_machine_anneeFabriq" class="form-label">Année de fabrication</label>
-              <input type="text" class="form-control" id="edit_machine_anneeFabriq" name="anneeFabriq">
+              <input type="number" class="form-control" id="edit_machine_anneeFabriq" name="anneeFabriq" min="1900" max="2100" step="1" placeholder="Ex: 2023">
             </div>
           </div>
           
@@ -203,6 +203,17 @@
 </div>
 <script>
     $(document).ready(function() {
+        // Validation pour n'accepter que des nombres pour l'année de fabrication
+        $('#machine_anneeFabriq, #edit_machine_anneeFabriq').on('input', function() {
+            if (this.value !== '' && (!$.isNumeric(this.value) || this.value.includes('.'))) {
+                this.setCustomValidity('Veuillez entrer uniquement un nombre entier pour l\'année');
+                $(this).addClass('is-invalid');
+            } else {
+                this.setCustomValidity('');
+                $(this).removeClass('is-invalid');
+            }
+        });
+        
         var table = $('#machinesTable').DataTable({
             language: {
                 url: '{{ asset('js/fr-FR.json') }}'

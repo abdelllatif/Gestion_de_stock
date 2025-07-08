@@ -24,6 +24,7 @@ final class AuthController extends AbstractController
             'controller_name' => 'AuthController',
             'last_username' => $lastUsername,
             'error' => $error,
+            'activeLink' => 'login',
         ]);
     }
 

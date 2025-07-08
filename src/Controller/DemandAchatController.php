@@ -14,7 +14,11 @@ final class DemandAchatController extends AbstractController
         $activeLink = 'demande_achat';
         return $this->render('demand_achat/index.html.twig', [
             'controller_name' => 'DemandAchatController',
+<<<<<<< HEAD
             'activeLink' => $activeLink
+=======
+            'activeLink' => 'demand_achat',
+>>>>>>> origin/Machines
         ]);
     }
 }
