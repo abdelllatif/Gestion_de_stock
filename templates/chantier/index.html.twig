@@ -1,20 +1,328 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Hello ChantierController!{% endblock %}
+{% block title %}Chantiers{% endblock %}
 
 {% block body %}
-<style>
-    .example-wrapper { margin: 1em auto; max-width: 800px; width: 95%; font: 18px/1.5 sans-serif; }
-    .example-wrapper code { background: #F5F5F5; padding: 2px 6px; }
-</style>
+<link rel="stylesheet" href="https://cdn.datatables.net/2.0.7/css/dataTables.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/2.0.7/css/dataTables.bootstrap5.min.css">
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/2.0.7/js/dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/2.0.7/js/dataTables.bootstrap5.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
-<div class="example-wrapper">
-    <h1>Hello {{ controller_name }}! ✅</h1>
-
-    This friendly message is coming from:
-    <ul>
-        <li>Your controller at <code>C:/My projects/Gestion_des_materielles/src/Controller/ChantierController.php</code></li>
-        <li>Your template at <code>C:/My projects/Gestion_des_materielles/templates/chantier/index.html.twig</code></li>
-    </ul>
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 style="color: #232946; font-family: 'Segoe UI', sans-serif; font-weight: bold; letter-spacing: 1px;">Chantiers</h1>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addChantierModal" style="font-weight: 500;">Ajouter chantier</button>
+    </div>
+    <div class="card shadow-sm p-4">
+        <table id="chantiersTable" class="table table-striped" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Nom</th>
+                    <th>Type</th>
+                    <th>Télé Responsable</th>
+                    <th>Adresse</th>
+                    <th>Responsable</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for chantier in chantiers %}
+                    <tr data-chantier-id="{{ chantier.id }}">
+                        <td>{{ chantier.nom }}</td>
+                        <td>{{ chantier.type }}</td>
+                        <td>{{ chantier.teleResponsable }}</td>
+                        <td>{{ chantier.address }}</td>
+                        <td>{{ chantier.responsable }}</td>
+                        <td>
+                            <a href="#" class="btn btn-sm btn-outline-primary me-1 edit-chantier" title="Modifier" data-bs-toggle="modal" data-bs-target="#editChantierModal" data-id="{{ chantier.id }}"><i class="bi bi-pencil"></i></a>
+                            <a href="#" class="btn btn-sm btn-outline-danger delete-chantier" title="Supprimer" data-id="{{ chantier.id }}"><i class="bi bi-trash"></i></a>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center">Aucun chantier pour l'instant</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
+
+<!-- Add Chantier Modal -->
+<div class="modal fade" id="addChantierModal" tabindex="-1" aria-labelledby="addChantierModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addChantierModalLabel">Ajouter un chantier</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addChantierForm">
+                    <div class="row g-4 mb-3">
+                        <div class="col-md-6">
+                            <label for="add_nom" class="form-label fw-bold">Nom</label>
+                            <input type="text" class="form-control" id="add_nom" name="nom" required maxlength="255">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="add_type" class="form-label fw-bold">Type</label>
+                            <input type="text" class="form-control" id="add_type" name="type" required maxlength="255">
+                        </div>
+                    </div>
+                    <div class="row g-4 mb-3">
+                        <div class="col-md-6">
+                            <label for="add_tele_responsable" class="form-label fw-bold">Télé Responsable</label>
+                            <input type="text" class="form-control" id="add_tele_responsable" name="tele_responsable" maxlength="255">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="add_address" class="form-label fw-bold">Adresse</label>
+                            <input type="text" class="form-control" id="add_address" name="address" maxlength="255">
+                        </div>
+                    </div>
+                    <div class="row g-4 mb-3">
+                        <div class="col-md-6">
+                            <label for="add_responsable" class="form-label fw-bold">Responsable</label>
+                            <input type="text" class="form-control" id="add_responsable" name="responsable" maxlength="255">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="add_users" class="form-label fw-bold">Affecter des utilisateurs</label>
+                            <input id="add_users" name="users" class="form-control" placeholder="Sélectionner des utilisateurs...">
+                        </div>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg" id="addChantierSubmit">Ajouter</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Chantier Modal -->
+<div class="modal fade" id="editChantierModal" tabindex="-1" aria-labelledby="editChantierModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editChantierModalLabel">Modifier un chantier</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editChantierForm">
+                    <input type="hidden" name="id" id="edit_id">
+                    <div class="row g-4 mb-3">
+                        <div class="col-md-6">
+                            <label for="edit_nom" class="form-label fw-bold">Nom</label>
+                            <input type="text" class="form-control" id="edit_nom" name="nom" required maxlength="255">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="edit_type" class="form-label fw-bold">Type</label>
+                            <input type="text" class="form-control" id="edit_type" name="type" required maxlength="255">
+                        </div>
+                    </div>
+                    <div class="row g-4 mb-3">
+                        <div class="col-md-6">
+                            <label for="edit_tele_responsable" class="form-label fw-bold">Télé Responsable</label>
+                            <input type="text" class="form-control" id="edit_tele_responsable" name="tele_responsable" maxlength="255">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="edit_address" class="form-label fw-bold">Adresse</label>
+                            <input type="text" class="form-control" id="edit_address" name="address" maxlength="255">
+                        </div>
+                    </div>
+                    <div class="row g-4 mb-3">
+                        <div class="col-md-6">
+                            <label for="edit_responsable" class="form-label fw-bold">Responsable</label>
+                            <input type="text" class="form-control" id="edit_responsable" name="responsable" maxlength="255">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="edit_users" class="form-label fw-bold">Affecter des utilisateurs</label>
+                            <input id="edit_users" name="users" class="form-control" placeholder="Sélectionner des utilisateurs...">
+                        </div>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg" id="editChantierSubmit">Enregistrer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css">
+<script>
+$(document).ready(function() {
+    const table = $('#chantiersTable').DataTable({
+        language: {
+            decimal: ",",
+            thousands: " ",
+            search: "Rechercher :",
+            lengthMenu: "Afficher _MENU_ entrées",
+            info: "Affichage de _START_ à _END_ sur _TOTAL_ entrées",
+            infoEmpty: "Affichage de 0 à 0 sur 0 entrées",
+            infoFiltered: "(filtré de _MAX_ entrées totales)",
+            loadingRecords: "Chargement...",
+            zeroRecords: "Aucun enregistrement correspondant trouvé",
+            emptyTable: "Aucune donnée disponible dans le tableau",
+            paginate: {
+                first: '<i class="bi bi-chevron-bar-left"></i>',
+                previous: '<i class="bi bi-chevron-left"></i>',
+                next: '<i class="bi bi-chevron-right"></i>',
+                last: '<i class="bi bi-chevron-bar-right"></i>'
+            }
+        }
+    });
+
+    // Tagify setup for add
+    var usersList = [
+        {% for user in users %}
+            { value: '{{ user.id }}', name: '{{ user.prenom|e('js') }} {{ user.nom|e('js') }}' }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
+    var addTagify = new Tagify(document.querySelector('#add_users'), {
+        whitelist: usersList,
+        enforceWhitelist: true,
+        maxTags: 20,
+        dropdown: { enabled: 0, maxItems: 20, classname: 'users-list', searchKeys: ['name'] },
+        templates: {
+            tag: function(v, tagData){ return `<tag title='${tagData.name}' contenteditable='false' spellcheck='false' class='tagify__tag'><div><span class='tagify__tag-text'>${tagData.name}</span></div></tag>`; },
+            dropdownItem: function(tagData){ return `<div class='tagify__dropdown__item'>${tagData.name}</div>`; }
+        }
+    });
+    // Tagify setup for edit
+    var editTagify = new Tagify(document.querySelector('#edit_users'), {
+        whitelist: usersList,
+        enforceWhitelist: true,
+        maxTags: 20,
+        dropdown: { enabled: 0, maxItems: 20, classname: 'users-list', searchKeys: ['name'] },
+        templates: {
+            tag: function(v, tagData){ return `<tag title='${tagData.name}' contenteditable='false' spellcheck='false' class='tagify__tag'><div><span class='tagify__tag-text'>${tagData.name}</span></div></tag>`; },
+            dropdownItem: function(tagData){ return `<div class='tagify__dropdown__item'>${tagData.name}</div>`; }
+        }
+    });
+
+    // Add Chantier AJAX
+    $('#addChantierForm').on('submit', function(e) {
+        e.preventDefault();
+        const $form = $(this);
+        const data = $form.serializeArray();
+        // Add users as JSON array
+        data.push({ name: 'users', value: JSON.stringify(addTagify.value.map(u => u.value)) });
+        const $btn = $('#addChantierSubmit');
+        $btn.prop('disabled', true).text('Chargement...');
+        $.ajax({
+            url: '/chantiers/new',
+            method: 'POST',
+            data: $.param(data),
+            success: function(response) {
+                Swal.fire({ icon: 'success', title: 'Succès', text: response.message });
+                $form[0].reset();
+                addTagify.removeAllTags();
+                $('#addChantierModal').modal('hide');
+                window.location.reload();
+            },
+            error: function(xhr) {
+                let response = xhr.responseJSON || {};
+                Swal.fire({ icon: 'error', title: 'Erreur', text: response.message || 'Une erreur est survenue: ' + xhr.responseText });
+            },
+            complete: function() { $btn.prop('disabled', false).text('Ajouter'); }
+        });
+    });
+
+    // Edit Chantier - open modal and fill data
+    $('.edit-chantier').on('click', function(e) {
+        e.preventDefault();
+        const chantierId = $(this).data('id');
+        $.ajax({
+            url: '/chantiers/' + chantierId,
+            method: 'GET',
+            success: function(chantier) {
+                $('#edit_id').val(chantier.id);
+                $('#edit_nom').val(chantier.nom);
+                $('#edit_type').val(chantier.type);
+                $('#edit_tele_responsable').val(chantier.tele_responsable);
+                $('#edit_address').val(chantier.address);
+                $('#edit_responsable').val(chantier.responsable);
+                // Set users in Tagify
+                var tags = chantier.users.map(function(u){ return usersList.find(x => x.value == u.id) || { value: u.id, name: u.value }; });
+                editTagify.removeAllTags();
+                editTagify.addTags(tags);
+            },
+            error: function(xhr) {
+                let response = xhr.responseJSON || {};
+                Swal.fire({ icon: 'error', title: 'Erreur', text: response.message || 'Impossible de charger les données du chantier: ' + xhr.responseText });
+            }
+        });
+    });
+
+    // Edit Chantier - submit
+    $('#editChantierForm').on('submit', function(e) {
+        e.preventDefault();
+        const $form = $(this);
+        const chantierId = $('#edit_id').val();
+        const data = $form.serializeArray();
+        data.push({ name: 'users', value: JSON.stringify(editTagify.value.map(u => u.value)) });
+        const $btn = $('#editChantierSubmit');
+        $btn.prop('disabled', true).text('Chargement...');
+        $.ajax({
+            url: '/chantiers/' + chantierId + '/edit',
+            method: 'POST',
+            data: $.param(data),
+            success: function(response) {
+                Swal.fire({ icon: 'success', title: 'Succès', text: response.message });
+                $form[0].reset();
+                editTagify.removeAllTags();
+                $('#editChantierModal').modal('hide');
+                window.location.reload();
+            },
+            error: function(xhr) {
+                let response = xhr.responseJSON || {};
+                Swal.fire({ icon: 'error', title: 'Erreur', text: response.message || 'Une erreur est survenue: ' + xhr.responseText });
+            },
+            complete: function() { $btn.prop('disabled', false).text('Enregistrer'); }
+        });
+    });
+
+    // Delete Chantier
+    $('.delete-chantier').on('click', function(e) {
+        e.preventDefault();
+        const chantierId = $(this).data('id');
+        Swal.fire({
+            title: 'Êtes-vous sûr ?',
+            text: 'Cette action est irréversible !',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Oui, supprimer !',
+            cancelButtonText: 'Annuler'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: '/chantiers/' + chantierId,
+                    method: 'DELETE',
+                    success: function(response) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Supprimé !',
+                            text: response.message
+                        });
+                        window.location.reload();
+                    },
+                    error: function(xhr) {
+                        let response = xhr.responseJSON || {};
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Erreur',
+                            text: response.message || 'Une erreur est survenue: ' + xhr.responseText
+                        });
+                    }
+                });
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

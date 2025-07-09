@@ -77,8 +77,6 @@
                 const sidebar = document.querySelector('.sidebar');
                 const content = document.querySelector('.content');
                 const toggleBtn = document.querySelector('.toggle-btn');
-
-                // Check localStorage for sidebar state
                 const isSidebarOpen = localStorage.getItem('sidebarOpen') === 'true';
                 if (isSidebarOpen) {
                     sidebar.classList.add('active');
@@ -89,6 +87,7 @@
                     content.classList.toggle('active');
                     localStorage.setItem('sidebarOpen', sidebar.classList.contains('active'));
                 });
+                // Load chantiers dynamically
             });
         </script>
     {% endblock %}
@@ -100,14 +99,13 @@
             <h1 class="h4 mb-0">Gestion des Matérielles</h1>
         </div>
         <div class="d-flex align-items-center">
-            <div class="dropdown me-3">
+            <div class="dropdown me-3" id="chantier-dropdown">
                 <button class="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    Bonjour, Abdellatif
+                    Sélectionner un chantier
                 </button>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#">Voir Profil</a></li>
-                    <li><a class="dropdown-item" href="#">Déconnexion</a></li>
-                </ul>
+                <div class="dropdown-menu" id="chantier-list">
+                    <!-- Chantiers will be populated dynamically -->
+                </div>
             </div>
         </div>
     </header>
@@ -119,5 +117,40 @@
     <div class="content">
         {% block body %}{% endblock %}
     </div>
+
+    <script>
+    function loadChantiers() {
+                var xhr = new XMLHttpRequest();
+                xhr.open('GET', '/chantiers/api', true);
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState === 4 && xhr.status === 200) {
+                        var chantiers = JSON.parse(xhr.responseText);
+                        var chantierList = document.getElementById('chantier-list');
+                        
+                        // Check if chantiers array is empty
+                        if (chantiers.length === 0) {
+                            chantierList.innerHTML = '<p class="dropdown-item">No chantier yet</p>';
+                        } else {
+                            // Create an unordered list of chantier names
+                            chantierList.innerHTML = ''; // Clear existing content
+                            chantiers.forEach(function (chantier) {
+                                var a = document.createElement('a');
+                                a.className = 'dropdown-item';
+                                a.href = '#';
+                                a.textContent = chantier.nom;
+                                chantierList.appendChild(a);
+                            });
+                        }
+                    } else if (xhr.readyState === 4) {
+                        // Handle error case
+                        document.getElementById('chantier-list').innerHTML = '<p class="dropdown-item">Error loading chantiers</p>';
+                    }
+                };
+                xhr.send();
+            }
+
+            // Load chantiers when the page loads
+            window.onload = loadChantiers;
+    </script>
 </body>
 </html>
