@@ -339,4 +339,34 @@ final class DemandAchatController extends AbstractController
         $entityManager->flush();
         return $this->json(['success' => true, 'etat' => $demandeAchat->getEtat()]);
     }
+
+    #[Route('/demande/achat/{id}/pdf', name: 'app_demand_achat_pdf', methods: ['GET'])]
+    public function generatePdf(DemandeAchat $demandeAchat): Response
+    {
+        // Retourner une simple réponse JSON pour le moment
+        return $this->json([
+            'success' => true,
+            'message' => 'La génération de PDF sera implémentée prochainement.',
+            'demande_id' => $demandeAchat->getId()
+        ]);
+        
+        /* 
+        // Exemple d'implémentation avec Dompdf (nécessite l'installation du bundle)
+        
+        $html = $this->renderView('demand_achat/pdf.html.twig', [
+            'demande' => $demandeAchat,
+        ]);
+        
+        $dompdf = new Dompdf();
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+        
+        $response = new Response($dompdf->output());
+        $response->headers->set('Content-Type', 'application/pdf');
+        $response->headers->set('Content-Disposition', 'attachment; filename="demande-achat-'.$demandeAchat->getId().'.pdf"');
+        
+        return $response;
+        */
+    }
 }

@@ -197,6 +197,7 @@
     </div>
   </div>
 </div>
+{% endblock %}
 
 {% block page_javascripts %}
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -204,8 +205,8 @@
 <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
 <script>
 // Ajouter des styles personnalisés pour les animations et transitions
-const style = document.createElement('style');
-style.textContent = `
+let customStyle = document.createElement('style');
+customStyle.textContent = `
     .edit-tva-badge {
         cursor: pointer;
         transition: all 0.2s ease;
@@ -268,7 +269,27 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             $('.table').DataTable({
                 language: {
-                    url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/fr-FR.json'
+                    // Utiliser des valeurs statiques pour éviter les problèmes CORS
+                    processing: "Traitement en cours...",
+                    search: "Rechercher&nbsp;:",
+                    lengthMenu: "Afficher _MENU_ éléments",
+                    info: "Affichage de _START_ à _END_ sur _TOTAL_ éléments",
+                    infoEmpty: "Affichage de 0 à 0 sur 0 élément",
+                    infoFiltered: "(filtré de _MAX_ éléments au total)",
+                    infoPostFix: "",
+                    loadingRecords: "Chargement en cours...",
+                    zeroRecords: "Aucun élément à afficher",
+                    emptyTable: "Aucune donnée disponible",
+                    paginate: {
+                        first: "Premier",
+                        previous: "Précédent",
+                        next: "Suivant",
+                        last: "Dernier"
+                    },
+                    aria: {
+                        sortAscending: ": activer pour trier la colonne par ordre croissant",
+                        sortDescending: ": activer pour trier la colonne par ordre décroissant"
+                    }
                 },
                 pageLength: 10,
                 responsive: true,
@@ -542,5 +563,4 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-{% endblock %}
 {% endblock %}

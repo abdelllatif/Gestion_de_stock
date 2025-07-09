@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Demande d'Achat #{{ demande.id }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.4;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #ddd;
+        }
+        .header h1 {
+            color: #1e3a8a;
+            margin: 0;
+            padding: 0;
+            font-size: 24px;
+        }
+        .company-info {
+            margin-bottom: 20px;
+            font-size: 12px;
+            text-align: center;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 4px;
+            color: white;
+            font-weight: bold;
+        }
+        .status-pending { background-color: #ffc107; }
+        .status-approved { background-color: #28a745; }
+        .status-rejected { background-color: #dc3545; }
+        
+        .info-section {
+            margin-bottom: 25px;
+        }
+        .info-section h2 {
+            font-size: 16px;
+            color: #1e3a8a;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-gap: 15px;
+        }
+        .info-item {
+            display: grid;
+            grid-template-columns: 40% 60%;
+        }
+        .info-label {
+            font-weight: bold;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f5f5f5;
+        }
+        .total-section {
+            margin-top: 20px;
+            text-align: right;
+        }
+        .total-row {
+            margin: 5px 0;
+        }
+        .total-label {
+            font-weight: bold;
+            margin-right: 15px;
+        }
+        .footer {
+            margin-top: 50px;
+            font-size: 12px;
+            text-align: center;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Demande d'Achat #{{ demande.id }}</h1>
+    </div>
+    
+    <div class="company-info">
+        <strong>ENTREPRISE XYZ</strong> | Adresse complète | Téléphone | Email | SIRET
+    </div>
+    
+    <div class="info-section">
+        <h2>Informations Générales</h2>
+        <div class="info-grid">
+            <div class="info-item">
+                <span class="info-label">Numéro:</span>
+                <span>{{ demande.id }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Date:</span>
+                <span>{{ demande.date|date('d/m/Y') }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Utilisateur:</span>
+                <span>{{ demande.uilisateur ? demande.uilisateur.nom ~ ' ' ~ demande.uilisateur.prenom : 'N/A' }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">État:</span>
+                <span class="status-badge status-{% if demande.etat == 'En attente' %}pending{% elseif demande.etat == 'Approuvée' %}approved{% else %}rejected{% endif %}">
+                    {{ demande.etat }}
+                </span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="info-section">
+        <h2>Articles Demandés</h2>
+        {% if demande.demandeDetails is empty %}
+            <p><em>Aucun article dans cette demande.</em></p>
+        {% else %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Article</th>
+                        <th>Référence</th>
+                        <th>Fournisseur</th>
+                        <th>Quantité</th>
+                        <th>Prix Unitaire</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for detail in demande.demandeDetails %}
+                    <tr>
+                        <td>{{ detail.article.nom }}</td>
+                        <td>{{ detail.article.reference }}</td>
+                        <td>{{ detail.fournisseur }}</td>
+                        <td>{{ detail.quantite }}</td>
+                        <td>{{ detail.prixUnitaire|number_format(2, ',', ' ') }} DH</td>
+                        <td>{{ detail.prixTotal|number_format(2, ',', ' ') }} DH</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            <div class="total-section">
+                <div class="total-row">
+                    <span class="total-label">Total HT:</span>
+                    <span>{{ demande.montantHT|number_format(2, ',', ' ') }} DH</span>
+                </div>
+                <div class="total-row">
+                    <span class="total-label">TVA ({{ demande.tva }}%):</span>
+                    <span>{{ (demande.montantTTC - demande.montantHT)|number_format(2, ',', ' ') }} DH</span>
+                </div>
+                <div class="total-row">
+                    <span class="total-label">Total TTC:</span>
+                    <strong>{{ demande.montantTTC|number_format(2, ',', ' ') }} DH</strong>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    
+    <div class="footer">
+        <p>Document généré le {{ "now"|date("d/m/Y H:i") }}</p>
+        <p>Ce document est un export électronique de la demande d'achat et ne requiert pas de signature.</p>
+    </div>
+</body>
+</html>
