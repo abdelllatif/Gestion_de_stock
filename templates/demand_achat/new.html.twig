@@ -41,6 +41,54 @@
         background-color: #3b82f6 !important;
         color: white;
     }
+    
+    /* Nouveaux styles pour le formulaire d'article */
+    .form-check-input:checked {
+        background-color: #3b82f6;
+        border-color: #3b82f6;
+    }
+    
+    .modal-content {
+        border-radius: 0.5rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    
+    .form-label {
+        font-weight: 500;
+    }
+    
+    #form-errors {
+        border-left: 4px solid #dc3545;
+    }
+    
+    .toast {
+        opacity: 1;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .toast .toast-header {
+        border-bottom: 0;
+    }
+    
+    /* Animation pour les nouveaux articles */
+    @keyframes highlightNew {
+        0% { background-color: rgba(25, 135, 84, 0.2); }
+        100% { background-color: transparent; }
+    }
+    
+    .article-row.new-article {
+        animation: highlightNew 2s ease-out;
+    }
+    
+    .badge.bg-success {
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { opacity: 0.7; }
+        50% { opacity: 1; }
+        100% { opacity: 0.7; }
+    }
 </style>
 {% endblock %}
 
@@ -123,9 +171,9 @@
                                 <label class="form-label">TVA</label>
                                 <div class="d-flex">
                                     <span class="badge bg-light text-dark me-2 p-2 tva-badge" data-tva="0">0%</span>
-                                    <span class="badge bg-light text-dark me-2 p-2 tva-badge active" data-tva="20">20%</span>
+                                    <span class="badge bg-light text-dark me-2 p-2 tva-badge" data-tva="7">7%</span>
                                     <span class="badge bg-light text-dark me-2 p-2 tva-badge" data-tva="14">14%</span>
-                                    <span class="badge bg-light text-dark p-2 tva-badge" data-tva="10">10%</span>
+                                    <span class="badge bg-light text-dark me-2 p-2 tva-badge active" data-tva="20">20%</span>
                                 </div>
                                 <input type="hidden" id="tva" name="tva" value="20">
                             </div>
@@ -167,8 +215,13 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div class="mb-3">
-                    <input type="text" class="form-control" id="articleSearch" placeholder="Rechercher un article...">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="flex-grow-1 me-2">
+                        <input type="text" class="form-control" id="articleSearch" placeholder="Rechercher un article...">
+                    </div>
+                    <button type="button" class="btn btn-success" id="newArticleBtn">
+                        <i class="bi bi-plus-circle me-1"></i>Nouvel Article
+                    </button>
                 </div>
                 <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
                     <table class="table table-hover" id="articlesModalTable">
@@ -205,6 +258,93 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nouvel Article -->
+<div class="modal fade" id="newArticleModal" tabindex="-1" aria-labelledby="newArticleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); color: white;">
+                <h5 class="modal-title" id="newArticleModalLabel"><i class="bi bi-plus-circle me-2"></i>Ajouter un Nouvel Article</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="newArticleForm">
+                    <!-- Première ligne: Type d'article -->
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label d-block">Type d'article*</label>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="articleType" id="type_consommable" value="Consommable" required checked>
+                                <label class="form-check-label" for="type_consommable">Consommable</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="articleType" id="type_non_consommable" value="Non Consommable" required>
+                                <label class="form-check-label" for="type_non_consommable">Non consommable</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Deuxième ligne: Désignation et Marque -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="articleNom" class="form-label">Désignation*</label>
+                            <input type="text" class="form-control" id="articleNom" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="articleMarque" class="form-label">Marque*</label>
+                            <input type="text" class="form-control" id="articleMarque" required>
+                        </div>
+                    </div>
+                    
+                    <!-- Troisième ligne: Référence et Unité -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="articleReference" class="form-label">Référence*</label>
+                            <input type="text" class="form-control" id="articleReference" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="articleUnite" class="form-label">Unité*</label>
+                            <select class="form-select" id="articleUnite" required>
+                                <option value="" disabled selected>Choisir...</option>
+                                <option value="Pièce">Pièce</option>
+                                <option value="Unité">Unité</option>
+                                <option value="Boîte">Boîte</option>
+                                <option value="Sachet">Sachet</option>
+                                <option value="Lot">Lot</option>
+                                <option value="Kg">Kg</option>
+                                <option value="L">L</option>
+                                <option value="m">m</option>
+                                <option value="m²">m²</option>
+                                <option value="m³">m³</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Quatrième ligne: Prix -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="articlePrix" class="form-label">Prix* (DH)</label>
+                            <input type="number" class="form-control" id="articlePrix" step="0.01" min="0" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="articleDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="articleDescription" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="alert alert-danger d-none" id="form-errors"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" id="saveNewArticleBtn" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); border: none;">
+                    <i class="bi bi-save me-1"></i> Enregistrer
+                </button>
             </div>
         </div>
     </div>
@@ -258,11 +398,19 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fonction pour ajouter un article à la table
     function addArticleToTable(article) {
         const newRow = document.createElement('tr');
-        newRow.className = 'article-row';
+        
+        // Vérifier s'il s'agit d'un nouvel article ou d'un article existant
+        const isNewArticle = article.id.toString().startsWith('new_');
+        
+        // Ajouter une classe spéciale pour les nouveaux articles pour l'animation
+        newRow.className = isNewArticle ? 'article-row new-article' : 'article-row';
         newRow.dataset.id = article.id;
+        
         newRow.innerHTML = `
             <td class="article-select">
-                ${article.nom} <small class="text-muted d-block">${article.reference}</small>
+                ${article.nom} 
+                <small class="text-muted d-block">${article.reference}</small>
+                ${isNewArticle ? '<span class="badge bg-success">Nouveau</span>' : ''}
             </td>
             <td>
                 <input type="text" class="form-control fournisseur-input" value="${article.fournisseur}" placeholder="Fournisseur">
@@ -275,7 +423,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </td>
             <td class="article-total">${(article.quantite * article.prix).toFixed(2)} DH</td>
             <td>
-                <i class="bi bi-x-circle delete-row"></i>
+                <!-- Icône de suppression retirée -->
             </td>
         `;
         
@@ -285,7 +433,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const quantiteInput = newRow.querySelector('.quantite-input');
         const prixInput = newRow.querySelector('.prix-input');
         const fournisseurInput = newRow.querySelector('.fournisseur-input');
-        const deleteBtn = newRow.querySelector('.delete-row');
         const totalCell = newRow.querySelector('.article-total');
         
         // Mise à jour de la quantité
@@ -313,17 +460,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const index = articles.findIndex(a => a.id === article.id);
             if (index !== -1) {
                 articles[index].fournisseur = this.value;
-            }
-        });
-        
-        // Suppression de l'article
-        deleteBtn.addEventListener('click', function() {
-            const index = articles.findIndex(a => a.id === article.id);
-            if (index !== -1) {
-                articles.splice(index, 1);
-                newRow.remove();
-                toggleEmptyMessage();
-                updateTotals();
             }
         });
     }
@@ -382,6 +518,138 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
+    // Gestion du modal pour créer un nouvel article
+    const newArticleBtn = document.getElementById('newArticleBtn');
+    const newArticleModal = new bootstrap.Modal(document.getElementById('newArticleModal'));
+    const saveNewArticleBtn = document.getElementById('saveNewArticleBtn');
+    
+    // Ouvrir le modal pour créer un nouvel article
+    newArticleBtn.addEventListener('click', function() {
+        // Masquer le modal de sélection et afficher le modal de création
+        articleModal.hide();
+        
+        // Réinitialiser le formulaire de nouvel article
+        document.getElementById('newArticleForm').reset();
+        
+        // Afficher le modal de création
+        setTimeout(() => {
+            newArticleModal.show();
+        }, 500);
+    });
+    
+    // Enregistrer un nouvel article
+    saveNewArticleBtn.addEventListener('click', function() {
+        // Récupérer les valeurs du formulaire
+        const form = document.getElementById('newArticleForm');
+        const reference = document.getElementById('articleReference').value;
+        const nom = document.getElementById('articleNom').value;
+        const marque = document.getElementById('articleMarque').value;
+        const unite = document.getElementById('articleUnite').value;
+        const prix = parseFloat(document.getElementById('articlePrix').value);
+        const type = document.querySelector('input[name="articleType"]:checked')?.value;
+        const description = document.getElementById('articleDescription').value;
+        
+        // Récupérer le conteneur d'erreurs
+        const formErrors = document.getElementById('form-errors');
+        formErrors.classList.add('d-none');
+        formErrors.innerHTML = '';
+        
+        // Validation avancée
+        let errors = [];
+        
+        if (!reference) errors.push("La référence est obligatoire");
+        if (!nom) errors.push("La désignation est obligatoire");
+        if (!marque) errors.push("La marque est obligatoire");
+        if (!unite || unite === '') errors.push("L'unité est obligatoire");
+        if (isNaN(prix) || prix <= 0) errors.push("Le prix doit être un nombre positif");
+        if (!type) errors.push("Le type d'article est obligatoire");
+        
+        // Afficher les erreurs si nécessaire
+        if (errors.length > 0) {
+            formErrors.classList.remove('d-none');
+            errors.forEach(error => {
+                formErrors.innerHTML += `<div><i class="bi bi-exclamation-triangle me-2"></i>${error}</div>`;
+            });
+            return;
+        }
+        
+        // Désactiver le bouton pour éviter les soumissions multiples
+        saveNewArticleBtn.disabled = true;
+        saveNewArticleBtn.innerHTML = '<i class="spinner-border spinner-border-sm me-1"></i> Traitement en cours...';
+        
+        // Simuler un ID pour le nouvel article (en production, cette valeur viendrait du serveur)
+        const tempId = 'new_' + Date.now();
+        
+        // Créer l'objet article avec toutes les données du formulaire
+        const newArticleData = {
+            reference: reference,
+            nom: nom,
+            marque: marque,
+            unite: unite,
+            prix: prix,
+            type: type,
+            description: description
+        };
+        
+        // En production, on enverrait ces données au serveur via une requête AJAX
+        console.log('Nouvel article à enregistrer:', newArticleData);
+        
+        // Ajouter le nouvel article à la liste des articles pour la demande
+        const article = {
+            id: tempId,  // ID temporaire, à remplacer par l'ID réel retourné par le serveur
+            reference: reference,
+            nom: nom,
+            marque: marque,
+            unite: unite,
+            prix: prix,
+            type: type,
+            description: description,
+            quantite: 1,
+            fournisseur: ''
+        };
+        
+        // Ajouter à la liste et à la table
+        articles.push(article);
+        addArticleToTable(article);
+        toggleEmptyMessage();
+        updateTotals();
+        
+        // Réinitialiser le formulaire
+        form.reset();
+        document.getElementById('type_consommable').checked = true;
+        
+        // Fermer le modal et afficher un message de confirmation
+        newArticleModal.hide();
+        
+        // Afficher une notification stylisée au lieu d'un simple alert
+        const toast = document.createElement('div');
+        toast.className = 'position-fixed bottom-0 end-0 p-3';
+        toast.style.zIndex = '5';
+        toast.innerHTML = `
+            <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="toast-header bg-success text-white">
+                    <i class="bi bi-check-circle me-2"></i>
+                    <strong class="me-auto">Succès</strong>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body">
+                    Article "${nom}" créé avec succès et ajouté à la demande.
+                </div>
+            </div>
+        `;
+        document.body.appendChild(toast);
+        
+        // Réactiver le bouton
+        saveNewArticleBtn.disabled = false;
+        saveNewArticleBtn.innerHTML = '<i class="bi bi-save me-1"></i> Enregistrer';
+        
+        // En environnement réel, il faudrait :
+        // 1. Envoyer les données au serveur
+        // 2. Récupérer l'ID réel de l'article créé
+        // 3. Mettre à jour l'ID dans la liste des articles
+        // 4. Ajouter l'article à la table des articles disponibles
+    });
+    
     // Gestion des badges TVA
     tvaBadges.forEach(badge => {
         badge.addEventListener('click', function() {
@@ -401,21 +669,84 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
+        // Désactiver le bouton pour éviter les soumissions multiples
+        saveDemandeBtn.disabled = true;
+        saveDemandeBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Traitement en cours...';
+        
+        // Vérifier s'il y a des nouveaux articles à créer d'abord
+        const newArticles = articles.filter(article => article.id.toString().startsWith('new_'));
+        const existingArticles = articles.filter(article => !article.id.toString().startsWith('new_'));
+        
         const demandeData = {
             date: document.getElementById('date').value,
             etat: document.getElementById('etat').value,
             tva: parseInt(tvaInput.value),
-            articles: articles.map(article => ({
+            // Pour les articles existants, on envoie simplement l'ID
+            existingArticles: existingArticles.map(article => ({
                 articleId: article.id,
                 quantite: article.quantite,
                 fournisseur: article.fournisseur,
                 prixUnitaire: article.prix
+            })),
+            // Pour les nouveaux articles, on envoie toutes les informations nécessaires
+            newArticles: newArticles.map(article => ({
+                reference: article.reference,
+                nom: article.nom,
+                marque: article.marque,
+                unite: article.unite,
+                type: article.type,
+                description: article.description,
+                prix: article.prix,
+                quantite: article.quantite,
+                fournisseur: article.fournisseur
             }))
         };
         
-        console.log('Données de la demande:', demandeData);
-        // Ici, vous ajouterez le code pour envoyer les données au serveur
-        alert('Fonctionnalité à implémenter: envoi des données au serveur.');
+        // Créer la demande d'achat via une requête AJAX
+        fetch('{{ path('app_demand_achat_new') }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify(demandeData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Erreur réseau: ' + response.status);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Afficher un message de confirmation avec le nombre d'articles
+                const totalArticles = articles.length;
+                const nouveauxArticles = newArticles.length;
+                let message = `Demande d'achat créée avec succès (${totalArticles} article(s)`;
+                
+                if (nouveauxArticles > 0) {
+                    message += ` dont ${nouveauxArticles} nouveau(x) article(s)`;
+                }
+                
+                alert(message + '). Redirection vers la liste des demandes...');
+                
+                // Rediriger vers la liste des demandes ou la vue détaillée de la demande créée
+                window.location.href = '{{ path('app_demand_achat') }}';
+            } else {
+                // En cas d'erreur côté serveur
+                alert('Erreur: ' + (data.message || 'Une erreur est survenue'));
+                // Réactiver le bouton
+                saveDemandeBtn.disabled = false;
+                saveDemandeBtn.innerHTML = 'Enregistrer la Demande';
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            alert('Erreur: ' + error.message);
+            // Réactiver le bouton
+            saveDemandeBtn.disabled = false;
+            saveDemandeBtn.innerHTML = 'Enregistrer la Demande';
+        });
     });
     
     // Initialisation

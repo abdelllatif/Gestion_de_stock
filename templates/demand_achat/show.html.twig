@@ -43,8 +43,7 @@
                 <ul class="dropdown-menu dropdown-menu-end">
                     <li><a class="dropdown-item" href="#"><i class="bi bi-pencil me-2"></i>Modifier</a></li>
                     <li><a class="dropdown-item" href="#"><i class="bi bi-printer me-2"></i>Imprimer</a></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item text-danger" href="#" data-bs-toggle="modal" data-bs-target="#deleteModal"><i class="bi bi-trash me-2"></i>Supprimer</a></li>
+                    <!-- Option de suppression retirée -->
                 </ul>
             </div>
         </div>
@@ -179,14 +178,14 @@
                     <div class="row">
                         <div class="col-md-6">
                             {% if demande.etat == 'En attente' %}
-                                <button type="button" class="btn btn-success w-100 mb-3">
+                                <button type="button" id="approveBtn" class="btn btn-success w-100 mb-3" data-id="{{ demande.id }}">
                                     <i class="bi bi-check-circle me-2"></i>Approuver la demande
                                 </button>
-                                <button type="button" class="btn btn-danger w-100">
+                                <button type="button" id="rejectBtn" class="btn btn-danger w-100" data-id="{{ demande.id }}">
                                     <i class="bi bi-x-circle me-2"></i>Rejeter la demande
                                 </button>
                             {% else %}
-                                <button type="button" class="btn btn-outline-primary w-100">
+                                <button type="button" id="changeStatusBtn" class="btn btn-outline-primary w-100" data-id="{{ demande.id }}" data-etat="{{ demande.etat }}">
                                     <i class="bi bi-arrow-repeat me-2"></i>Changer l'état
                                 </button>
                             {% endif %}
@@ -206,34 +205,210 @@
     </div>
 </div>
 
-<!-- Modal de suppression -->
-<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="deleteModalLabel">Confirmation de suppression</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                Êtes-vous sûr de vouloir supprimer cette demande d'achat ? Cette action est irréversible.
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                <button type="button" class="btn btn-danger" id="confirmDelete">Supprimer</button>
-            </div>
-        </div>
+<!-- Modal de changement de statut -->
+<div class="modal fade" id="statusModal" tabindex="-1" aria-labelledby="statusModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); color: white;">
+        <h5 class="modal-title" id="statusModalLabel"><i class="bi bi-arrow-repeat me-2"></i>Changer le statut de la demande</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="statusForm">
+          <input type="hidden" id="statusDemandeId">
+          <div class="mb-3">
+            <label for="newEtat" class="form-label">Nouveau statut</label>
+            <select class="form-select" id="newEtat" required>
+              <option value="En attente">En attente</option>
+              <option value="Approuvée">Approuvée</option>
+              <option value="Rejetée">Rejetée</option>
+            </select>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button type="button" class="btn btn-primary" id="saveStatusBtn" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); border: none;">
+            <i class="bi bi-save me-1"></i> Enregistrer
+        </button>
+      </div>
     </div>
+  </div>
 </div>
+
+<!-- Toast de confirmation -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 5" id="toastContainer"></div>
 
 {% block page_javascripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Logique de suppression
-    const confirmDeleteBtn = document.getElementById('confirmDelete');
+    // Initialisation des éléments Bootstrap
+    const statusModal = new bootstrap.Modal(document.getElementById('statusModal'));
+    const statusDemandeId = document.getElementById('statusDemandeId');
+    const newEtat = document.getElementById('newEtat');
+    const saveStatusBtn = document.getElementById('saveStatusBtn');
     
-    confirmDeleteBtn.addEventListener('click', function() {
-        // Ici, vous ajouterez le code pour supprimer la demande via une requête AJAX
-        alert('Fonctionnalité à implémenter: suppression de la demande.');
+    // Gestion des boutons d'approbation et de rejet
+    const approveBtn = document.getElementById('approveBtn');
+    const rejectBtn = document.getElementById('rejectBtn');
+    const changeStatusBtn = document.getElementById('changeStatusBtn');
+    
+    // Fonction pour créer et afficher un toast
+    function showToast(message, type = 'success') {
+        const toastEl = document.createElement('div');
+        toastEl.className = 'toast';
+        toastEl.setAttribute('role', 'alert');
+        toastEl.setAttribute('aria-live', 'assertive');
+        toastEl.setAttribute('aria-atomic', 'true');
+        
+        toastEl.innerHTML = `
+            <div class="toast align-items-center text-white bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i> ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('toastContainer').appendChild(toastEl);
+        const toast = new bootstrap.Toast(toastEl.querySelector('.toast'));
+        toast.show();
+        
+        // Supprimer le toast après qu'il se soit caché
+        toastEl.addEventListener('hidden.bs.toast', function() {
+            toastEl.remove();
+        });
+    }
+    
+    // Fonction pour changer le statut
+    function changeDemandeStatus(demandeId, newStatus, button) {
+        // Désactiver le bouton et montrer un spinner
+        const originalContent = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = '<i class="spinner-border spinner-border-sm me-2"></i> Traitement en cours...';
+        
+        // Appel API pour changer le statut
+        fetch(`/demande/achat/${demandeId}/status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ etat: newStatus })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Erreur lors de la mise à jour du statut');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                showToast(`La demande a été ${newStatus === 'Approuvée' ? 'approuvée' : 'rejetée'} avec succès!`, 'success');
+                
+                // Recharger la page après un délai
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                showToast('Erreur: ' + (data.message || 'Impossible de modifier le statut'), 'danger');
+                // Réinitialiser le bouton
+                button.disabled = false;
+                button.innerHTML = originalContent;
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            showToast('Une erreur est survenue lors de la mise à jour.', 'danger');
+            
+            // Réinitialiser le bouton
+            button.disabled = false;
+            button.innerHTML = originalContent;
+        });
+    }
+    
+    // Gestionnaire pour le bouton d'approbation
+    if (approveBtn) {
+        approveBtn.addEventListener('click', function() {
+            if (confirm('Êtes-vous sûr de vouloir approuver cette demande?')) {
+                const demandeId = this.getAttribute('data-id');
+                changeDemandeStatus(demandeId, 'Approuvée', this);
+            }
+        });
+    }
+    
+    // Gestionnaire pour le bouton de rejet
+    if (rejectBtn) {
+        rejectBtn.addEventListener('click', function() {
+            if (confirm('Êtes-vous sûr de vouloir rejeter cette demande?')) {
+                const demandeId = this.getAttribute('data-id');
+                changeDemandeStatus(demandeId, 'Rejetée', this);
+            }
+        });
+    }
+    
+    // Gestionnaire pour le bouton de changement d'état
+    if (changeStatusBtn) {
+        changeStatusBtn.addEventListener('click', function() {
+            const demandeId = this.getAttribute('data-id');
+            const currentEtat = this.getAttribute('data-etat');
+            
+            statusDemandeId.value = demandeId;
+            newEtat.value = currentEtat;
+            
+            statusModal.show();
+        });
+    }
+    
+    // Gestionnaire pour le bouton de sauvegarde du modal
+    saveStatusBtn.addEventListener('click', function() {
+        const demandeId = statusDemandeId.value;
+        const etat = newEtat.value;
+        
+        // Désactiver le bouton pendant la soumission
+        saveStatusBtn.disabled = true;
+        saveStatusBtn.innerHTML = '<i class="spinner-border spinner-border-sm me-1"></i> Traitement en cours...';
+        
+        fetch(`/demande/achat/${demandeId}/status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ etat: etat })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Erreur lors de la mise à jour');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                showToast('Statut de la demande modifié avec succès!', 'success');
+                
+                // Recharger la page après un délai
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+                
+                // Fermer le modal
+                statusModal.hide();
+            } else {
+                showToast('Erreur: ' + (data.message || 'Impossible de modifier le statut'), 'danger');
+                // Réinitialiser le bouton
+                saveStatusBtn.disabled = false;
+                saveStatusBtn.innerHTML = '<i class="bi bi-save me-1"></i> Enregistrer';
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            showToast('Une erreur est survenue lors de la mise à jour.', 'danger');
+            
+            // Réinitialiser le bouton
+            saveStatusBtn.disabled = false;
+            saveStatusBtn.innerHTML = '<i class="bi bi-save me-1"></i> Enregistrer';
+        });
     });
 });
 </script>
