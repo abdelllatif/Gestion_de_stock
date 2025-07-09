@@ -1,0 +1,80 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier Demande d'Achat{% endblock %}
+
+{% block body %}
+<div class="container py-4">
+    <h1 class="h3 mb-4">Modifier la Demande d'Achat #{{ demande.id }}</h1>
+    <form id="editDemandeForm" method="post">
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <label for="date" class="form-label">Date</label>
+                <input type="date" class="form-control" id="date" name="date" value="{{ demande.date|date('Y-m-d') }}" required>
+            </div>
+            <div class="col-md-4">
+                <label for="etat" class="form-label">État</label>
+                <select class="form-select" id="etat" name="etat" required>
+                    <option value="En attente" {% if demande.etat == 'En attente' %}selected{% endif %}>En attente</option>
+                    <option value="Approuvée" {% if demande.etat == 'Approuvée' %}selected{% endif %}>Approuvée</option>
+                    <option value="Rejetée" {% if demande.etat == 'Rejetée' %}selected{% endif %}>Rejetée</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">TVA</label>
+                <select class="form-select" id="tva" name="tva">
+                    <option value="0" {% if demande.tva == 0 %}selected{% endif %}>0%</option>
+                    <option value="7" {% if demande.tva == 7 %}selected{% endif %}>7%</option>
+                    <option value="14" {% if demande.tva == 14 %}selected{% endif %}>14%</option>
+                    <option value="20" {% if demande.tva == 20 %}selected{% endif %}>20%</option>
+                </select>
+            </div>
+        </div>
+        <h5 class="mt-4">Articles de la demande</h5>
+        <table class="table table-bordered mt-2">
+            <thead>
+                <tr>
+                    <th>Référence</th>
+                    <th>Nom</th>
+                    <th>Quantité</th>
+                    <th>Prix Unitaire</th>
+                    <th>Fournisseur</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for detail in details %}
+                <tr>
+                    <td>{{ detail.article.reference }}</td>
+                    <td>{{ detail.article.nom }}</td>
+                    <td><input type="number" class="form-control" name="details[{{ loop.index0 }}][quantite]" value="{{ detail.quantite }}" min="1" required></td>
+                    <td><input type="number" class="form-control" name="details[{{ loop.index0 }}][prixUnitaire]" value="{{ detail.prixUnitaire }}" min="0" step="0.01" required></td>
+                    <td><input type="text" class="form-control" name="details[{{ loop.index0 }}][fournisseur]" value="{{ detail.fournisseur }}"></td>
+                    <td><button type="button" class="btn btn-danger btn-sm remove-article">Supprimer</button></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <button type="button" class="btn btn-outline-primary mb-3" id="addArticleBtn">Ajouter un article</button>
+        <div class="d-flex justify-content-end">
+            <a href="{{ path('app_demand_achat') }}" class="btn btn-secondary me-2">Annuler</a>
+            <button type="submit" class="btn btn-success">Enregistrer les modifications</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block page_javascripts %}
+<script>
+// JS pour ajouter/supprimer dynamiquement des articles (à compléter selon vos besoins)
+document.getElementById('addArticleBtn').addEventListener('click', function() {
+    // À compléter : ouvrir un modal ou ajouter une ligne vide dans le tableau
+    alert('Fonctionnalité à compléter : ajout d\'article à la volée');
+});
+
+document.querySelectorAll('.remove-article').forEach(btn => {
+    btn.addEventListener('click', function() {
+        this.closest('tr').remove();
+    });
+});
+</script>
+{% endblock %}

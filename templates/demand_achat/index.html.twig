@@ -1,4 +1,5 @@
 {% extends 'base.html.twig' %}
+<<<<<<< HEAD
 {% block title %}Chantiers{% endblock %}
 
 {% block body %}
@@ -44,6 +45,205 @@
             </tbody>
         </table>
     </div>
+=======
+
+{% block title %}Demandes d'Achat{% endblock %}
+
+{% block stylesheets %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+{% endblock %}
+
+{% block body %}
+<div class="container-fluid px-4 py-3">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Gestion des Demandes d'Achat</h1>
+        <a href="{{ path('app_demand_achat_new') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-2"></i>Nouvelle Demande
+        </a>
+    </div>
+    
+    <div class="card shadow-sm">
+        <div class="card-header bg-white py-3">
+            <h5 class="card-title mb-0">Liste des Demandes d'Achat</h5>
+        </div>
+        <div class="card-body">
+            {% if demandes is empty %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Aucune demande d'achat n'a été enregistrée pour le moment.
+                </div>
+            {% else %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Date</th>
+                                <th>Utilisateur</th>
+                                <th>État</th>
+                                <th>Montant HT</th>
+                                <th>TVA</th>
+                                <th>Montant TTC</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for demande in demandes %}
+                                <tr>
+                                    <td>{{ demande.id }}</td>
+                                    <td>{{ demande.date|date('d/m/Y') }}</td>
+                                    <td>{{ demande.uilisateur ? demande.uilisateur.nom ~ ' ' ~ demande.uilisateur.prenom : 'N/A' }}</td>
+                                    <td>
+                                        <span class="badge {% if demande.etat == 'En attente' %}bg-warning{% elseif demande.etat == 'Approuvée' %}bg-success{% elseif demande.etat == 'Rejetée' %}bg-danger{% else %}bg-secondary{% endif %}" style="font-size: 0.85rem; padding: 0.4rem 0.6rem;">
+                                            {% if demande.etat == 'En attente' %}
+                                                <i class="bi bi-hourglass-split me-1"></i>
+                                            {% elseif demande.etat == 'Approuvée' %}
+                                                <i class="bi bi-check-circle-fill me-1"></i>
+                                            {% elseif demande.etat == 'Rejetée' %}
+                                                <i class="bi bi-x-circle-fill me-1"></i>
+                                            {% else %}
+                                                <i class="bi bi-question-circle me-1"></i>
+                                            {% endif %}
+                                            {{ demande.etat }}
+                                        </span>
+                                    </td>
+                                    <td>{{ demande.montantHT|number_format(2, ',', ' ') }} DH</td>
+                                    <td>{{ demande.tva }}%</td>
+                                    <td>{{ demande.montantTTC|number_format(2, ',', ' ') }} DH</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ path('app_demand_achat_show', {'id': demande.id}) }}" class="btn btn-outline-primary" title="Voir les détails">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            {% if demande.etat == 'En attente' %}
+                                                <button type="button" class="btn btn-outline-info status-btn" data-id="{{ demande.id }}" data-etat="{{ demande.etat }}" title="Changer le statut">
+                                                    <i class="bi bi-arrow-repeat"></i>
+                                                </button>
+                                                <a href="{{ path('app_demand_achat_edit_page', {'id': demande.id}) }}" class="btn btn-outline-secondary" title="Modifier la demande">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                            {% else %}
+                                                <button type="button" class="btn btn-outline-secondary edit-btn" data-id="{{ demande.id }}" title="Modifier infos principales">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                            {% endif %}
+                                            <!-- Bouton de suppression désactivé -->
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal de modification -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); color: white;">
+                <h5 class="modal-title" id="editModalLabel">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3 bg-white text-primary rounded-circle p-2" style="height: 40px; width: 40px; display: flex; align-items: center; justify-content: center;">
+                            <i class="bi bi-pencil-square fs-4"></i>
+                        </div>
+                        <span>Modifier la Demande d'Achat #<span id="modalDemandeId"></span></span>
+                    </div>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editDemandeForm">
+                    <input type="hidden" id="editDemandeId">
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="editDate" class="form-label">Date</label>
+                            <input type="date" class="form-control" id="editDate" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editEtat" class="form-label">État</label>
+                            <select class="form-select" id="editEtat" required>
+                                <option value="En attente">En attente</option>
+                                <option value="Approuvée">Approuvée</option>
+                                <option value="Rejetée">Rejetée</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label"><i class="bi bi-percent me-1"></i>Taux de TVA</label>
+                            <div class="d-flex flex-wrap" role="group" aria-label="Sélection du taux de TVA">
+                                <span class="badge bg-light text-dark me-2 mb-2 p-2 edit-tva-badge" role="button" tabindex="0" data-tva="0" aria-pressed="false" aria-label="TVA 0%" style="min-width: 60px; text-align: center;"><strong>0%</strong></span>
+                                <span class="badge bg-light text-dark me-2 mb-2 p-2 edit-tva-badge" role="button" tabindex="0" data-tva="7" aria-pressed="false" aria-label="TVA 7%" style="min-width: 60px; text-align: center;"><strong>7%</strong></span>
+                                <span class="badge bg-light text-dark me-2 mb-2 p-2 edit-tva-badge" role="button" tabindex="0" data-tva="14" aria-pressed="false" aria-label="TVA 14%" style="min-width: 60px; text-align: center;"><strong>14%</strong></span>
+                                <span class="badge bg-light text-dark me-2 mb-2 p-2 edit-tva-badge active" role="button" tabindex="0" data-tva="20" aria-pressed="true" aria-label="TVA 20%" style="min-width: 60px; text-align: center;"><strong>20%</strong></span>
+                            </div>
+                            <input type="hidden" id="editTva" value="20">
+                            <div class="form-text">Cliquez sur un badge pour sélectionner le taux de TVA.</div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info" role="alert">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0">
+                                <i class="bi bi-info-circle-fill fs-4"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="alert-heading mb-1">Note importante</h6>
+                                Pour modifier les articles de cette demande, veuillez accéder à la page de détails.
+                                <div class="mt-2">
+                                    <a href="#" id="viewDetailsLink" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye me-1"></i> Voir les détails
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" id="saveEditBtn" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); border: none;">
+                    <i class="bi bi-save me-1"></i> Enregistrer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Changement de Statut -->
+<div class="modal fade" id="statusModal" tabindex="-1" aria-labelledby="statusModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-info text-white">
+        <h5 class="modal-title" id="statusModalLabel"><i class="bi bi-arrow-repeat me-2"></i>Changer le statut de la demande</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="statusForm">
+          <input type="hidden" id="statusDemandeId">
+          <div class="mb-3">
+            <label for="newEtat" class="form-label">Nouveau statut</label>
+            <select class="form-select" id="newEtat" required>
+              <option value="En attente">En attente</option>
+              <option value="Approuvée">Approuvée</option>
+              <option value="Rejetée">Rejetée</option>
+            </select>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button type="button" class="btn btn-info" id="saveStatusBtn"><i class="bi bi-save me-1"></i>Enregistrer</button>
+      </div>
+    </div>
+  </div>
+>>>>>>> origin/DemandeAchat
 </div>
 
 <!-- Modal Chantier (Ajout) -->
@@ -169,6 +369,372 @@ $(document).ready(function() {
             // TODO: Refresh table via AJAX (not implemented here)
         }).catch(() => showFlash('Erreur lors de l\'enregistrement', 'error'));
     };
+});
+</script>
+{% endblock %}
+
+{% block page_javascripts %}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<script>
+// Ajouter des styles personnalisés pour les animations et transitions
+let customStyle = document.createElement('style');
+customStyle.textContent = `
+    .edit-tva-badge {
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 2px solid transparent;
+    }
+    .edit-tva-badge:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .edit-tva-badge.active {
+        border-color: #1e3a8a;
+        background: linear-gradient(90deg, #1e3a8a, #3b82f6) !important;
+        color: white !important;
+    }
+    .modal.fade .modal-dialog {
+        transform: scale(0.8);
+        transition: transform 0.3s ease-out;
+    }
+    .modal.show .modal-dialog {
+        transform: scale(1);
+    }
+    .btn-primary:hover {
+        filter: brightness(110%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translate3d(0, 40px, 0);
+        }
+        to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+        }
+    }
+    .toast {
+        animation: fadeInUp 0.4s ease-out;
+    }
+    
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.05);
+        }
+        100% {
+            transform: scale(1);
+        }
+    }
+`;
+document.head.appendChild(style);
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialisation de DataTables pour un meilleur affichage de la table
+    // Vérifier que jQuery et DataTables sont disponibles avant de les utiliser
+    if (window.jQuery && typeof jQuery.fn.DataTable === 'function') {
+        try {
+            $('.table').DataTable({
+                language: {
+                    // Utiliser des valeurs statiques pour éviter les problèmes CORS
+                    processing: "Traitement en cours...",
+                    search: "Rechercher&nbsp;:",
+                    lengthMenu: "Afficher _MENU_ éléments",
+                    info: "Affichage de _START_ à _END_ sur _TOTAL_ éléments",
+                    infoEmpty: "Affichage de 0 à 0 sur 0 élément",
+                    infoFiltered: "(filtré de _MAX_ éléments au total)",
+                    infoPostFix: "",
+                    loadingRecords: "Chargement en cours...",
+                    zeroRecords: "Aucun élément à afficher",
+                    emptyTable: "Aucune donnée disponible",
+                    paginate: {
+                        first: "Premier",
+                        previous: "Précédent",
+                        next: "Suivant",
+                        last: "Dernier"
+                    },
+                    aria: {
+                        sortAscending: ": activer pour trier la colonne par ordre croissant",
+                        sortDescending: ": activer pour trier la colonne par ordre décroissant"
+                    }
+                },
+                pageLength: 10,
+                responsive: true,
+                drawCallback: function() {
+                    console.log('DataTable successfully initialized');
+                }
+            });
+        } catch (error) {
+            console.error('Error initializing DataTable:', error);
+        }
+    } else {
+        console.warn('DataTables not available - table will be displayed without enhanced functionality');
+    }
+    
+    // Gestion du modal de modification
+    const editButtons = document.querySelectorAll('.edit-btn');
+    const editModal = new bootstrap.Modal(document.getElementById('editModal'));
+    const editTvaBadges = document.querySelectorAll('.edit-tva-badge');
+    const editTvaInput = document.getElementById('editTva');
+    const saveEditBtn = document.getElementById('saveEditBtn');
+    const viewDetailsLink = document.getElementById('viewDetailsLink');
+    
+    // Gestion des boutons d'édition
+    editButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const demandeId = this.getAttribute('data-id');
+            document.getElementById('editDemandeId').value = demandeId;
+            document.getElementById('modalDemandeId').textContent = demandeId;
+            
+            // Mettre à jour le lien "Voir les détails" pour qu'il pointe vers la page de détails
+            viewDetailsLink.href = `/demande/achat/${demandeId}`;
+            
+            // Récupérer les données de la demande via l'API
+            fetch(`/demande/achat/${demandeId}/data`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erreur lors de la récupération des données');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Préremplir le formulaire avec les données récupérées
+                    document.getElementById('editDate').value = data.date;
+                    document.getElementById('editEtat').value = data.etat;
+                    
+                    // Mettre à jour les badges TVA
+                    editTvaBadges.forEach(badge => {
+                        badge.classList.remove('active');
+                        if (parseInt(badge.getAttribute('data-tva')) === data.tva) {
+                            badge.classList.add('active');
+                            editTvaInput.value = data.tva;
+                        }
+                    });
+                    
+                    editModal.show();
+                })
+                .catch(error => {
+                    console.error('Erreur:', error);
+                    alert('Impossible de récupérer les informations de la demande.');
+                });
+        });
+    });
+    
+    // Gestion des badges TVA - avec support clavier et ARIA
+    editTvaBadges.forEach(badge => {
+        // Support pour le clic souris
+        badge.addEventListener('click', function() {
+            updateTvaBadgeSelection(this);
+        });
+        
+        // Support pour la navigation au clavier
+        badge.addEventListener('keydown', function(e) {
+            // Espace ou Entrée pour activer le badge
+            if (e.key === ' ' || e.key === 'Enter') {
+                e.preventDefault();
+                updateTvaBadgeSelection(this);
+            }
+        });
+    });
+    
+    // Fonction pour mettre à jour la sélection de badge TVA
+    function updateTvaBadgeSelection(selectedBadge) {
+        // Mettre à jour les classes visuelles
+        editTvaBadges.forEach(b => {
+            b.classList.remove('active');
+            b.setAttribute('aria-pressed', 'false');
+        });
+        selectedBadge.classList.add('active');
+        selectedBadge.setAttribute('aria-pressed', 'true');
+        
+        // Mettre à jour la valeur cachée
+        editTvaInput.value = selectedBadge.getAttribute('data-tva');
+        
+        // Feedback visuel
+        selectedBadge.style.animation = 'none';
+        setTimeout(() => {
+            selectedBadge.style.animation = 'pulse 0.3s';
+        }, 5);
+    }
+    
+    // Enregistrement des modifications avec validation améliorée
+    saveEditBtn.addEventListener('click', function() {
+        const demandeId = document.getElementById('editDemandeId').value;
+        const dateInput = document.getElementById('editDate');
+        const etatInput = document.getElementById('editEtat');
+        const date = dateInput.value;
+        const etat = etatInput.value;
+        const tva = parseInt(editTvaInput.value);
+        
+        // Validation côté client améliorée
+        let isValid = true;
+        let errorMessage = '';
+        
+        // Valider la date
+        if (!date) {
+            dateInput.classList.add('is-invalid');
+            isValid = false;
+            errorMessage = 'Veuillez saisir une date valide.';
+        } else {
+            dateInput.classList.remove('is-invalid');
+            dateInput.classList.add('is-valid');
+        }
+        
+        // Valider l'état
+        if (!etat) {
+            etatInput.classList.add('is-invalid');
+            isValid = false;
+            errorMessage = errorMessage ? errorMessage + '<br>Veuillez sélectionner un état.' : 'Veuillez sélectionner un état.';
+        } else {
+            etatInput.classList.remove('is-invalid');
+            etatInput.classList.add('is-valid');
+        }
+        
+        // Valider la TVA
+        if (isNaN(tva) || ![0, 7, 14, 20].includes(tva)) {
+            isValid = false;
+            errorMessage = errorMessage ? errorMessage + '<br>Veuillez sélectionner un taux de TVA valide.' : 'Veuillez sélectionner un taux de TVA valide.';
+        }
+        
+        // Afficher les erreurs si nécessaire
+        if (!isValid) {
+            // Créer une alerte d'erreur avec les messages
+            const alertEl = document.createElement('div');
+            alertEl.className = 'alert alert-danger alert-dismissible fade show mt-3';
+            alertEl.role = 'alert';
+            alertEl.innerHTML = `
+                <strong><i class="bi bi-exclamation-triangle-fill me-2"></i>Erreur de validation</strong>
+                <p class="mb-0 mt-1">${errorMessage}</p>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            
+            // Trouver la zone où afficher l'alerte
+            const formEl = document.getElementById('editDemandeForm');
+            formEl.insertBefore(alertEl, formEl.firstChild);
+            
+            // Supprimer automatiquement l'alerte après 5 secondes
+            setTimeout(() => {
+                alertEl.remove();
+            }, 5000);
+            
+            return;
+        }
+        
+        // Désactiver le bouton pendant la soumission
+        saveEditBtn.disabled = true;
+        saveEditBtn.innerHTML = '<i class="spinner-border spinner-border-sm me-1"></i> Traitement en cours...';
+        
+        const formData = {
+            date: date,
+            etat: etat,
+            tva: tva
+        };
+        
+        // Envoyer les modifications à l'API
+        fetch(`/demande/achat/${demandeId}/edit`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Erreur lors de la mise à jour');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Créer un toast de notification au lieu d'une alerte
+                const toastEl = document.createElement('div');
+                toastEl.className = 'position-fixed bottom-0 end-0 p-3';
+                toastEl.style.zIndex = '5';
+                toastEl.innerHTML = `
+                    <div class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                <i class="bi bi-check-circle me-2"></i> Demande modifiée avec succès!
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(toastEl);
+                
+                const toast = new bootstrap.Toast(toastEl.querySelector('.toast'));
+                toast.show();
+                
+                // Recharger la page après un délai
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+                
+                // Fermer le modal
+                editModal.hide();
+            } else {
+                alert('Erreur: ' + data.message);
+                // Réinitialiser le bouton
+                saveEditBtn.disabled = false;
+                saveEditBtn.innerHTML = '<i class="bi bi-save me-1"></i> Enregistrer';
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            alert('Une erreur est survenue lors de la mise à jour.');
+            
+            // Réinitialiser le bouton
+            saveEditBtn.disabled = false;
+            saveEditBtn.innerHTML = '<i class="bi bi-save me-1"></i> Enregistrer';
+        });
+    });
+    
+    // Gestion du modal de changement de statut
+    const statusButtons = document.querySelectorAll('.status-btn');
+    const statusModal = new bootstrap.Modal(document.getElementById('statusModal'));
+    const statusDemandeId = document.getElementById('statusDemandeId');
+    const newEtat = document.getElementById('newEtat');
+    const saveStatusBtn = document.getElementById('saveStatusBtn');
+
+    statusButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            statusDemandeId.value = this.getAttribute('data-id');
+            newEtat.value = this.getAttribute('data-etat');
+            statusModal.show();
+        });
+    });
+
+    saveStatusBtn.addEventListener('click', function() {
+        const demandeId = statusDemandeId.value;
+        const etat = newEtat.value;
+        saveStatusBtn.disabled = true;
+        saveStatusBtn.innerHTML = '<i class="spinner-border spinner-border-sm me-1"></i> Traitement...';
+        fetch(`/demande/achat/${demandeId}/status`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ etat })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert('Erreur: ' + data.message);
+            }
+        })
+        .catch(() => alert('Erreur serveur'))
+        .finally(() => {
+            saveStatusBtn.disabled = false;
+            saveStatusBtn.innerHTML = '<i class="bi bi-save me-1"></i>Enregistrer';
+        });
+    });
 });
 </script>
 {% endblock %}
