@@ -6,6 +6,7 @@
     <title>{% block title %}Gestion des Matérielles{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body {
             font-family: 'Segoe UI', sans-serif;
@@ -87,7 +88,6 @@
                     content.classList.toggle('active');
                     localStorage.setItem('sidebarOpen', sidebar.classList.contains('active'));
                 });
-                // Load chantiers dynamically
             });
         </script>
     {% endblock %}
@@ -101,7 +101,11 @@
         <div class="d-flex align-items-center">
             <div class="dropdown me-3" id="chantier-dropdown">
                 <button class="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    Sélectionner un chantier
+                    {% if app.session.get('selected_chantier') %}
+                        {{ chantier_nom|default('Aucun chantier sélectionné') }}
+                    {% else %}
+                        Sélectionner un chantier
+                    {% endif %}
                 </button>
                 <div class="dropdown-menu" id="chantier-list">
                     <!-- Chantiers will be populated dynamically -->
@@ -115,42 +119,109 @@
     </div>
 
     <div class="content">
-        {% block body %}{% endblock %}
+        {% block body %}
+            <div class="container mt-4">
+                <h2>Liste des Chantiers</h2>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Type</th>
+                            <th>Responsable</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for chantier in chantiers %}
+                            <tr>
+                                <td>{{ chantier.nom }}</td>
+                                <td>{{ chantier.type }}</td>
+                                <td>{{ chantier.responsable }}</td>
+                                <td>
+                                    <a href="{{ path('app_chantier_show', {'id': chantier.id}) }}" class="btn btn-sm btn-info">Voir</a>
+                                    <a href="{{ path('app_chantier_edit', {'id': chantier.id}) }}" class="btn btn-sm btn-warning">Modifier</a>
+                                    {% if is_granted('ROLE_ADMIN') %}
+                                        <a href="{{ path('app_chantier_delete', {'id': chantier.id}) }}" class="btn btn-sm btn-danger" onclick="return confirm('Voulez-vous vraiment supprimer ce chantier ?')">Supprimer</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="4">Aucun chantier trouvé</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endblock %}
     </div>
 
     <script>
     function loadChantiers() {
-                var xhr = new XMLHttpRequest();
-                xhr.open('GET', '/chantiers/api', true);
-                xhr.onreadystatechange = function () {
-                    if (xhr.readyState === 4 && xhr.status === 200) {
-                        var chantiers = JSON.parse(xhr.responseText);
-                        var chantierList = document.getElementById('chantier-list');
-                        
-                        // Check if chantiers array is empty
-                        if (chantiers.length === 0) {
-                            chantierList.innerHTML = '<p class="dropdown-item">No chantier yet</p>';
-                        } else {
-                            // Create an unordered list of chantier names
-                            chantierList.innerHTML = ''; // Clear existing content
-                            chantiers.forEach(function (chantier) {
-                                var a = document.createElement('a');
-                                a.className = 'dropdown-item';
-                                a.href = '#';
-                                a.textContent = chantier.nom;
-                                chantierList.appendChild(a);
-                            });
-                        }
-                    } else if (xhr.readyState === 4) {
-                        // Handle error case
-                        document.getElementById('chantier-list').innerHTML = '<p class="dropdown-item">Error loading chantiers</p>';
-                    }
-                };
-                xhr.send();
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', '{{ path('app_chantier_api') }}', true);
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                var chantiers = JSON.parse(xhr.responseText);
+                var chantierList = document.getElementById('chantier-list');
+                
+                if (chantiers.length === 0) {
+                    chantierList.innerHTML = '<p class="dropdown-item">Aucun chantier disponible</p>';
+                } else {
+                    chantierList.innerHTML = '';
+                    chantiers.forEach(function (chantier) {
+                        var a = document.createElement('a');
+                        a.className = 'dropdown-item';
+                        a.href = '#';
+                        a.textContent = chantier.nom;
+                        a.dataset.chantierId = chantier.id;
+                        a.addEventListener('click', function (e) {
+                            e.preventDefault();
+                            saveChantierToSession(chantier.id, chantier.nom);
+                        });
+                        chantierList.appendChild(a);
+                    });
+                }
+            } else if (xhr.readyState === 4) {
+                document.getElementById('chantier-list').innerHTML = '<p class="dropdown-item">Erreur lors du chargement des chantiers</p>';
             }
+        };
+        xhr.send();
+    }
 
-            // Load chantiers when the page loads
-            window.onload = loadChantiers;
+    function saveChantierToSession(chantierId, chantierNom) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '{{ path('app_set_chantier_session') }}', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        document.querySelector('#chantier-dropdown .dropdown-toggle').textContent = chantierNom;
+                        window.location.reload();
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Erreur',
+                            text: 'Désolé, impossible de changer pour ce chantier : ' + response.message,
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erreur',
+                        text: 'Désolé, impossible de changer pour ce chantier.',
+                        confirmButtonText: 'OK'
+                    });
+                }
+            }
+        };
+        xhr.send(JSON.stringify({ chantierId: chantierId, chantierNom: chantierNom }));
+    }
+
+    window.onload = loadChantiers;
     </script>
 </body>
 </html>

@@ -1,0 +1,553 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier Bon #{{ bon.numeroSerie }}{% endblock %}
+
+{% block stylesheets %}
+<style>
+    .article-row {
+        transition: all 0.2s;
+        border-left: 3px solid transparent;
+    }
+    .article-row:hover {
+        background-color: #f8f9fa;
+        border-left: 3px solid #3b82f6;
+    }
+    .delete-row {
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .delete-row:hover {
+        color: #dc3545;
+    }
+    .fournisseur-input, .quantite-input {
+        border: none;
+        border-bottom: 1px solid #dee2e6;
+        border-radius: 0;
+        padding: 0.25rem;
+        transition: all 0.2s;
+    }
+    .fournisseur-input:focus, .quantite-input:focus {
+        border-bottom: 2px solid #3b82f6;
+        box-shadow: none;
+    }
+    .article-select {
+        font-weight: 500;
+    }
+    .type-toggle .btn {
+        width: 33.33%;
+        text-align: center;
+    }
+    .type-toggle .btn-outline-primary:not(.active):hover {
+        background-color: rgba(59, 130, 246, 0.1);
+    }
+    .type-toggle .btn-outline-primary.active {
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    }
+    
+    /* Styles personnalisés pour les types de bons */
+    .type-toggle .btn-sortie.active {
+        background-color: #ef4444;
+        border-color: #ef4444;
+        color: white;
+    }
+    
+    .type-toggle .btn-entree.active {
+        background-color: #10b981;
+        border-color: #10b981;
+        color: white;
+    }
+    
+    .type-toggle .btn-transfert.active {
+        background-color: #f59e0b;
+        border-color: #f59e0b;
+        color: white;
+    }
+    
+    /* Animation pour les nouveaux articles */
+    @keyframes highlightNew {
+        0% { background-color: rgba(25, 135, 84, 0.2); }
+        100% { background-color: transparent; }
+    }
+    
+    .article-row.new-article {
+        animation: highlightNew 2s ease-out;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="container-fluid px-4 py-3">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Modifier le Bon #{{ bon.numeroSerie }}</h1>
+        <div>
+            <a href="{{ path('app_bon_show', {'id': bon.id}) }}" class="btn btn-outline-secondary me-2">
+                <i class="bi bi-eye me-2"></i>Voir le bon
+            </a>
+            <a href="{{ path('app_bon') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Retour à la liste
+            </a>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="card-title mb-0">Informations du Bon</h5>
+                </div>
+                <div class="card-body">
+                    <form id="bonInfoForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Type de Bon</label>
+                                <div class="btn-group type-toggle w-100" role="group">
+                                    <input type="radio" class="btn-check" name="bonType" id="typeSortie" value="Sortie" autocomplete="off" {% if bon.type == 'Sortie' %}checked{% endif %}>
+                                    <label class="btn btn-outline-primary btn-sortie" for="typeSortie">
+                                        <i class="bi bi-box-arrow-right me-2"></i>Sortie
+                                    </label>
+                                    
+                                    <input type="radio" class="btn-check" name="bonType" id="typeEntree" value="Entrée" autocomplete="off" {% if bon.type == 'Entrée' %}checked{% endif %}>
+                                    <label class="btn btn-outline-primary btn-entree" for="typeEntree">
+                                        <i class="bi bi-box-arrow-in-right me-2"></i>Entrée
+                                    </label>
+                                    
+                                    <input type="radio" class="btn-check" name="bonType" id="typeTransfert" value="Transfert" autocomplete="off" {% if bon.type == 'Transfert' %}checked{% endif %}>
+                                    <label class="btn btn-outline-primary btn-transfert" for="typeTransfert">
+                                        <i class="bi bi-arrow-left-right me-2"></i>Transfert
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="bonNumero" class="form-label">Numéro de Série</label>
+                                <input type="text" class="form-control" id="bonNumero" value="{{ bon.numeroSerie }}" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="bonDate" class="form-label">Date</label>
+                                <input type="date" class="form-control" id="bonDate" value="{{ bon.date|date('Y-m-d') }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="bonChantier" class="form-label">Chantier</label>
+                                <select class="form-select" id="bonChantier">
+                                    <option value="">Sélectionner un chantier</option>
+                                    {% for chantier in chantiers %}
+                                        <option value="{{ chantier.id }}" {% if bon.chantier and bon.chantier.id == chantier.id %}selected{% endif %}>{{ chantier.nom }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="bonNote" class="form-label">Note/Commentaire</label>
+                            <textarea class="form-control" id="bonNote" rows="2" placeholder="Ajouter des informations complémentaires sur ce bon">{{ bon.note }}</textarea>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Articles</h5>
+                    <button type="button" class="btn btn-sm btn-primary" id="addArticleBtn">
+                        <i class="bi bi-plus-circle me-1"></i>Ajouter un Article
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning mb-4">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>Attention :</strong> La modification des articles peut entraîner des ajustements dans les stocks. Veuillez procéder avec précaution.
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table" id="articlesTable">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40%">Article</th>
+                                    <th style="width: 25%">Fournisseur</th>
+                                    <th style="width: 20%">Quantité</th>
+                                    <th style="width: 15%">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="articlesBody">
+                                {% for detail in bon.bonDetails %}
+                                    <tr class="article-row" data-id="{{ detail.article.id }}" data-detail-id="{{ detail.id }}">
+                                        <td class="article-select">
+                                            {{ detail.article.nom }}
+                                            <small class="text-muted d-block">{{ detail.article.reference }}</small>
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control fournisseur-input" value="{{ detail.fournisseur }}" placeholder="Fournisseur">
+                                        </td>
+                                        <td>
+                                            <input type="number" class="form-control quantite-input" value="{{ detail.quantite }}" min="1">
+                                        </td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-outline-danger delete-article">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="alert alert-info mt-3 {% if bon.bonDetails|length > 0 %}d-none{% endif %}" id="emptyArticlesMessage">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Aucun article n'a été ajouté à ce bon. Cliquez sur "Ajouter un Article" pour commencer.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-end mb-4">
+                <a href="{{ path('app_bon_show', {'id': bon.id}) }}" class="btn btn-secondary me-2">Annuler</a>
+                <button type="button" class="btn btn-primary" id="saveBonBtn">Enregistrer les modifications</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Sélection d'Article -->
+<div class="modal fade" id="articleModal" tabindex="-1" aria-labelledby="articleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="articleModalLabel">Sélectionner un Article</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="flex-grow-1 me-2">
+                        <input type="text" class="form-control" id="articleSearch" placeholder="Rechercher un article...">
+                    </div>
+                </div>
+                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-hover" id="articlesModalTable">
+                        <thead class="sticky-top bg-light">
+                            <tr>
+                                <th>Référence</th>
+                                <th>Nom</th>
+                                <th>Marque</th>
+                                <th>Unité</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for article in articles %}
+                                <tr>
+                                    <td>{{ article.reference }}</td>
+                                    <td>{{ article.nom }}</td>
+                                    <td>{{ article.marque }}</td>
+                                    <td>{{ article.unite }}</td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-primary select-article" 
+                                                data-id="{{ article.id }}" 
+                                                data-reference="{{ article.reference }}" 
+                                                data-nom="{{ article.nom }}"
+                                                data-unite="{{ article.unite }}">
+                                            Sélectionner
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block page_javascripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialisation des variables
+    const articleModal = new bootstrap.Modal(document.getElementById('articleModal'));
+    const articlesBody = document.getElementById('articlesBody');
+    const emptyArticlesMessage = document.getElementById('emptyArticlesMessage');
+    const addArticleBtn = document.getElementById('addArticleBtn');
+    const articleSearch = document.getElementById('articleSearch');
+    const saveBonBtn = document.getElementById('saveBonBtn');
+    
+    // Liste des articles déjà présents dans le bon
+    let existingArticles = [];
+    
+    // Initialiser les articles existants
+    document.querySelectorAll('#articlesTable tbody tr').forEach(row => {
+        const articleId = row.dataset.id;
+        const detailId = row.dataset.detailId;
+        const fournisseur = row.querySelector('.fournisseur-input').value;
+        const quantite = parseInt(row.querySelector('.quantite-input').value);
+        
+        existingArticles.push({
+            id: articleId,
+            detailId: detailId,
+            fournisseur: fournisseur,
+            quantite: quantite,
+            isModified: false,
+            isNew: false
+        });
+        
+        // Ajouter les écouteurs d'événements
+        setupArticleRowEvents(row);
+    });
+    
+    // Liste des articles nouvellement ajoutés
+    let newArticles = [];
+    
+    // Fonction pour vérifier si la table est vide
+    function toggleEmptyMessage() {
+        if (existingArticles.length === 0 && newArticles.length === 0) {
+            emptyArticlesMessage.classList.remove('d-none');
+        } else {
+            emptyArticlesMessage.classList.add('d-none');
+        }
+    }
+    
+    // Fonction pour configurer les événements d'une ligne d'article
+    function setupArticleRowEvents(row) {
+        const articleId = row.dataset.id;
+        const quantiteInput = row.querySelector('.quantite-input');
+        const fournisseurInput = row.querySelector('.fournisseur-input');
+        const deleteButton = row.querySelector('.delete-article');
+        
+        // Mise à jour de la quantité
+        quantiteInput.addEventListener('change', function() {
+            const isNew = row.classList.contains('new-article');
+            if (isNew) {
+                const index = newArticles.findIndex(a => a.id === articleId);
+                if (index !== -1) {
+                    newArticles[index].quantite = parseInt(this.value) || 1;
+                }
+            } else {
+                const index = existingArticles.findIndex(a => a.id === articleId);
+                if (index !== -1) {
+                    existingArticles[index].quantite = parseInt(this.value) || 1;
+                    existingArticles[index].isModified = true;
+                }
+            }
+        });
+        
+        // Mise à jour du fournisseur
+        fournisseurInput.addEventListener('change', function() {
+            const isNew = row.classList.contains('new-article');
+            if (isNew) {
+                const index = newArticles.findIndex(a => a.id === articleId);
+                if (index !== -1) {
+                    newArticles[index].fournisseur = this.value;
+                }
+            } else {
+                const index = existingArticles.findIndex(a => a.id === articleId);
+                if (index !== -1) {
+                    existingArticles[index].fournisseur = this.value;
+                    existingArticles[index].isModified = true;
+                }
+            }
+        });
+        
+        // Suppression de l'article
+        deleteButton.addEventListener('click', function() {
+            const isNew = row.classList.contains('new-article');
+            if (isNew) {
+                const index = newArticles.findIndex(a => a.id === articleId);
+                if (index !== -1) {
+                    newArticles.splice(index, 1);
+                }
+            } else {
+                const index = existingArticles.findIndex(a => a.id === articleId);
+                if (index !== -1) {
+                    existingArticles[index].isDeleted = true;
+                }
+            }
+            
+            row.remove();
+            toggleEmptyMessage();
+        });
+    }
+    
+    // Fonction pour ajouter un nouvel article à la table
+    function addArticleToTable(article, isNew = true) {
+        const newRow = document.createElement('tr');
+        newRow.className = isNew ? 'article-row new-article' : 'article-row';
+        newRow.dataset.id = article.id;
+        
+        if (!isNew && article.detailId) {
+            newRow.dataset.detailId = article.detailId;
+        }
+        
+        newRow.innerHTML = `
+            <td class="article-select">
+                ${article.nom} 
+                <small class="text-muted d-block">${article.reference}</small>
+            </td>
+            <td>
+                <input type="text" class="form-control fournisseur-input" value="${article.fournisseur}" placeholder="Fournisseur">
+            </td>
+            <td>
+                <input type="number" class="form-control quantite-input" value="${article.quantite}" min="1">
+            </td>
+            <td>
+                <button type="button" class="btn btn-sm btn-outline-danger delete-article">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        `;
+        
+        articlesBody.appendChild(newRow);
+        
+        // Configurer les événements de la ligne
+        setupArticleRowEvents(newRow);
+    }
+    
+    // Afficher le modal pour ajouter un article
+    addArticleBtn.addEventListener('click', function() {
+        articleModal.show();
+    });
+    
+    // Recherche d'articles dans le modal
+    articleSearch.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        const rows = document.querySelectorAll('#articlesModalTable tbody tr');
+        
+        rows.forEach(row => {
+            const reference = row.cells[0].textContent.toLowerCase();
+            const name = row.cells[1].textContent.toLowerCase();
+            const marque = row.cells[2].textContent.toLowerCase();
+            
+            if (reference.includes(searchTerm) || name.includes(searchTerm) || marque.includes(searchTerm)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+    
+    // Sélection d'un article dans le modal
+    document.querySelectorAll('.select-article').forEach(button => {
+        button.addEventListener('click', function() {
+            const id = this.dataset.id;
+            const reference = this.dataset.reference;
+            const nom = this.dataset.nom;
+            const unite = this.dataset.unite;
+            
+            // Vérifier si l'article est déjà dans la liste
+            if ([...existingArticles, ...newArticles].some(a => a.id === id && !a.isDeleted)) {
+                alert('Cet article est déjà dans la liste.');
+                return;
+            }
+            
+            const article = {
+                id: id,
+                reference: reference,
+                nom: nom,
+                unite: unite,
+                quantite: 1,
+                fournisseur: '',
+                isNew: true
+            };
+            
+            newArticles.push(article);
+            addArticleToTable(article, true);
+            toggleEmptyMessage();
+            articleModal.hide();
+        });
+    });
+    
+    // Enregistrement des modifications du bon
+    saveBonBtn.addEventListener('click', function() {
+        // Validation de base
+        const bonType = document.querySelector('input[name="bonType"]:checked').value;
+        const bonNumero = document.getElementById('bonNumero').value.trim();
+        const bonDate = document.getElementById('bonDate').value;
+        const bonChantier = document.getElementById('bonChantier').value;
+        const bonNote = document.getElementById('bonNote').value.trim();
+        
+        if (!bonNumero) {
+            alert('Veuillez saisir un numéro de série pour le bon.');
+            return;
+        }
+        
+        // Vérifier s'il y a au moins un article (non supprimé)
+        const hasArticles = existingArticles.some(a => !a.isDeleted) || newArticles.length > 0;
+        if (!hasArticles) {
+            alert('Veuillez ajouter au moins un article au bon.');
+            return;
+        }
+        
+        // Désactiver le bouton pendant la soumission
+        saveBonBtn.disabled = true;
+        saveBonBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Traitement en cours...';
+        
+        // Préparer les données pour la mise à jour
+        const bonData = {
+            type: bonType,
+            numero_serie: bonNumero,
+            date: bonDate,
+            chantier_id: bonChantier || null,
+            note: bonNote,
+            modified_details: {
+                updated: existingArticles.filter(a => a.isModified && !a.isDeleted).map(a => ({
+                    detail_id: a.detailId,
+                    quantite: a.quantite,
+                    fournisseur: a.fournisseur
+                })),
+                deleted: existingArticles.filter(a => a.isDeleted).map(a => a.detailId),
+                new: newArticles.map(a => ({
+                    id: a.id,
+                    quantite: a.quantite,
+                    fournisseur: a.fournisseur
+                }))
+            }
+        };
+        
+        // Envoyer les modifications au serveur
+        fetch('{{ path('app_bon_edit', {'id': bon.id}) }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify(bonData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(errorData => {
+                    throw new Error(errorData.message || `Erreur réseau: ${response.status}`);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Afficher un message de confirmation
+                alert('Bon mis à jour avec succès.');
+                
+                // Rediriger vers la page de détails du bon
+                window.location.href = '{{ path('app_bon_show', {'id': bon.id}) }}';
+            } else {
+                alert('Erreur: ' + (data.message || 'Une erreur est survenue'));
+                // Réactiver le bouton
+                saveBonBtn.disabled = false;
+                saveBonBtn.innerHTML = 'Enregistrer les modifications';
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            alert('Erreur: ' + error.message);
+            // Réactiver le bouton
+            saveBonBtn.disabled = false;
+            saveBonBtn.innerHTML = 'Enregistrer les modifications';
+        });
+    });
+    
+    // Initialisation
+    toggleEmptyMessage();
+});
+</script>
+{% endblock %}
+{% endblock %}

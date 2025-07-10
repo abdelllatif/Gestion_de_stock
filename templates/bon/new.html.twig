@@ -1,0 +1,465 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouveau Bon{% endblock %}
+
+{% block stylesheets %}
+<style>
+    .article-row {
+        transition: all 0.2s;
+        border-left: 3px solid transparent;
+    }
+    .article-row:hover {
+        background-color: #f8f9fa;
+        border-left: 3px solid #3b82f6;
+    }
+    .delete-row {
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .delete-row:hover {
+        color: #dc3545;
+    }
+    .fournisseur-input, .quantite-input {
+        border: none;
+        border-bottom: 1px solid #dee2e6;
+        border-radius: 0;
+        padding: 0.25rem;
+        transition: all 0.2s;
+    }
+    .fournisseur-input:focus, .quantite-input:focus {
+        border-bottom: 2px solid #3b82f6;
+        box-shadow: none;
+    }
+    .article-select {
+        font-weight: 500;
+    }
+    .type-toggle .btn {
+        width: 33.33%;
+        text-align: center;
+    }
+    .type-toggle .btn-outline-primary:not(.active):hover {
+        background-color: rgba(59, 130, 246, 0.1);
+    }
+    .type-toggle .btn-outline-primary.active {
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    }
+    
+    /* Styles personnalisés pour les types de bons */
+    .type-toggle .btn-sortie.active {
+        background-color: #ef4444;
+        border-color: #ef4444;
+        color: white;
+    }
+    
+    .type-toggle .btn-entree.active {
+        background-color: #10b981;
+        border-color: #10b981;
+        color: white;
+    }
+    
+    .type-toggle .btn-transfert.active {
+        background-color: #f59e0b;
+        border-color: #f59e0b;
+        color: white;
+    }
+    
+    /* Animation pour les nouveaux articles */
+    @keyframes highlightNew {
+        0% { background-color: rgba(25, 135, 84, 0.2); }
+        100% { background-color: transparent; }
+    }
+    
+    .article-row.new-article {
+        animation: highlightNew 2s ease-out;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="container-fluid px-4 py-3">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Créer un Nouveau Bon</h1>
+        <a href="{{ path('app_bon') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>Retour à la liste
+        </a>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="card-title mb-0">Informations du Bon</h5>
+                </div>
+                <div class="card-body">
+                    <form id="bonInfoForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Type de Bon</label>
+                                <div class="btn-group type-toggle w-100" role="group">
+                                    <input type="radio" class="btn-check" name="bonType" id="typeSortie" value="Sortie" autocomplete="off" checked>
+                                    <label class="btn btn-outline-primary btn-sortie" for="typeSortie">
+                                        <i class="bi bi-box-arrow-right me-2"></i>Sortie
+                                    </label>
+                                    
+                                    <input type="radio" class="btn-check" name="bonType" id="typeEntree" value="Entrée" autocomplete="off">
+                                    <label class="btn btn-outline-primary btn-entree" for="typeEntree">
+                                        <i class="bi bi-box-arrow-in-right me-2"></i>Entrée
+                                    </label>
+                                    
+                                    <input type="radio" class="btn-check" name="bonType" id="typeTransfert" value="Transfert" autocomplete="off">
+                                    <label class="btn btn-outline-primary btn-transfert" for="typeTransfert">
+                                        <i class="bi bi-arrow-left-right me-2"></i>Transfert
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="bonNumero" class="form-label">Numéro de Série</label>
+                                <input type="text" class="form-control" id="bonNumero" placeholder="Ex: BON-2025-001" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="bonDate" class="form-label">Date</label>
+                                <input type="date" class="form-control" id="bonDate" value="{{ "now"|date('Y-m-d') }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="bonChantier" class="form-label">Chantier</label>
+                                <select class="form-select" id="bonChantier">
+                                    <option value="">Sélectionner un chantier</option>
+                                    {% for chantier in chantiers %}
+                                        <option value="{{ chantier.id }}">{{ chantier.nom }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="bonNote" class="form-label">Note/Commentaire</label>
+                            <textarea class="form-control" id="bonNote" rows="2" placeholder="Ajouter des informations complémentaires sur ce bon"></textarea>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Articles</h5>
+                    <button type="button" class="btn btn-sm btn-primary" id="addArticleBtn">
+                        <i class="bi bi-plus-circle me-1"></i>Ajouter un Article
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table" id="articlesTable">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40%">Article</th>
+                                    <th style="width: 25%">Fournisseur</th>
+                                    <th style="width: 20%">Quantité</th>
+                                    <th style="width: 15%">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="articlesBody">
+                                <!-- Les articles seront ajoutés dynamiquement -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="alert alert-info mt-3" id="emptyArticlesMessage">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Aucun article n'a été ajouté à ce bon. Cliquez sur "Ajouter un Article" pour commencer.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-end mb-4">
+                <button type="button" class="btn btn-secondary me-2">Annuler</button>
+                <button type="button" class="btn btn-primary" id="saveBonBtn">Enregistrer le Bon</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Sélection d'Article -->
+<div class="modal fade" id="articleModal" tabindex="-1" aria-labelledby="articleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="articleModalLabel">Sélectionner un Article</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="flex-grow-1 me-2">
+                        <input type="text" class="form-control" id="articleSearch" placeholder="Rechercher un article...">
+                    </div>
+                </div>
+                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-hover" id="articlesModalTable">
+                        <thead class="sticky-top bg-light">
+                            <tr>
+                                <th>Référence</th>
+                                <th>Nom</th>
+                                <th>Marque</th>
+                                <th>Unité</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for article in articles %}
+                                <tr>
+                                    <td>{{ article.reference }}</td>
+                                    <td>{{ article.nom }}</td>
+                                    <td>{{ article.marque }}</td>
+                                    <td>{{ article.unite }}</td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-primary select-article" 
+                                                data-id="{{ article.id }}" 
+                                                data-reference="{{ article.reference }}" 
+                                                data-nom="{{ article.nom }}"
+                                                data-unite="{{ article.unite }}">
+                                            Sélectionner
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block page_javascripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialisation des variables
+    const articleModal = new bootstrap.Modal(document.getElementById('articleModal'));
+    const articlesBody = document.getElementById('articlesBody');
+    const emptyArticlesMessage = document.getElementById('emptyArticlesMessage');
+    const addArticleBtn = document.getElementById('addArticleBtn');
+    const articleSearch = document.getElementById('articleSearch');
+    const saveBonBtn = document.getElementById('saveBonBtn');
+    
+    // Stockage des articles sélectionnés
+    let selectedArticles = [];
+    
+    // Fonction pour afficher/masquer le message d'articles vides
+    function toggleEmptyMessage() {
+        if (selectedArticles.length === 0) {
+            emptyArticlesMessage.style.display = 'block';
+        } else {
+            emptyArticlesMessage.style.display = 'none';
+        }
+    }
+    
+    // Fonction pour ajouter un article à la table
+    function addArticleToTable(article) {
+        const newRow = document.createElement('tr');
+        newRow.className = 'article-row';
+        newRow.dataset.id = article.id;
+        
+        newRow.innerHTML = `
+            <td class="article-select">
+                ${article.nom} 
+                <small class="text-muted d-block">${article.reference}</small>
+            </td>
+            <td>
+                <input type="text" class="form-control fournisseur-input" value="${article.fournisseur}" placeholder="Fournisseur">
+            </td>
+            <td>
+                <input type="number" class="form-control quantite-input" value="${article.quantite}" min="1">
+            </td>
+            <td>
+                <button type="button" class="btn btn-sm btn-outline-danger delete-article">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        `;
+        
+        articlesBody.appendChild(newRow);
+        
+        // Ajouter les écouteurs d'événements
+        const quantiteInput = newRow.querySelector('.quantite-input');
+        const fournisseurInput = newRow.querySelector('.fournisseur-input');
+        const deleteButton = newRow.querySelector('.delete-article');
+        
+        // Mise à jour de la quantité
+        quantiteInput.addEventListener('change', function() {
+            const index = selectedArticles.findIndex(a => a.id === article.id);
+            if (index !== -1) {
+                selectedArticles[index].quantite = parseInt(this.value) || 1;
+            }
+        });
+        
+        // Mise à jour du fournisseur
+        fournisseurInput.addEventListener('change', function() {
+            const index = selectedArticles.findIndex(a => a.id === article.id);
+            if (index !== -1) {
+                selectedArticles[index].fournisseur = this.value;
+            }
+        });
+        
+        // Suppression de l'article
+        deleteButton.addEventListener('click', function() {
+            const index = selectedArticles.findIndex(a => a.id === article.id);
+            if (index !== -1) {
+                selectedArticles.splice(index, 1);
+                newRow.remove();
+                toggleEmptyMessage();
+            }
+        });
+    }
+    
+    // Afficher le modal pour ajouter un article
+    addArticleBtn.addEventListener('click', function() {
+        articleModal.show();
+    });
+    
+    // Recherche d'articles dans le modal
+    articleSearch.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        const rows = document.querySelectorAll('#articlesModalTable tbody tr');
+        
+        rows.forEach(row => {
+            const reference = row.cells[0].textContent.toLowerCase();
+            const name = row.cells[1].textContent.toLowerCase();
+            const marque = row.cells[2].textContent.toLowerCase();
+            
+            if (reference.includes(searchTerm) || name.includes(searchTerm) || marque.includes(searchTerm)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+    
+    // Sélection d'un article dans le modal
+    document.querySelectorAll('.select-article').forEach(button => {
+        button.addEventListener('click', function() {
+            const id = this.dataset.id;
+            const reference = this.dataset.reference;
+            const nom = this.dataset.nom;
+            const unite = this.dataset.unite;
+            
+            // Vérifier si l'article est déjà dans la liste
+            if (selectedArticles.some(a => a.id === id)) {
+                alert('Cet article est déjà dans la liste.');
+                return;
+            }
+            
+            const article = {
+                id: id,
+                reference: reference,
+                nom: nom,
+                unite: unite,
+                quantite: 1,
+                fournisseur: ''
+            };
+            
+            selectedArticles.push(article);
+            addArticleToTable(article);
+            toggleEmptyMessage();
+            articleModal.hide();
+        });
+    });
+    
+    // Gestion des boutons radio du type de bon
+    document.querySelectorAll('input[name="bonType"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            // Actions spécifiques selon le type de bon
+            const bonType = this.value;
+            console.log(`Type de bon sélectionné: ${bonType}`);
+            
+            // Vous pouvez ajouter ici une logique pour adapter l'interface selon le type de bon
+        });
+    });
+    
+    // Enregistrement du bon
+    saveBonBtn.addEventListener('click', function() {
+        // Validation basique
+        const bonType = document.querySelector('input[name="bonType"]:checked').value;
+        const bonNumero = document.getElementById('bonNumero').value.trim();
+        const bonDate = document.getElementById('bonDate').value;
+        const bonChantier = document.getElementById('bonChantier').value;
+        const bonNote = document.getElementById('bonNote').value.trim();
+        
+        if (!bonNumero) {
+            alert('Veuillez saisir un numéro de série pour le bon.');
+            return;
+        }
+        
+        if (selectedArticles.length === 0) {
+            alert('Veuillez ajouter au moins un article au bon.');
+            return;
+        }
+        
+        // Désactiver le bouton pour éviter les soumissions multiples
+        saveBonBtn.disabled = true;
+        saveBonBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Traitement en cours...';
+        
+        // Préparer les données à envoyer
+        const bonData = {
+            type: bonType,
+            numero_serie: bonNumero,
+            date: bonDate,
+            chantier_id: bonChantier || null,
+            note: bonNote,
+            articles: selectedArticles.map(article => ({
+                id: article.id,
+                quantite: article.quantite,
+                fournisseur: article.fournisseur
+            }))
+        };
+        
+        // Envoyer les données au serveur
+        fetch('{{ path('app_bon_new') }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify(bonData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(errorData => {
+                    throw new Error(errorData.message || `Erreur réseau: ${response.status}`);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Afficher un message de confirmation
+                alert('Bon créé avec succès. Redirection vers la liste des bons...');
+                
+                // Rediriger vers la liste des bons
+                window.location.href = '{{ path('app_bon') }}';
+            } else {
+                alert('Erreur: ' + (data.message || 'Une erreur est survenue'));
+                // Réactiver le bouton
+                saveBonBtn.disabled = false;
+                saveBonBtn.innerHTML = 'Enregistrer le Bon';
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            alert('Erreur: ' + error.message);
+            // Réactiver le bouton
+            saveBonBtn.disabled = false;
+            saveBonBtn.innerHTML = 'Enregistrer le Bon';
+        });
+    });
+    
+    // Initialisation
+    toggleEmptyMessage();
+});
+</script>
+{% endblock %}
+{% endblock %}
