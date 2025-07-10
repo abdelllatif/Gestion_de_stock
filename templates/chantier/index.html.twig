@@ -101,7 +101,7 @@
     </div>
 </div>
 
-<!-- Edit Chantier Modal -->
+<!-- Edit  Modal -->
 <div class="modal fade" id="editChantierModal" tabindex="-1" aria-labelledby="editChantierModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -174,7 +174,7 @@ $(document).ready(function() {
         }
     });
 
-    // Tagify setup for add
+    // Tagify add
     const usersList = [
         {% for user in users %}
             { value: '{{ user.id }}', name: '{{ user.prenom|e('js') }} {{ user.nom|e('js') }}' }{% if not loop.last %},{% endif %}
@@ -204,7 +204,7 @@ $(document).ready(function() {
         }
     });
 
-    // Tagify setup for edit
+    // Tagify edit
     const editTagify = new Tagify(document.querySelector('#edit_users'), {
         whitelist: usersList,
         enforceWhitelist: true,
