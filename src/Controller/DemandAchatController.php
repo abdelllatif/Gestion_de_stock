@@ -13,6 +13,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use App\Repository\ChantierRepository;
+use Spipu\Html2Pdf\Html2Pdf;
 
 final class DemandAchatController extends AbstractController
 {
@@ -20,6 +21,7 @@ final class DemandAchatController extends AbstractController
     public function index(DemandeAchatRepository $demandeAchatRepository): Response
     {   
         $demandes = $demandeAchatRepository->findAll();
+        // dd($demandes);
         
         return $this->render('demand_achat/index.html.twig', [
             'demandes' => $demandes,
@@ -30,13 +32,12 @@ final class DemandAchatController extends AbstractController
     #[Route('/demande/achat/nouvelle', name: 'app_demand_achat_new')]
     public function new(Request $request, EntityManagerInterface $entityManager, ArticleRepository $articleRepository): Response
     {
-        // Si c'est une requête POST, on traite la soumission du formulaire
         if ($request->isMethod('POST')) {
             try {
                 $data = json_decode($request->getContent(), true);
                 
-                if (empty($data['date']) || empty($data['etat']) || !isset($data['tva'])) {
-                    return $this->json(['success' => false, 'message' => 'Données incomplètes'], 400);
+                if (!isset($data['tva'])) {
+                    return $this->json(['success' => false, 'message' => 'Données incomplètes: TVA manquante'], 400);
                 }
                 
                 if ((empty($data['existingArticles']) || count($data['existingArticles']) === 0) && 
@@ -44,37 +45,29 @@ final class DemandAchatController extends AbstractController
                     return $this->json(['success' => false, 'message' => 'Aucun article dans la demande'], 400);
                 }
                 
-                // Créer la demande d'achat
                 $demandeAchat = new DemandeAchat();
-                $demandeAchat->setDate(new \DateTime($data['date']));
-                $demandeAchat->setEtat($data['etat']);
+                $demandeAchat->setDate(new \DateTime('now'));
+                $demandeAchat->setEtat('En attente');
                 $demandeAchat->setTva($data['tva']);
                 
-                // On pourrait aussi associer l'utilisateur connecté
-                // $demandeAchat->setUilisateur($this->getUser());
-                
-                // Initialiser les montants
                 $montantHT = 0;
                 
-                // Traiter les nouveaux articles
                 if (!empty($data['newArticles'])) {
                     foreach ($data['newArticles'] as $newArticleData) {
-                        // Créer le nouvel article
-                        $article = new Article();
-                        $article->setReference($newArticleData['reference']);
-                        $article->setNom($newArticleData['nom']);
-                        $article->setMarque($newArticleData['marque'] ?? '');
-                        $article->setUnite($newArticleData['unite'] ?? 'Unité');
-                        $article->setType($newArticleData['type'] ?? 'Consommable');
-                        $article->setDescription($newArticleData['description'] ?? '');
-                        $article->setPrix($newArticleData['prix']);
+
+                        $data = new Article();
+                        $data->setReference($newArticleData['reference']);
+                        $data->setNom($newArticleData['nom']);
+                        $data->setMarque($newArticleData['marque'] ?? '');
+                        $data->setUnite($newArticleData['unite'] ?? 'Unité');
+                        $data->setType($newArticleData['type'] ?? 'Consommable');
+                        $data->setDescription($newArticleData['description'] ?? '');
+                        $data->setPrix($newArticleData['prix']);
                         
-                        // Persister l'article
-                        $entityManager->persist($article);
+                        $entityManager->persist($data);
                         
-                        // Créer les détails de demande
                         $demandeDetail = new DemandeDetails();
-                        $demandeDetail->setArticle($article);
+                        $demandeDetail->setArticle($data);
                         $demandeDetail->setQuantite($newArticleData['quantite']);
                         $demandeDetail->setPrixUnitaire($newArticleData['prix']);
                         $demandeDetail->setFournisseur($newArticleData['fournisseur'] ?? '');
@@ -82,27 +75,25 @@ final class DemandAchatController extends AbstractController
                         $prixTotal = $newArticleData['prix'] * $newArticleData['quantite'];
                         $demandeDetail->setPrixTotal($prixTotal);
                         
-                        // Ajouter à la demande
                         $demandeDetail->setDemandeAchat($demandeAchat);
                         $entityManager->persist($demandeDetail);
                         
-                        // Mettre à jour le montant HT
                         $montantHT += $prixTotal;
                     }
                 }
                 
-                // Traiter les articles existants
+
                 if (!empty($data['existingArticles'])) {
                     foreach ($data['existingArticles'] as $existingArticleData) {
-                        $article = $articleRepository->find($existingArticleData['articleId']);
+                        $data = $articleRepository->find($existingArticleData['articleId']);
                         
-                        if (!$article) {
+                        if (!$data) {
                             continue;
                         }
                         
                         // Créer les détails de demande
                         $demandeDetail = new DemandeDetails();
-                        $demandeDetail->setArticle($article);
+                        $demandeDetail->setArticle($data);
                         $demandeDetail->setQuantite($existingArticleData['quantite']);
                         $demandeDetail->setPrixUnitaire($existingArticleData['prixUnitaire']);
                         $demandeDetail->setFournisseur($existingArticleData['fournisseur'] ?? '');
@@ -161,19 +152,39 @@ final class DemandAchatController extends AbstractController
     }
 
     #[Route('/demande/achat/{id}/data', name: 'app_demand_achat_data', methods: ['GET'])]
-    public function getData(DemandeAchat $demandeAchat): Response
+    public function getDemandeData(DemandeAchat $demandeAchat): Response
     {
-        // Retourner les données de la demande au format JSON
-        $data = [
+        // Récupérer les détails de la demande
+        $details = [];
+        foreach ($demandeAchat->getDemandeDetails() as $detail) {
+            $details[] = [
+                'id' => $detail->getId(),
+                'article' => $detail->getArticle() ? [
+                    'id' => $detail->getArticle()->getId(),
+                    'nom' => $detail->getArticle()->getNom(),
+                    'reference' => $detail->getArticle()->getReference(),
+                ] : null,
+                'quantite' => $detail->getQuantite(),
+                'prixUnitaire' => $detail->getPrixUnitaire(),
+                'total' => $detail->getQuantite() * $detail->getPrixUnitaire(),
+            ];
+        }
+
+        // Formater les données pour le PDF
+        return $this->json([
             'id' => $demandeAchat->getId(),
             'date' => $demandeAchat->getDate()->format('Y-m-d'),
+            'utilisateur' => $demandeAchat->getUilisateur() ? [
+                'id' => $demandeAchat->getUilisateur()->getId(),
+                'nom' => $demandeAchat->getUilisateur()->getNom(),
+                'prenom' => $demandeAchat->getUilisateur()->getPrenom(),
+            ] : null,
             'etat' => $demandeAchat->getEtat(),
-            'tva' => $demandeAchat->getTva(),
             'montantHT' => $demandeAchat->getMontantHT(),
+            'tva' => $demandeAchat->getTva(),
             'montantTTC' => $demandeAchat->getMontantTTC(),
-        ];
-
-        return $this->json($data);
+            'details' => $details,
+        ]);
     }
     
     #[Route('/demande/achat/{id}/edit', name: 'app_demand_achat_edit', methods: ['POST'])]
@@ -316,9 +327,7 @@ final class DemandAchatController extends AbstractController
             }
         }
 
-        // Récupérer tous les articles pour la sélection
         $articles = $articleRepository->findAll();
-        // Récupérer les détails existants
         $details = $demandeAchat->getDemandeDetails();
 
         return $this->render('demand_achat/edit.html.twig', [
@@ -344,12 +353,62 @@ final class DemandAchatController extends AbstractController
     #[Route('/demande/achat/{id}/pdf', name: 'app_demand_achat_pdf', methods: ['GET'])]
     public function generatePdf(DemandeAchat $demandeAchat): Response
     {
-        return $this->json([
-            'success' => true,
-            'message' => 'La génération de PDF sera implémentée prochainement.',
-            'demande_id' => $demandeAchat->getId()
+        // Créer une instance de HTML2PDF
+        $html2pdf = new Html2Pdf('P', 'A4', 'fr');
+        
+        // Récupérer les détails de la demande
+        $details = [];
+        foreach ($demandeAchat->getDemandeDetails() as $detail) {
+            $details[] = [
+                'id' => $detail->getId(),
+                'article' => $detail->getArticle() ? [
+                    'nom' => $detail->getArticle()->getNom(),
+                    'reference' => $detail->getArticle()->getReference(),
+                ] : ['nom' => 'N/A', 'reference' => 'N/A'],
+                'quantite' => $detail->getQuantite(),
+                'prixUnitaire' => $detail->getPrixUnitaire(),
+                'prixTotal' => $detail->getPrixTotal(),
+            ];
+        }
+        
+        // Préparer les données pour le template
+        $dateFormattee = $demandeAchat->getDate() ? $demandeAchat->getDate()->format('d/m/Y') : date('d/m/Y');
+        $userName = $demandeAchat->getUilisateur() ? 
+            $demandeAchat->getUilisateur()->getNom() . ' ' . $demandeAchat->getUilisateur()->getPrenom() : 'N/A';
+        
+        // Créer le HTML pour le PDF
+        $html = $this->renderView('demand_achat/pdf_template.html.twig', [
+            'demande' => $demandeAchat,
+            'details' => $details,
+            'dateFormattee' => $dateFormattee,
+            'userName' => $userName,
+            'dateGeneration' => date('d/m/Y')
         ]);
         
-      
+        try {
+            // Générer le PDF
+            $html2pdf->writeHTML($html);
+            
+            // Nommer le fichier
+            $filename = 'demande_achat_' . $demandeAchat->getId() . '.pdf';
+            
+            // Retourner le PDF en tant que réponse
+            return new Response(
+                $html2pdf->output($filename, 'S'),
+                200,
+                [
+                    'Content-Type' => 'application/pdf',
+                    'Content-Disposition' => 'attachment; filename="' . $filename . '"'
+                ]
+            );
+            
+        } catch (\Exception $e) {
+            // En cas d'erreur, retourner une réponse JSON avec le message d'erreur
+            return $this->json([
+                'success' => false,
+                'message' => 'Erreur lors de la génération du PDF: ' . $e->getMessage(),
+                'demande_id' => $demandeAchat->getId()
+            ], 500);
+        }
     }
 }

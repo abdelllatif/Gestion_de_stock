@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Demande d'Achat #{{ demande.id }}</title>
+    <style>
+        body {
+            font-family: DejaVu Sans, Arial, sans-serif;
+            font-size: 12px;
+            color: #333333;
+            line-height: 1.5;
+        }
+        .container {
+            width: 100%;
+            padding: 10mm;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 10mm;
+        }
+        h1 {
+            color: #1e3a8a;
+            font-size: 18px;
+            margin-bottom: 5mm;
+        }
+        h2 {
+            color: #3b82f6;
+            font-size: 14px;
+            margin-top: 10mm;
+            margin-bottom: 5mm;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 2mm;
+        }
+        .info-block {
+            border: 1px solid #e5e7eb;
+            border-radius: 5px;
+            padding: 5mm;
+            margin-bottom: 5mm;
+        }
+        .info-row {
+            margin-bottom: 2mm;
+        }
+        .info-label {
+            font-weight: bold;
+            width: 40%;
+            float: left;
+        }
+        .info-value {
+            width: 60%;
+            float: left;
+        }
+        .clearfix::after {
+            content: "";
+            clear: both;
+            display: table;
+        }
+        .badge {
+            display: inline-block;
+            padding: 1mm 2mm;
+            border-radius: 2mm;
+            color: white;
+            font-size: 10px;
+        }
+        .badge-success {
+            background-color: #2e7d32;
+        }
+        .badge-danger {
+            background-color: #dc3545;
+        }
+        .badge-warning {
+            background-color: #ffc107;
+            color: #333333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 5mm;
+            margin-bottom: 5mm;
+        }
+        th {
+            background-color: #f3f4f6;
+            border: 1px solid #ddd;
+            padding: 2mm;
+            text-align: left;
+            font-weight: bold;
+        }
+        td {
+            border: 1px solid #ddd;
+            padding: 2mm;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .total-row {
+            font-weight: bold;
+        }
+        .footer {
+            margin-top: 10mm;
+            text-align: center;
+            font-size: 10px;
+            color: #6b7280;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 5mm;
+        }
+        .page-number {
+            text-align: center;
+            font-size: 10px;
+            color: #6b7280;
+            margin-top: 10mm;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Demande d'Achat #{{ demande.id }}</h1>
+            <p>Document généré le: {{ dateGeneration }}</p>
+        </div>
+        
+        <div class="info-block">
+            <h2>Informations de la demande</h2>
+            
+            <div class="info-row clearfix">
+                <div class="info-label">Numéro de demande:</div>
+                <div class="info-value">{{ demande.id }}</div>
+            </div>
+            
+            <div class="info-row clearfix">
+                <div class="info-label">Date de la demande:</div>
+                <div class="info-value">{{ dateFormattee }}</div>
+            </div>
+            
+            <div class="info-row clearfix">
+                <div class="info-label">État:</div>
+                <div class="info-value">
+                    {% if demande.etat == 'Approuvée' %}
+                        <span class="badge badge-success">{{ demande.etat }}</span>
+                    {% elseif demande.etat == 'Rejetée' %}
+                        <span class="badge badge-danger">{{ demande.etat }}</span>
+                    {% else %}
+                        <span class="badge badge-warning">{{ demande.etat }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="info-row clearfix">
+                <div class="info-label">Demandeur:</div>
+                <div class="info-value">{{ userName }}</div>
+            </div>
+        </div>
+        
+        <div class="info-block">
+            <h2>Résumé financier</h2>
+            
+            <div class="info-row clearfix">
+                <div class="info-label">Montant HT:</div>
+                <div class="info-value">{{ demande.montantHT|number_format(2, ',', ' ') }} DH</div>
+            </div>
+            
+            <div class="info-row clearfix">
+                <div class="info-label">TVA ({{ demande.tva }}%):</div>
+                <div class="info-value">
+                    {{ (demande.montantHT * demande.tva / 100)|number_format(2, ',', ' ') }} DH
+                </div>
+            </div>
+            
+            <div class="info-row clearfix" style="margin-top: 5mm; border-top: 1px solid #e5e7eb; padding-top: 2mm;">
+                <div class="info-label" style="font-size: 14px; font-weight: bold;">Montant TTC:</div>
+                <div class="info-value" style="font-size: 14px; font-weight: bold; color: #dc2626;">
+                    {{ demande.montantTTC|number_format(2, ',', ' ') }} DH
+                </div>
+            </div>
+        </div>
+        
+        {% if details|length > 0 %}
+            <h2>Détails des articles</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th width="40%">Article</th>
+                        <th width="15%" class="text-right">Quantité</th>
+                        <th width="20%" class="text-right">Prix unitaire (DH)</th>
+                        <th width="25%" class="text-right">Total (DH)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for detail in details %}
+                        <tr>
+                            <td>
+                                <strong>{{ detail.article.nom }}</strong><br>
+                                <small>Réf: {{ detail.article.reference }}</small>
+                            </td>
+                            <td class="text-right">{{ detail.quantite }}</td>
+                            <td class="text-right">{{ detail.prixUnitaire|number_format(2, ',', ' ') }}</td>
+                            <td class="text-right">{{ detail.prixTotal|number_format(2, ',', ' ') }}</td>
+                        </tr>
+                    {% endfor %}
+                    <tr class="total-row">
+                        <td colspan="3" class="text-right">Total HT:</td>
+                        <td class="text-right">{{ demande.montantHT|number_format(2, ',', ' ') }} DH</td>
+                    </tr>
+                    <tr>
+                        <td colspan="3" class="text-right">TVA ({{ demande.tva }}%):</td>
+                        <td class="text-right">{{ (demande.montantHT * demande.tva / 100)|number_format(2, ',', ' ') }} DH</td>
+                    </tr>
+                    <tr class="total-row">
+                        <td colspan="3" class="text-right">Total TTC:</td>
+                        <td class="text-right" style="color: #dc2626;">{{ demande.montantTTC|number_format(2, ',', ' ') }} DH</td>
+                    </tr>
+                </tbody>
+            </table>
+        {% else %}
+            <div class="info-block" style="text-align: center; font-style: italic; color: #6b7280;">
+                Aucun article dans cette demande d'achat.
+            </div>
+        {% endif %}
+        
+        <div class="footer">
+            <p>Ce document a été généré automatiquement et ne nécessite pas de signature.</p>
+            <p>Système de Gestion de Stock &copy; {{ "now"|date("Y") }}</p>
+        </div>
+        
+        <div class="page-number">Page 1 / 1</div>
+    </div>
+</body>
+</html>

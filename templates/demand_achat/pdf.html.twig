@@ -150,8 +150,8 @@
                         <td>{{ detail.article.reference }}</td>
                         <td>{{ detail.fournisseur }}</td>
                         <td>{{ detail.quantite }}</td>
-                        <td>{{ detail.prixUnitaire|number_format(2, ',', ' ') }} DH</td>
-                        <td>{{ detail.prixTotal|number_format(2, ',', ' ') }} DH</td>
+                        <td style="color: red; font-weight: bold;">{{ detail.prixUnitaire|number_format(2, ',', ' ') }} DH</td>
+                        <td style="color: red; font-weight: bold;">{{ detail.prixTotal|number_format(2, ',', ' ') }} DH</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -160,15 +160,15 @@
             <div class="total-section">
                 <div class="total-row">
                     <span class="total-label">Total HT:</span>
-                    <span>{{ demande.montantHT|number_format(2, ',', ' ') }} DH</span>
+                    <span style="color: red; font-weight: bold;">{{ demande.montantHT|number_format(2, ',', ' ') }} DH</span>
                 </div>
                 <div class="total-row">
                     <span class="total-label">TVA ({{ demande.tva }}%):</span>
-                    <span>{{ (demande.montantTTC - demande.montantHT)|number_format(2, ',', ' ') }} DH</span>
+                    <span style="color: red; font-weight: bold;">{{ (demande.montantTTC - demande.montantHT)|number_format(2, ',', ' ') }} DH</span>
                 </div>
                 <div class="total-row">
                     <span class="total-label">Total TTC:</span>
-                    <strong>{{ demande.montantTTC|number_format(2, ',', ' ') }} DH</strong>
+                    <strong style="color: red; font-weight: bold;">{{ demande.montantTTC|number_format(2, ',', ' ') }} DH</strong>
                 </div>
             </div>
         {% endif %}

@@ -240,7 +240,7 @@
                         <td>{{ article.reference }}</td>
                         <td>{{ article.marque }}</td>
                         <td>{{ article.unite }}</td>
-                        <td>{{ article.prix|number_format(2, ',', ' ') }} €</td>
+                        <td><span class="fw-bold text-danger">{{ article.prix|number_format(2, ',', ' ') }} DH</span></td>
                         <td>{{ article.category ? article.category.nom : 'N/A' }}</td>
                         <td>{{ article.description|length > 50 ? article.description|slice(0, 50) ~ '...' : article.description }}</td>
                         <td>{{ article.numero }}</td>

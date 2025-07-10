@@ -1,566 +1,1445 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Demandes d'Achat{% endblock %}
+{% block title %}Demandes d'Achat
+{% endblock %}
 
 {% block stylesheets %}
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+	<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
 {% endblock %}
 
 {% block body %}
-<div class="container-fluid px-4 py-3">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3">Gestion des Demandes d'Achat</h1>
-        <a href="{{ path('app_demand_achat_new') }}" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-2"></i>Nouvelle Demande
-        </a>
-    </div>
-    
-    <div class="card shadow-sm">
-        <div class="card-header bg-white py-3">
-            <h5 class="card-title mb-0">Liste des Demandes d'Achat</h5>
-        </div>
-        <div class="card-body">
-            {% if demandes is empty %}
-                <div class="alert alert-info">
-                    <i class="bi bi-info-circle me-2"></i>
-                    Aucune demande d'achat n'a été enregistrée pour le moment.
-                </div>
-            {% else %}
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead class="table-light">
-                            <tr>
-                                <th>ID</th>
-                                <th>Date</th>
-                                <th>Utilisateur</th>
-                                <th>État</th>
-                                <th>Montant HT</th>
-                                <th>TVA</th>
-                                <th>Montant TTC</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for demande in demandes %}
-                                <tr>
-                                    <td>{{ demande.id }}</td>
-                                    <td>{{ demande.date|date('d/m/Y') }}</td>
-                                    <td>{{ demande.uilisateur ? demande.uilisateur.nom ~ ' ' ~ demande.uilisateur.prenom : 'N/A' }}</td>
-                                    <td>
-                                        <span class="badge {% if demande.etat == 'En attente' %}bg-warning{% elseif demande.etat == 'Approuvée' %}bg-success{% elseif demande.etat == 'Rejetée' %}bg-danger{% else %}bg-secondary{% endif %}" style="font-size: 0.85rem; padding: 0.4rem 0.6rem;">
-                                            {% if demande.etat == 'En attente' %}
-                                                <i class="bi bi-hourglass-split me-1"></i>
-                                            {% elseif demande.etat == 'Approuvée' %}
-                                                <i class="bi bi-check-circle-fill me-1"></i>
-                                            {% elseif demande.etat == 'Rejetée' %}
-                                                <i class="bi bi-x-circle-fill me-1"></i>
-                                            {% else %}
-                                                <i class="bi bi-question-circle me-1"></i>
-                                            {% endif %}
-                                            {{ demande.etat }}
-                                        </span>
-                                    </td>
-                                    <td>{{ demande.montantHT|number_format(2, ',', ' ') }} DH</td>
-                                    <td>{{ demande.tva }}%</td>
-                                    <td>{{ demande.montantTTC|number_format(2, ',', ' ') }} DH</td>
-                                    <td>
-                                        <div class="btn-group btn-group-sm">
-                                            <a href="{{ path('app_demand_achat_show', {'id': demande.id}) }}" class="btn btn-outline-primary" title="Voir les détails">
-                                                <i class="bi bi-eye"></i>
-                                            </a>
-                                            {% if demande.etat == 'En attente' %}
-                                                <button type="button" class="btn btn-outline-info status-btn" data-id="{{ demande.id }}" data-etat="{{ demande.etat }}" title="Changer le statut">
-                                                    <i class="bi bi-arrow-repeat"></i>
-                                                </button>
-                                                <a href="{{ path('app_demand_achat_edit_page', {'id': demande.id}) }}" class="btn btn-outline-secondary" title="Modifier la demande">
-                                                    <i class="bi bi-pencil"></i>
-                                                </a>
-                                            {% else %}
-                                                <button type="button" class="btn btn-outline-secondary edit-btn" data-id="{{ demande.id }}" title="Modifier infos principales">
-                                                    <i class="bi bi-pencil"></i>
-                                                </button>
-                                            {% endif %}
-                                            <!-- Bouton de suppression désactivé -->
-                                        </div>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% endif %}
-        </div>
-    </div>
-</div>
+	<!-- Script de définition de fonction globale pour le modal de statut -->
+	<script>
+		// Fonction pour ouvrir le modal de changement de statut
+		window.openStatusModal = function(demandeId, etat) {
+			// Remplir les champs du modal
+			const statusDemandeId = document.getElementById('statusDemandeId');
+			const modalStatusDemandeId = document.getElementById('modalStatusDemandeId');
+			const newEtat = document.getElementById('newEtat');
+			
+			if (statusDemandeId) statusDemandeId.value = demandeId;
+			if (modalStatusDemandeId) modalStatusDemandeId.textContent = '#' + demandeId;
+			if (newEtat) newEtat.value = etat;
+			
+			// Ouvrir le modal via Bootstrap
+			const modalElement = document.getElementById('statusModal');
+			if (modalElement && window.bootstrap && window.bootstrap.Modal) {
+				const modal = new window.bootstrap.Modal(modalElement);
+				modal.show();
+			}
+		};
+	</script>
+	
+	<div class="container-fluid px-4 py-3">
+		<div class="d-flex justify-content-between align-items-center mb-4">
+			<h1 class="h3">Gestion des Demandes d'Achat</h1>
+			<a href="{{ path('app_demand_achat_new') }}" class="btn btn-primary">
+				<i class="bi bi-plus-circle me-2"></i>Nouvelle Demande
+			</a>
+		</div>
 
-<!-- Modal de modification -->
-<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); color: white;">
-                <h5 class="modal-title" id="editModalLabel">
-                    <div class="d-flex align-items-center">
-                        <div class="me-3 bg-white text-primary rounded-circle p-2" style="height: 40px; width: 40px; display: flex; align-items: center; justify-content: center;">
-                            <i class="bi bi-pencil-square fs-4"></i>
-                        </div>
-                        <span>Modifier la Demande d'Achat #<span id="modalDemandeId"></span></span>
-                    </div>
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="editDemandeForm">
-                    <input type="hidden" id="editDemandeId">
-                    
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="editDate" class="form-label">Date</label>
-                            <input type="date" class="form-control" id="editDate" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="editEtat" class="form-label">État</label>
-                            <select class="form-select" id="editEtat" required>
-                                <option value="En attente">En attente</option>
-                                <option value="Approuvée">Approuvée</option>
-                                <option value="Rejetée">Rejetée</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="row mb-3">
-                        <div class="col-md-12">
-                            <label class="form-label"><i class="bi bi-percent me-1"></i>Taux de TVA</label>
-                            <div class="d-flex flex-wrap" role="group" aria-label="Sélection du taux de TVA">
-                                <span class="badge bg-light text-dark me-2 mb-2 p-2 edit-tva-badge" role="button" tabindex="0" data-tva="0" aria-pressed="false" aria-label="TVA 0%" style="min-width: 60px; text-align: center;"><strong>0%</strong></span>
-                                <span class="badge bg-light text-dark me-2 mb-2 p-2 edit-tva-badge" role="button" tabindex="0" data-tva="7" aria-pressed="false" aria-label="TVA 7%" style="min-width: 60px; text-align: center;"><strong>7%</strong></span>
-                                <span class="badge bg-light text-dark me-2 mb-2 p-2 edit-tva-badge" role="button" tabindex="0" data-tva="14" aria-pressed="false" aria-label="TVA 14%" style="min-width: 60px; text-align: center;"><strong>14%</strong></span>
-                                <span class="badge bg-light text-dark me-2 mb-2 p-2 edit-tva-badge active" role="button" tabindex="0" data-tva="20" aria-pressed="true" aria-label="TVA 20%" style="min-width: 60px; text-align: center;"><strong>20%</strong></span>
-                            </div>
-                            <input type="hidden" id="editTva" value="20">
-                            <div class="form-text">Cliquez sur un badge pour sélectionner le taux de TVA.</div>
-                        </div>
-                    </div>
-                    
-                    <div class="alert alert-info" role="alert">
-                        <div class="d-flex">
-                            <div class="flex-shrink-0">
-                                <i class="bi bi-info-circle-fill fs-4"></i>
-                            </div>
-                            <div class="flex-grow-1 ms-3">
-                                <h6 class="alert-heading mb-1">Note importante</h6>
-                                Pour modifier les articles de cette demande, veuillez accéder à la page de détails.
-                                <div class="mt-2">
-                                    <a href="#" id="viewDetailsLink" class="btn btn-sm btn-outline-primary">
-                                        <i class="bi bi-eye me-1"></i> Voir les détails
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
-                <button type="button" class="btn btn-primary" id="saveEditBtn" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); border: none;">
-                    <i class="bi bi-save me-1"></i> Enregistrer
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
+		<div class="card shadow-sm">
+			<div class="card-header bg-white py-3">
+				<h5 class="card-title mb-0">Liste des Demandes d'Achat</h5>
+			</div>
+			<div class="card-body">
+				{% if demandes is empty %}
+					<div class="alert alert-info">
+						<i class="bi bi-info-circle me-2"></i>
+						Aucune demande d'achat n'a été enregistrée pour le moment.
+					</div>
+				{% else %}
+					<div class="table-responsive">
+						<table class="table table-hover">
+							<thead class="table-light">
+								<tr>
+									<th>ID</th>
+									<th>Date</th>
+									<th>Utilisateur</th>
+									<th>État</th>
+									<th>Montant HT</th>
+									<th>TVA</th>
+									<th>Montant TTC</th>
+									<th>Actions</th>
+								</tr>
+							</thead>
+							<tbody>
+								{% for demande in demandes %}
+									<tr class="demande-row" data-id="{{ demande.id }}">
+										<td>{{ demande.id }}</td>
+										<td>{{ demande.date|date('d/m/Y') }}</td>
+										<td>{{ demande.uilisateur ? demande.uilisateur.nom ~ ' ' ~ demande.uilisateur.prenom : 'N/A' }}</td>
+										<td class="demande-status">
+											<span class="badge {% if demande.etat == 'En attente' %}bg-warning{% elseif demande.etat == 'Approuvée' %}bg-success{% elseif demande.etat == 'Rejetée' %}bg-danger{% else %}bg-secondary{% endif %}" style="font-size: 0.85rem; padding: 0.4rem 0.6rem;">
+												{% if demande.etat == 'En attente' %}
+													<i class="bi bi-hourglass-split me-1"></i>
+												{% elseif demande.etat == 'Approuvée' %}
+													<i class="bi bi-check-circle-fill me-1"></i>
+												{% elseif demande.etat == 'Rejetée' %}
+													<i class="bi bi-x-circle-fill me-1"></i>
+												{% else %}
+													<i class="bi bi-question-circle me-1"></i>
+												{% endif %}
+												{{ demande.etat }}
+											</span>
+										</td>
+										<td>
+											<span class="fw-bold text-danger">{{ demande.montantHT|number_format(2, ',', ' ') }}
+												DH</span>
+										</td>
+										<td>{{ demande.tva }}%</td>
+										<td>
+											<span class="fw-bold text-danger">{{ demande.montantTTC|number_format(2, ',', ' ') }}
+												DH</span>
+										</td>
+										<td class="actions-cell">
+											<div class="btn-group btn-group-sm">
+												<!-- Bouton Consulter (voir détails) - toujours présent -->
+												<a href="{{ path('app_demand_achat_show', {'id': demande.id}) }}" class="btn btn-outline-primary" title="Voir les détails">
+													<i class="bi bi-eye"></i>
+												</a>
+												
+												{% if demande.etat == 'En attente' %}
+													<!-- Pour les demandes "En attente" : Consulter, Changer statut, Modifier -->
+													<a href="#" class="btn btn-outline-info status-btn" 
+													   data-id="{{ demande.id }}" 
+													   data-etat="{{ demande.etat }}" 
+													   title="Changer le statut" 
+													   onclick="event.preventDefault(); window.openStatusModal('{{ demande.id }}', '{{ demande.etat }}');">
+														<i class="bi bi-arrow-repeat"></i>
+													</a>
+													<a href="{{ path('app_demand_achat_edit_page', {'id': demande.id}) }}" class="btn btn-outline-secondary" title="Modifier la demande">
+														<i class="bi bi-pencil"></i>
+													</a>
+												{% elseif demande.etat == 'Approuvée' %}
+													<!-- Pour les demandes "Approuvée" : Consulter, Modifier, Exporter en PDF -->
+													<button type="button" class="btn btn-outline-secondary edit-btn" data-id="{{ demande.id }}" title="Modifier infos principales">
+														<i class="bi bi-pencil"></i>
+													</button>
+													<button type="button" class="btn btn-outline-danger export-pdf-btn" data-id="{{ demande.id }}" title="Exporter en PDF">
+														<i class="bi bi-file-earmark-pdf"></i>
+													</button>
+												{% else %}
+													<!-- Pour les autres états (Rejetée, etc.) -->
+													<button type="button" class="btn btn-outline-secondary edit-btn" data-id="{{ demande.id }}" title="Modifier infos principales">
+														<i class="bi bi-pencil"></i>
+													</button>
+													<button type="button" class="btn btn-outline-danger export-pdf-btn" data-id="{{ demande.id }}" title="Exporter en PDF">
+														<i class="bi bi-file-earmark-pdf"></i>
+													</button>
+												{% endif %}
+											</div>
+										</td>
+									</tr>
+								{% endfor %}
+							</tbody>
+						</table>
+					</div>
+				{% endif %}
+			</div>
+		</div>
+	</div>
 
-<!-- Modal Changement de Statut -->
-<div class="modal fade" id="statusModal" tabindex="-1" aria-labelledby="statusModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header bg-info text-white">
-        <h5 class="modal-title" id="statusModalLabel"><i class="bi bi-arrow-repeat me-2"></i>Changer le statut de la demande</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <form id="statusForm">
-          <input type="hidden" id="statusDemandeId">
-          <div class="mb-3">
-            <label for="newEtat" class="form-label">Nouveau statut</label>
-            <select class="form-select" id="newEtat" required>
-              <option value="En attente">En attente</option>
-              <option value="Approuvée">Approuvée</option>
-              <option value="Rejetée">Rejetée</option>
-            </select>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
-        <button type="button" class="btn btn-info" id="saveStatusBtn"><i class="bi bi-save me-1"></i>Enregistrer</button>
-      </div>
-    </div>
-  </div>
-</div>
+	<!-- Modal de modification -->
+	<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); color: white;">
+					<h5 class="modal-title" id="editModalLabel">
+						<div class="d-flex align-items-center">
+							<div class="me-3 bg-white text-primary rounded-circle p-2" style="height: 40px; width: 40px; display: flex; align-items: center; justify-content: center;">
+								<i class="bi bi-pencil-square fs-4"></i>
+							</div>
+							<span>Modifier la Demande d'Achat #<span id="modalDemandeId"></span>
+							</span>
+						</div>
+					</h5>
+					<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<form id="editDemandeForm">
+						<input type="hidden" id="editDemandeId">
+
+						<div class="row mb-3">
+							<div class="col-md-6">
+								<label for="editDate" class="form-label">Date</label>
+								<input type="date" class="form-control" id="editDate" required>
+							</div>
+							<div class="col-md-6">
+								<label for="editEtat" class="form-label">État</label>
+								<select class="form-select" id="editEtat" required>
+									<option value="En attente">En attente</option>
+									<option value="Approuvée">Approuvée</option>
+									<option value="Rejetée">Rejetée</option>
+								</select>
+							</div>
+						</div>
+
+						<div class="row mb-3">
+							<div class="col-md-12">
+								<label class="form-label">
+									<i class="bi bi-percent me-1"></i>Taux de TVA</label>
+								<div class="d-flex flex-wrap" role="group" aria-label="Sélection du taux de TVA">
+									<span class="badge bg-light text-dark me-2 mb-2 p-2 edit-tva-badge" role="button" tabindex="0" data-tva="0" aria-pressed="false" aria-label="TVA 0%" style="min-width: 60px; text-align: center;">
+										<strong>0%</strong>
+									</span>
+									<span class="badge bg-light text-dark me-2 mb-2 p-2 edit-tva-badge" role="button" tabindex="0" data-tva="7" aria-pressed="false" aria-label="TVA 7%" style="min-width: 60px; text-align: center;">
+										<strong>7%</strong>
+									</span>
+									<span class="badge bg-light text-dark me-2 mb-2 p-2 edit-tva-badge" role="button" tabindex="0" data-tva="14" aria-pressed="false" aria-label="TVA 14%" style="min-width: 60px; text-align: center;">
+										<strong>14%</strong>
+									</span>
+									<span class="badge bg-light text-dark me-2 mb-2 p-2 edit-tva-badge active" role="button" tabindex="0" data-tva="20" aria-pressed="true" aria-label="TVA 20%" style="min-width: 60px; text-align: center;">
+										<strong>20%</strong>
+									</span>
+								</div>
+								<input type="hidden" id="editTva" value="20">
+								<div class="form-text">Cliquez sur un badge pour sélectionner le taux de TVA.</div>
+							</div>
+						</div>
+
+						<div class="alert alert-info" role="alert">
+							<div class="d-flex">
+								<div class="flex-shrink-0">
+									<i class="bi bi-info-circle-fill fs-4"></i>
+								</div>
+								<div class="flex-grow-1 ms-3">
+									<h6 class="alert-heading mb-1">Note importante</h6>
+									Pour modifier les articles de cette demande, veuillez accéder à la page de détails.
+									<div class="mt-2">
+										<a href="#" id="viewDetailsLink" class="btn btn-sm btn-outline-primary">
+											<i class="bi bi-eye me-1"></i>
+											Voir les détails
+										</a>
+									</div>
+								</div>
+							</div>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+					<button type="button" class="btn btn-primary" id="saveEditBtn" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); border: none;">
+						<i class="bi bi-save me-1"></i>
+						Enregistrer
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+
+
+	<!-- Modal de changement de statut -->
+	<div class="modal fade" id="statusModal" tabindex="-1" aria-labelledby="statusModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); color: white;">
+					<h5 class="modal-title" id="statusModalLabel"><i class="bi bi-arrow-repeat me-2"></i>Changer le statut de la demande <span id="modalStatusDemandeId"></span></h5>
+					<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<form id="statusForm">
+						<input type="hidden" id="statusDemandeId">
+						<div class="mb-3">
+							<label for="newEtat" class="form-label">Nouveau statut</label>
+							<select class="form-select" id="newEtat" required>
+								<option value="En attente">En attente</option>
+								<option value="Approuvée">Approuvée</option>
+								<option value="Rejetée">Rejetée</option>
+							</select>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+					<button type="button" class="btn btn-primary" id="saveStatusBtn" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); border: none;">
+						<i class="bi bi-save me-1"></i> Enregistrer
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<!-- Toast Container -->
+	<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050" id="toastContainer"></div>
 {% endblock %}
 
-{% block page_javascripts %}
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
-<script>
-// Ajouter des styles personnalisés pour les animations et transitions
-let customStyle = document.createElement('style');
-customStyle.textContent = `
-    .edit-tva-badge {
-        cursor: pointer;
-        transition: all 0.2s ease;
-        border: 2px solid transparent;
-    }
-    .edit-tva-badge:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    .edit-tva-badge.active {
-        border-color: #1e3a8a;
-        background: linear-gradient(90deg, #1e3a8a, #3b82f6) !important;
-        color: white !important;
-    }
-    .modal.fade .modal-dialog {
-        transform: scale(0.8);
-        transition: transform 0.3s ease-out;
-    }
-    .modal.show .modal-dialog {
-        transform: scale(1);
-    }
-    .btn-primary:hover {
-        filter: brightness(110%);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        transition: all 0.3s ease;
-    }
-    @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translate3d(0, 40px, 0);
+{% block page_javascripts %} <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+	 <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+	 <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+	 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+	<!-- PDF Generation Libraries -->
+	<!-- Les bibliothèques jsPDF et html2canvas ne sont plus nécessaires côté client -->
+	<!-- La génération PDF est gérée par html2pdf côté serveur -->
+	 <script>
+	    // Rediriger les erreurs vers l'interface utilisateur
+	    window.onerror = function(message, source, lineno, colno, error) {
+	        // Créer un élément visible pour afficher l'erreur
+	        const errorDiv = document.createElement('div');
+	        errorDiv.style.position = 'fixed';
+	        errorDiv.style.top = '50px';
+	        errorDiv.style.left = '50%';
+	        errorDiv.style.transform = 'translateX(-50%)';
+	        errorDiv.style.backgroundColor = 'red';
+	        errorDiv.style.color = 'white';
+	        errorDiv.style.padding = '10px';
+	        errorDiv.style.borderRadius = '5px';
+	        errorDiv.style.zIndex = '10000';
+	        errorDiv.innerHTML = `<strong>ERREUR JS:</strong> ${message}<br>Source: ${source}<br>Ligne: ${lineno}, Col: ${colno}`;
+	        document.body.appendChild(errorDiv);
+	        
+	        setTimeout(() => {
+	            errorDiv.remove();
+	        }, 10000);
+	        
+	        return false; // Permet à l'erreur de se propager
+	    };
+	    
+	    // Rediriger les logs console vers une interface visible
+	    const originalLog = console.log;
+	    const originalError = console.error;
+	    const originalWarn = console.warn;
+	    
+	    function createVisualLog(type, args) {
+	        // Créer un conteneur pour les logs s'il n'existe pas
+	        let logContainer = document.getElementById('visual-logs-container');
+	        if (!logContainer) {
+	            logContainer = document.createElement('div');
+	            logContainer.id = 'visual-logs-container';
+	            logContainer.style.position = 'fixed';
+	            logContainer.style.bottom = '10px';
+	            logContainer.style.left = '10px';
+	            logContainer.style.maxWidth = '80%';
+	            logContainer.style.maxHeight = '200px';
+	            logContainer.style.overflowY = 'auto';
+	            logContainer.style.backgroundColor = 'rgba(0,0,0,0.7)';
+	            logContainer.style.color = 'white';
+	            logContainer.style.padding = '10px';
+	            logContainer.style.borderRadius = '5px';
+	            logContainer.style.zIndex = '10000';
+	            logContainer.style.fontSize = '12px';
+	            logContainer.style.fontFamily = 'monospace';
+	            
+	            // Bouton pour effacer les logs
+	            const clearButton = document.createElement('button');
+	            clearButton.textContent = 'Effacer logs';
+	            clearButton.style.position = 'absolute';
+	            clearButton.style.top = '5px';
+	            clearButton.style.right = '5px';
+	            clearButton.style.fontSize = '10px';
+	            clearButton.onclick = function() { 
+	                document.querySelectorAll('.visual-log-entry').forEach(el => el.remove());
+	            };
+	            logContainer.appendChild(clearButton);
+	            
+	            document.body.appendChild(logContainer);
+	        }
+	        
+	        // Créer une entrée de log
+	        const logEntry = document.createElement('div');
+	        logEntry.className = 'visual-log-entry';
+	        logEntry.style.borderBottom = '1px solid rgba(255,255,255,0.3)';
+	        logEntry.style.padding = '3px 0';
+	        logEntry.style.wordBreak = 'break-all';
+	        
+	        // Couleur selon le type
+	        switch(type) {
+	            case 'error':
+	                logEntry.style.color = '#ff8080';
+	                break;
+	            case 'warn':
+	                logEntry.style.color = '#ffcc80';
+	                break;
+	            default:
+	                logEntry.style.color = '#80ff80';
+	        }
+	        
+	        // Formatage du message
+	        let message = '';
+	        for (const arg of args) {
+	            if (typeof arg === 'object') {
+	                try {
+	                    message += JSON.stringify(arg) + ' ';
+	                } catch(e) {
+	                    message += '[Objet non sérialisable] ';
+	                }
+	            } else {
+	                message += arg + ' ';
+	            }
+	        }
+	        
+	        logEntry.textContent = `${new Date().toISOString().split('T')[1].split('.')[0]} - ${message}`;
+	        logContainer.appendChild(logEntry);
+	        
+	        // Ne garder que les 50 derniers messages
+	        const entries = logContainer.querySelectorAll('.visual-log-entry');
+	        if (entries.length > 50) {
+	            entries[0].remove();
+	        }
+	        
+	        // Défiler vers le bas
+	        logContainer.scrollTop = logContainer.scrollHeight;
+	    }
+	    
+	    // Redéfinir les fonctions de console
+	    console.log = function() {
+	        originalLog.apply(console, arguments);
+	        createVisualLog('log', arguments);
+	    };
+	    
+	    console.error = function() {
+	        originalError.apply(console, arguments);
+	        createVisualLog('error', arguments);
+	    };
+	    
+	    console.warn = function() {
+	        originalWarn.apply(console, arguments);
+	        createVisualLog('warn', arguments);
+	    };
+	       // Loguer quand la page est chargée
+    window.addEventListener('DOMContentLoaded', function() {
+        console.log('Page chargée, les boutons PDF utilisent la génération côté serveur');
+        console.log('Logs visuels activés, vérifiez le coin inférieur gauche');
+        
+        // Ajouter le gestionnaire d'événement pour le bouton de sauvegarde du modal
+        const saveStatusBtn = document.getElementById('saveStatusBtn');
+        if (saveStatusBtn) {
+            saveStatusBtn.addEventListener('click', function() {
+                const demandeId = document.getElementById('statusDemandeId').value;
+                const etat = document.getElementById('newEtat').value;
+                
+                // Désactiver le bouton pendant la soumission
+                saveStatusBtn.disabled = true;
+                saveStatusBtn.innerHTML = '<i class="spinner-border spinner-border-sm me-1"></i> Traitement en cours...';
+                
+                fetch(`/demande/achat/${demandeId}/status`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ etat: etat })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erreur lors de la mise à jour');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        showToast('Statut de la demande modifié avec succès!', 'success');
+                        
+                        // Recharger la page après un délai
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+                        
+                        // Fermer le modal
+                        const modalElement = document.getElementById('statusModal');
+                        if (modalElement && window.bootstrap) {
+                            const modalInstance = window.bootstrap.Modal.getInstance(modalElement);
+                            if (modalInstance) modalInstance.hide();
+                        }
+                    } else {
+                        showToast('Erreur: ' + (data.message || 'Impossible de modifier le statut'), 'danger');
+                        // Réinitialiser le bouton
+                        saveStatusBtn.disabled = false;
+                        saveStatusBtn.innerHTML = '<i class="bi bi-save me-1"></i> Enregistrer';
+                    }
+                })
+                .catch(error => {
+                    console.error('Erreur:', error);
+                    showToast('Une erreur est survenue lors de la mise à jour.', 'danger');
+                    
+                    // Réinitialiser le bouton
+                    saveStatusBtn.disabled = false;
+                    saveStatusBtn.innerHTML = '<i class="bi bi-save me-1"></i> Enregistrer';
+                });
+            });
         }
-        to {
-            opacity: 1;
-            transform: translate3d(0, 0, 0);
+    });
+	    
+	    // Vérifier que Bootstrap est correctement chargé
+	    window.addEventListener('load', function() {
+	        console.log('=== DIAGNOSTIC FINAL DU CHARGEMENT DE LA PAGE ===');
+	        
+	        // Vérifier si les scripts sont chargés
+	        console.log('Bootstrap global disponible:', typeof bootstrap !== 'undefined' ? 'Oui' : 'Non');
+	        console.log('jQuery disponible:', typeof jQuery !== 'undefined' ? 'Oui' : 'Non');
+	        
+	        // Vérifier si les éléments du DOM sont présents
+	        console.log('Modal #statusModal présent:', document.getElementById('statusModal') ? 'Oui' : 'Non');
+	        console.log('Boutons status-btn présents:', document.querySelectorAll('.status-btn').length);
+	        
+	        // Vérifier si l'API du modal est disponible
+	        if (typeof bootstrap !== 'undefined' && typeof bootstrap.Modal === 'function') {
+	            console.log('API bootstrap.Modal disponible');
+	        } else {
+	            console.error('ERREUR: API bootstrap.Modal NON DISPONIBLE!');
+	            
+	            // Tenter de recharger Bootstrap si nécessaire
+	            if (!document.getElementById('bootstrap-reload-script')) {
+	                console.log('Tentative de rechargement de Bootstrap...');
+	                const script = document.createElement('script');
+	                script.id = 'bootstrap-reload-script';
+	                script.src = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js';
+	                script.onload = function() {
+	                    console.log('Bootstrap rechargé avec succès');
+	                    // Réinitialiser les modals après le rechargement
+	                    if (typeof bootstrap !== 'undefined' && document.getElementById('statusModal')) {
+	                        window.statusModal = new bootstrap.Modal(document.getElementById('statusModal'));
+	                        console.log('Modal réinitialisé après rechargement');
+	                    }
+	                };
+	                document.body.appendChild(script);
+	            }
+	        }
+	        
+	        // Ajouter un écouteur d'événement global pour capturer tous les clics
+	        document.addEventListener('click', function(event) {
+	            console.log('=== DIAGNOSTIC GLOBAL: Clic détecté sur la page ===');
+	            console.log('Élément cliqué:', event.target);
+	            console.log('Classes de l\'élément:', event.target.className);
+	            console.log('Parent de l\'élément:', event.target.parentElement ? event.target.parentElement.className : 'Aucun');
+	            
+	            // Vérifier si le clic est sur le bouton statut ou un de ses enfants
+	            const isOnStatusBtn = event.target.classList.contains('status-btn') || 
+	                                 (event.target.parentElement && event.target.parentElement.classList.contains('status-btn'));
+	            
+	            if (isOnStatusBtn) {
+	                console.log('CLIC DÉTECTÉ SUR UN BOUTON DE STATUT OU SON ENFANT!');
+	                
+	                // Trouver le bouton réel
+	                const btn = event.target.classList.contains('status-btn') ? event.target : event.target.parentElement;
+	                const demandeId = btn.getAttribute('data-id');
+	                console.log(`Demande ID du bouton: ${demandeId}`);
+	                
+	                // Essayer d'ouvrir le modal directement depuis l'écouteur global
+	                try {
+	                    const statusDemandeId = document.getElementById('statusDemandeId');
+	                    const modalStatusDemandeId = document.getElementById('modalStatusDemandeId');
+	                    
+	                    if (statusDemandeId) statusDemandeId.value = demandeId;
+	                    if (modalStatusDemandeId) modalStatusDemandeId.textContent = demandeId;
+	                    
+	                    console.log('Tentative d\'ouverture du modal depuis l\'écouteur global');
+	                    
+	                    if (window.jQuery) {
+	                        $('#statusModal').modal('show');
+	                        console.log('Modal ouvert via jQuery (global)');
+	                    } else if (typeof bootstrap !== 'undefined') {
+	                        const modal = new bootstrap.Modal(document.getElementById('statusModal'));
+	                        modal.show();
+	                        console.log('Modal ouvert via Bootstrap (global)');
+	                    } else {
+	                        console.error('Ni jQuery ni Bootstrap ne sont disponibles pour ouvrir le modal');
+	                    }
+	                } catch (error) {
+	                    console.error('Erreur lors de l\'ouverture du modal depuis l\'écouteur global:', error);
+	                }
+	            }
+	        }, true); // Utiliser la capture pour intercepter avant la propagation
+	        
+	        // Créer un bouton de secours pour ouvrir le modal
+	        const emergencyButton = document.createElement('button');
+	        emergencyButton.textContent = 'OUVRIR MODAL (SECOURS)';
+	        emergencyButton.className = 'btn btn-danger position-fixed';
+	        emergencyButton.style.top = '10px';
+	        emergencyButton.style.right = '10px';
+	        emergencyButton.style.zIndex = '9999';
+	        emergencyButton.onclick = function() {
+	            console.log('Bouton de secours cliqué!');
+	            try {
+	                const modalElement = document.getElementById('statusModal');
+	                if (!modalElement) {
+	                    alert('Modal non trouvé dans le DOM!');
+	                    return;
+	                }
+	                
+	                // Essayer différentes méthodes
+	                if (typeof bootstrap !== 'undefined') {
+	                    const modalInstance = new bootstrap.Modal(modalElement);
+	                    modalInstance.show();
+	                    console.log('Modal ouvert via bootstrap.Modal');
+	                } else if (window.jQuery) {
+	                    $('#statusModal').modal('show');
+	                    console.log('Modal ouvert via jQuery');
+	                } else {
+	                    // Ouvrir manuellement
+	                    modalElement.classList.add('show');
+	                    modalElement.style.display = 'block';
+	                    document.body.classList.add('modal-open');
+	                    
+	                    // Ajouter un backdrop
+	                    const backdrop = document.createElement('div');
+	                    backdrop.className = 'modal-backdrop fade show';
+	                    document.body.appendChild(backdrop);
+	                    
+	                    console.log('Modal ouvert manuellement');
+	                }
+	            } catch (error) {
+	                console.error('Erreur avec le bouton de secours:', error);
+	                alert('Erreur: ' + error.message);
+	            }
+	        };
+	        document.body.appendChild(emergencyButton);
+	    });
+	</script>
+
+	<script>
+	// Ajouter des styles personnalisés pour les animations et transitions
+	let customStyle = document.createElement('style');
+	customStyle.textContent = `
+	    .edit-tva-badge {
+	        cursor: pointer;
+	        transition: all 0.2s ease;
+	        border: 2px solid transparent;
+	    }
+	    .edit-tva-badge:hover {
+	        transform: translateY(-2px);
+	        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+	    }
+	    .edit-tva-badge.active {
+	        border-color: #1e3a8a;
+	        background: linear-gradient(90deg, #1e3a8a, #3b82f6) !important;
+	        color: white !important;
+	    }
+	    .modal.fade .modal-dialog {
+	        transform: scale(0.8);
+	        transition: transform 0.3s ease-out;
+	    }
+	    .modal.show .modal-dialog {
+	        transform: scale(1);
+	    }
+	    .btn-primary:hover, .btn-info:hover {
+	        filter: brightness(110%);
+	        transform: translateY(-1px);
+	        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+	        transition: all 0.3s ease;
+	    }
+	    @keyframes fadeInUp {
+	        from {
+	            opacity: 0;
+	            transform: translate3d(0, 40px, 0);
+	        }
+	        to {
+	            opacity: 1;
+	            transform: translate3d(0, 0, 0);
+	        }
+	    }
+	    .toast {
+	        animation: fadeInUp 0.4s ease-out;
+	    }
+	    
+	    @keyframes pulse {
+	        0% {
+	            transform: scale(1);
+	        }
+	        50% {
+	            transform: scale(1.05);
+	        }
+	        100% {
+	            transform: scale(1);
+	        }
+	    }
+	    
+	    /* Styles pour les options de statut */
+	    .status-radio {
+	        margin: 0;
+	        padding: 0;
+	    }
+	    .status-label {
+	        cursor: pointer;
+	        transition: all 0.2s ease;
+	        border: 2px solid transparent;
+	        font-weight: 500;
+	        min-width: 110px;
+	        text-align: center;
+	    }
+	    .status-label:hover {
+	        transform: translateY(-2px);
+	        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+	    }
+	    .status-label.waiting {
+	        background-color: #fff9db;
+	        color: #b7791f;
+	    }
+	    .status-label.approved {
+	        background-color: #f0fff4;
+	        color: #2f855a;
+	    }
+	    .status-label.rejected {
+	        background-color: #fff5f5;
+	        color: #c53030;
+	    }
+	    .status-radio input:checked + .status-label.waiting {
+	        background-color: #ffd43b;
+	        color: #744210;
+	        border-color: #b7791f;
+	    }
+	    .status-radio input:checked + .status-label.approved {
+	        background-color: #48bb78;
+	        color: white;
+	        border-color: #2f855a;
+	    }
+	    .status-radio input:checked + .status-label.rejected {
+	        background-color: #f56565;
+	        color: white;
+	        border-color: #c53030;
+	    }
+	`;
+	document.head.appendChild(customStyle);
+	
+	// Cette section réutilise la fonction openStatusModal déjà définie en haut de la page
+	// La référence est conservée pour rétrocompatibilité
+	
+	// Enregistrer une référence à la fonction openStatusModal prioritaire
+	function openStatusModal(demandeId, etat) {
+		// Remplir les champs du modal
+		const statusDemandeId = document.getElementById('statusDemandeId');
+		const modalStatusDemandeId = document.getElementById('modalStatusDemandeId');
+		const newEtat = document.getElementById('newEtat');
+		
+		if (statusDemandeId) statusDemandeId.value = demandeId;
+		if (modalStatusDemandeId) modalStatusDemandeId.textContent = '#' + demandeId;
+		if (newEtat) newEtat.value = etat;
+		
+		// Récupérer l'élément modal et l'ouvrir
+		const modalElement = document.getElementById('statusModal');
+		if (modalElement && window.bootstrap && window.bootstrap.Modal) {
+			const modal = new window.bootstrap.Modal(modalElement);
+			modal.show();
+		}
+	};
+	// Fonction openStatusModal définie plus haut
+                            statusBtn.setAttribute('onclick', `console.log('Clic via onclick avec fonction globale pour demande ${demandeId}'); openStatusModal('${demandeId}', '${newStatus}'); return false;`);
+                            statusBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i>';
+                            actionsCell.appendChild(statusBtn);
+                        }
+                        
+                        // Ajouter le bouton Modifier (toujours présent)
+                        const editBtn = document.createElement('a');
+                        editBtn.href = `/demand_achat/${demandeId}/edit`;
+                        editBtn.className = 'btn btn-outline-secondary';
+                        editBtn.setAttribute('title', 'Modifier');
+                        editBtn.innerHTML = '<i class="bi bi-pencil"></i>';
+                        actionsCell.appendChild(editBtn);
+                        
+                        // Ajouter le bouton PDF (pour statuts Approuvée ou Rejetée)
+                        if (newStatus === 'Approuvée' || newStatus === 'Rejetée') {
+                            const pdfBtn = document.createElement('a');
+                            pdfBtn.href = `/demand_achat/pdf/${demandeId}`;
+                            pdfBtn.className = 'btn btn-outline-danger';
+                            pdfBtn.setAttribute('title', 'Exporter en PDF');
+                            pdfBtn.setAttribute('target', '_blank');
+                            pdfBtn.innerHTML = '<i class="bi bi-file-earmark-pdf"></i>';
+                            actionsCell.appendChild(pdfBtn);
+                        }
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Erreur lors du changement de statut:', error);
+                showToast('Erreur lors du changement de statut: ' + error.message, 'danger');
+            });
+            
+            return false; // Empêcher la soumission normale du formulaire
+        } catch (error) {
+            console.error('Erreur:', error);
+            showToast('Erreur: ' + error.message, 'danger');
+            return false;
         }
-    }
-    .toast {
-        animation: fadeInUp 0.4s ease-out;
-    }
+    };
     
-    @keyframes pulse {
-        0% {
-            transform: scale(1);
-        }
-        50% {
-            transform: scale(1.05);
-        }
-        100% {
-            transform: scale(1);
-        }
-    }
-`;
-document.head.appendChild(style);
+	// Fonction globale pour créer et afficher un toast
+function showToast(message, type = 'success') {
+    const toastEl = document.createElement('div');
+    toastEl.className = 'toast';
+    toastEl.setAttribute('role', 'alert');
+    toastEl.setAttribute('aria-live', 'assertive');
+    toastEl.setAttribute('aria-atomic', 'true');
+    
+    toastEl.innerHTML = `
+        <div class="toast align-items-center text-white bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i> ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('toastContainer').appendChild(toastEl);
+    const toast = new bootstrap.Toast(toastEl.querySelector('.toast'));
+    toast.show();
+    
+    // Supprimer le toast après qu'il se soit caché
+    toastEl.addEventListener('hidden.bs.toast', function() {
+        toastEl.remove();
+    });
+}
 
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM chargé, initialisation des scripts...');
+    
+    // Vérification que la fonction openStatusModal est bien disponible globalement
+    console.log('Vérification que la fonction openStatusModal est disponible:', typeof window.openStatusModal === 'function' ? 'OUI' : 'NON');
+    
+    // Attacher un événement au bouton de test via JS
+    const jsTestButton = document.getElementById('js-test-modal');
+    if (jsTestButton) {
+        jsTestButton.addEventListener('click', function() {
+            console.log('Bouton de test JS cliqué');
+            try {
+                if (typeof window.openStatusModal === 'function') {
+                    window.openStatusModal('TEST-JS', 'Rejetée');
+                } else {
+                    throw new Error('Fonction openStatusModal non disponible');
+                }
+            } catch (error) {
+                console.error('Erreur lors du test JS:', error);
+                alert('Erreur test JS: ' + error.message);
+            }
+        });
+        console.log('Gestionnaire d\'événement attaché au bouton de test JS');
+    }
+    
+    // Initialisation du modal de changement de statut
+    const statusModalElement = document.getElementById('statusModal');
+    if (statusModalElement && typeof bootstrap !== 'undefined') {
+        window.statusModal = new bootstrap.Modal(statusModalElement);
+    }
+    
     // Initialisation de DataTables pour un meilleur affichage de la table
     // Vérifier que jQuery et DataTables sont disponibles avant de les utiliser
     if (window.jQuery && typeof jQuery.fn.DataTable === 'function') {
         try {
             $('.table').DataTable({
-                language: {
-                    // Utiliser des valeurs statiques pour éviter les problèmes CORS
-                    processing: "Traitement en cours...",
-                    search: "Rechercher&nbsp;:",
-                    lengthMenu: "Afficher _MENU_ éléments",
-                    info: "Affichage de _START_ à _END_ sur _TOTAL_ éléments",
-                    infoEmpty: "Affichage de 0 à 0 sur 0 élément",
-                    infoFiltered: "(filtré de _MAX_ éléments au total)",
-                    infoPostFix: "",
-                    loadingRecords: "Chargement en cours...",
-                    zeroRecords: "Aucun élément à afficher",
-                    emptyTable: "Aucune donnée disponible",
-                    paginate: {
-                        first: "Premier",
-                        previous: "Précédent",
-                        next: "Suivant",
-                        last: "Dernier"
-                    },
-                    aria: {
-                        sortAscending: ": activer pour trier la colonne par ordre croissant",
-                        sortDescending: ": activer pour trier la colonne par ordre décroissant"
-                    }
-                },
-                pageLength: 10,
-                responsive: true,
-                drawCallback: function() {
-                    console.log('DataTable successfully initialized');
-                }
-            });
-        } catch (error) {
-            console.error('Error initializing DataTable:', error);
-        }
-    } else {
-        console.warn('DataTables not available - table will be displayed without enhanced functionality');
-    }
-    
-    // Gestion du modal de modification
-    const editButtons = document.querySelectorAll('.edit-btn');
-    const editModal = new bootstrap.Modal(document.getElementById('editModal'));
-    const editTvaBadges = document.querySelectorAll('.edit-tva-badge');
-    const editTvaInput = document.getElementById('editTva');
-    const saveEditBtn = document.getElementById('saveEditBtn');
-    const viewDetailsLink = document.getElementById('viewDetailsLink');
-    
-    // Gestion des boutons d'édition
-    editButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const demandeId = this.getAttribute('data-id');
-            document.getElementById('editDemandeId').value = demandeId;
-            document.getElementById('modalDemandeId').textContent = demandeId;
-            
-            // Mettre à jour le lien "Voir les détails" pour qu'il pointe vers la page de détails
-            viewDetailsLink.href = `/demande/achat/${demandeId}`;
-            
-            // Récupérer les données de la demande via l'API
-            fetch(`/demande/achat/${demandeId}/data`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Erreur lors de la récupération des données');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    // Préremplir le formulaire avec les données récupérées
-                    document.getElementById('editDate').value = data.date;
-                    document.getElementById('editEtat').value = data.etat;
-                    
-                    // Mettre à jour les badges TVA
-                    editTvaBadges.forEach(badge => {
-                        badge.classList.remove('active');
-                        if (parseInt(badge.getAttribute('data-tva')) === data.tva) {
-                            badge.classList.add('active');
-                            editTvaInput.value = data.tva;
-                        }
-                    });
-                    
-                    editModal.show();
-                })
-                .catch(error => {
-                    console.error('Erreur:', error);
-                    alert('Impossible de récupérer les informations de la demande.');
-                });
-        });
-    });
-    
-    // Gestion des badges TVA - avec support clavier et ARIA
-    editTvaBadges.forEach(badge => {
-        // Support pour le clic souris
-        badge.addEventListener('click', function() {
-            updateTvaBadgeSelection(this);
-        });
-        
-        // Support pour la navigation au clavier
-        badge.addEventListener('keydown', function(e) {
-            // Espace ou Entrée pour activer le badge
-            if (e.key === ' ' || e.key === 'Enter') {
-                e.preventDefault();
-                updateTvaBadgeSelection(this);
-            }
-        });
-    });
-    
-    // Fonction pour mettre à jour la sélection de badge TVA
-    function updateTvaBadgeSelection(selectedBadge) {
-        // Mettre à jour les classes visuelles
-        editTvaBadges.forEach(b => {
-            b.classList.remove('active');
-            b.setAttribute('aria-pressed', 'false');
-        });
-        selectedBadge.classList.add('active');
-        selectedBadge.setAttribute('aria-pressed', 'true');
-        
-        // Mettre à jour la valeur cachée
-        editTvaInput.value = selectedBadge.getAttribute('data-tva');
-        
-        // Feedback visuel
-        selectedBadge.style.animation = 'none';
-        setTimeout(() => {
-            selectedBadge.style.animation = 'pulse 0.3s';
-        }, 5);
-    }
-    
-    // Enregistrement des modifications avec validation améliorée
-    saveEditBtn.addEventListener('click', function() {
-        const demandeId = document.getElementById('editDemandeId').value;
-        const dateInput = document.getElementById('editDate');
-        const etatInput = document.getElementById('editEtat');
-        const date = dateInput.value;
-        const etat = etatInput.value;
-        const tva = parseInt(editTvaInput.value);
-        
-        // Validation côté client améliorée
-        let isValid = true;
-        let errorMessage = '';
-        
-        // Valider la date
-        if (!date) {
-            dateInput.classList.add('is-invalid');
-            isValid = false;
-            errorMessage = 'Veuillez saisir une date valide.';
-        } else {
-            dateInput.classList.remove('is-invalid');
-            dateInput.classList.add('is-valid');
-        }
-        
-        // Valider l'état
-        if (!etat) {
-            etatInput.classList.add('is-invalid');
-            isValid = false;
-            errorMessage = errorMessage ? errorMessage + '<br>Veuillez sélectionner un état.' : 'Veuillez sélectionner un état.';
-        } else {
-            etatInput.classList.remove('is-invalid');
-            etatInput.classList.add('is-valid');
-        }
-        
-        // Valider la TVA
-        if (isNaN(tva) || ![0, 7, 14, 20].includes(tva)) {
-            isValid = false;
-            errorMessage = errorMessage ? errorMessage + '<br>Veuillez sélectionner un taux de TVA valide.' : 'Veuillez sélectionner un taux de TVA valide.';
-        }
-        
-        // Afficher les erreurs si nécessaire
-        if (!isValid) {
-            // Créer une alerte d'erreur avec les messages
-            const alertEl = document.createElement('div');
-            alertEl.className = 'alert alert-danger alert-dismissible fade show mt-3';
-            alertEl.role = 'alert';
-            alertEl.innerHTML = `
-                <strong><i class="bi bi-exclamation-triangle-fill me-2"></i>Erreur de validation</strong>
-                <p class="mb-0 mt-1">${errorMessage}</p>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            `;
-            
-            // Trouver la zone où afficher l'alerte
-            const formEl = document.getElementById('editDemandeForm');
-            formEl.insertBefore(alertEl, formEl.firstChild);
-            
-            // Supprimer automatiquement l'alerte après 5 secondes
-            setTimeout(() => {
-                alertEl.remove();
-            }, 5000);
-            
-            return;
-        }
-        
-        // Désactiver le bouton pendant la soumission
-        saveEditBtn.disabled = true;
-        saveEditBtn.innerHTML = '<i class="spinner-border spinner-border-sm me-1"></i> Traitement en cours...';
-        
-        const formData = {
-            date: date,
-            etat: etat,
-            tva: tva
-        };
-        
-        // Envoyer les modifications à l'API
-        fetch(`/demande/achat/${demandeId}/edit`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(formData)
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Erreur lors de la mise à jour');
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                // Créer un toast de notification au lieu d'une alerte
-                const toastEl = document.createElement('div');
-                toastEl.className = 'position-fixed bottom-0 end-0 p-3';
-                toastEl.style.zIndex = '5';
-                toastEl.innerHTML = `
-                    <div class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
-                        <div class="d-flex">
-                            <div class="toast-body">
-                                <i class="bi bi-check-circle me-2"></i> Demande modifiée avec succès!
-                            </div>
-                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                        </div>
-                    </div>
-                `;
-                document.body.appendChild(toastEl);
-                
-                const toast = new bootstrap.Toast(toastEl.querySelector('.toast'));
-                toast.show();
-                
-                // Recharger la page après un délai
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1500);
-                
-                // Fermer le modal
-                editModal.hide();
-            } else {
-                alert('Erreur: ' + data.message);
-                // Réinitialiser le bouton
-                saveEditBtn.disabled = false;
-                saveEditBtn.innerHTML = '<i class="bi bi-save me-1"></i> Enregistrer';
-            }
-        })
-        .catch(error => {
-            console.error('Erreur:', error);
-            alert('Une erreur est survenue lors de la mise à jour.');
-            
-            // Réinitialiser le bouton
-            saveEditBtn.disabled = false;
-            saveEditBtn.innerHTML = '<i class="bi bi-save me-1"></i> Enregistrer';
-        });
-    });
-    
-    // Gestion du modal de changement de statut
+	                language: {
+	                    // Utiliser des valeurs statiques pour éviter les problèmes CORS
+	                    processing: "Traitement en cours...",
+	                    search: "Rechercher&nbsp;:",
+	                    lengthMenu: "Afficher _MENU_ éléments",
+	                    info: "Affichage de _START_ à _END_ sur _TOTAL_ éléments",
+	                    infoEmpty: "Affichage de 0 à 0 sur 0 élément",
+	                    infoFiltered: "(filtré de _MAX_ éléments au total)",
+	                    infoPostFix: "",
+	                    loadingRecords: "Chargement en cours...",
+	                    zeroRecords: "Aucun élément à afficher",
+	                    emptyTable: "Aucune donnée disponible",
+	                    paginate: {
+	                        first: "Premier",
+	                        previous: "Précédent",
+	                        next: "Suivant",
+	                        last: "Dernier"
+	                    },
+	                    aria: {
+	                        sortAscending: ": activer pour trier la colonne par ordre croissant",
+	                        sortDescending: ": activer pour trier la colonne par ordre décroissant"
+	                    }
+	                },
+	                pageLength: 10,
+	                responsive: true,
+	                drawCallback: function() {
+	                    console.log('DataTable successfully initialized');
+	                }
+	            });
+	        } catch (error) {
+	            console.error('Error initializing DataTable:', error);
+	        }
+	    } else {
+	        console.warn('DataTables not available - table will be displayed without enhanced functionality');
+	    }
+	    
+	    // Gestion du modal de modification
+	    const editButtons = document.querySelectorAll('.edit-btn');
+	    const editModal = new bootstrap.Modal(document.getElementById('editModal'));
+	    const editTvaBadges = document.querySelectorAll('.edit-tva-badge');
+	    const editTvaInput = document.getElementById('editTva');
+	    const saveEditBtn = document.getElementById('saveEditBtn');
+	    const viewDetailsLink = document.getElementById('viewDetailsLink');
+	    
+	    // Gestion des boutons d'édition
+	    editButtons.forEach(button => {
+	        button.addEventListener('click', function() {
+	            const demandeId = this.getAttribute('data-id');
+	            document.getElementById('editDemandeId').value = demandeId;
+	            document.getElementById('modalDemandeId').textContent = demandeId;
+	            
+	            // Mettre à jour le lien "Voir les détails" pour qu'il pointe vers la page de détails
+	            viewDetailsLink.href = `/demande/achat/${demandeId}`;
+	            
+	            // Récupérer les données de la demande via l'API
+	            fetch(`/demande/achat/${demandeId}/data`)
+	                .then(response => {
+	                    if (!response.ok) {
+	                        throw new Error('Erreur lors de la récupération des données');
+	                    }
+	                    return response.json();
+	                })
+	                .then(data => {
+	                    // Préremplir le formulaire avec les données récupérées
+	                    document.getElementById('editDate').value = data.date;
+	                    document.getElementById('editEtat').value = data.etat;
+	                    
+	                    // Mettre à jour les badges TVA
+	                    editTvaBadges.forEach(badge => {
+	                        badge.classList.remove('active');
+	                        if (parseInt(badge.getAttribute('data-tva')) === data.tva) {
+	                            badge.classList.add('active');
+	                            editTvaInput.value = data.tva;
+	                        }
+	                    });
+	                    
+	                    editModal.show();
+	                })
+	                .catch(error => {
+	                    console.error('Erreur:', error);
+	                    alert('Impossible de récupérer les informations de la demande.');
+	                });
+	        });
+	    });
+	    
+	    // Gestion des badges TVA - avec support clavier et ARIA
+	    editTvaBadges.forEach(badge => {
+	        // Support pour le clic souris
+	        badge.addEventListener('click', function() {
+	            updateTvaBadgeSelection(this);
+	        });
+	        
+	        // Support pour la navigation au clavier
+	        badge.addEventListener('keydown', function(e) {
+	            // Espace ou Entrée pour activer le badge
+	            if (e.key === ' ' || e.key === 'Enter') {
+	                e.preventDefault();
+	                updateTvaBadgeSelection(this);
+	            }
+	        });
+	    });
+	    
+	    // Fonction pour mettre à jour la sélection de badge TVA
+	    function updateTvaBadgeSelection(selectedBadge) {
+	        // Mettre à jour les classes visuelles
+	        editTvaBadges.forEach(b => {
+	            b.classList.remove('active');
+	            b.setAttribute('aria-pressed', 'false');
+	        });
+	        selectedBadge.classList.add('active');
+	        selectedBadge.setAttribute('aria-pressed', 'true');
+	        
+	        // Mettre à jour la valeur cachée
+	        editTvaInput.value = selectedBadge.getAttribute('data-tva');
+	        
+	        // Feedback visuel
+	        selectedBadge.style.animation = 'none';
+	        setTimeout(() => {
+	            selectedBadge.style.animation = 'pulse 0.3s';
+	        }, 5);
+	    }
+	    
+	    // Enregistrement des modifications avec validation améliorée
+	    saveEditBtn.addEventListener('click', function() {
+	        const demandeId = document.getElementById('editDemandeId').value;
+	        const dateInput = document.getElementById('editDate');
+	        const etatInput = document.getElementById('editEtat');
+	        const date = dateInput.value;
+	        const etat = etatInput.value;
+	        const tva = parseInt(editTvaInput.value);
+	        
+	        // Validation côté client améliorée
+	        let isValid = true;
+	        let errorMessage = '';
+	        
+	        // Valider la date
+	        if (!date) {
+	            dateInput.classList.add('is-invalid');
+	            isValid = false;
+	            errorMessage = 'Veuillez saisir une date valide.';
+	        } else {
+	            dateInput.classList.remove('is-invalid');
+	            dateInput.classList.add('is-valid');
+	        }
+	        
+	        // Valider l'état
+	        if (!etat) {
+	            etatInput.classList.add('is-invalid');
+	            isValid = false;
+	            errorMessage = errorMessage ? errorMessage + '<br>Veuillez sélectionner un état.' : 'Veuillez sélectionner un état.';
+	        } else {
+	            etatInput.classList.remove('is-invalid');
+	            etatInput.classList.add('is-valid');
+	        }
+	        
+	        // Valider la TVA
+	        if (isNaN(tva) || ![0, 7, 14, 20].includes(tva)) {
+	            isValid = false;
+	            errorMessage = errorMessage ? errorMessage + '<br>Veuillez sélectionner un taux de TVA valide.' : 'Veuillez sélectionner un taux de TVA valide.';
+	        }
+	        
+	        // Afficher les erreurs si nécessaire
+	        if (!isValid) {
+	            // Créer une alerte d'erreur avec les messages
+	            const alertEl = document.createElement('div');
+	            alertEl.className = 'alert alert-danger alert-dismissible fade show mt-3';
+	            alertEl.role = 'alert';
+	            alertEl.innerHTML = `
+	                <strong><i class="bi bi-exclamation-triangle-fill me-2"></i>Erreur de validation</strong>
+	                <p class="mb-0 mt-1">${errorMessage}</p>
+	                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+	            `;
+	            
+	            // Trouver la zone où afficher l'alerte
+	            const formEl = document.getElementById('editDemandeForm');
+	            formEl.insertBefore(alertEl, formEl.firstChild);
+	            
+	            // Supprimer automatiquement l'alerte après 5 secondes
+	            setTimeout(() => {
+	                alertEl.remove();
+	            }, 5000);
+	            
+	            return;
+	        }
+	        
+	        // Désactiver le bouton pendant la soumission
+	        saveEditBtn.disabled = true;
+	        saveEditBtn.innerHTML = '<i class="spinner-border spinner-border-sm me-1"></i> Traitement en cours...';
+	        
+	        const formData = {
+	            date: date,
+	            etat: etat,
+	            tva: tva
+	        };
+	        
+	        // Envoyer les modifications à l'API
+	        fetch(`/demande/achat/${demandeId}/edit`, {
+	            method: 'POST',
+	            headers: {
+	                'Content-Type': 'application/json',
+	            },
+	            body: JSON.stringify(formData)
+	        })
+	        .then(response => {
+	            if (!response.ok) {
+	                throw new Error('Erreur lors de la mise à jour');
+	            }
+	            return response.json();
+	        })
+	        .then(data => {
+	            if (data.success) {
+	                // Créer un toast de notification au lieu d'une alerte
+	                const toastEl = document.createElement('div');
+	                toastEl.className = 'position-fixed bottom-0 end-0 p-3';
+	                toastEl.style.zIndex = '5';
+	                toastEl.innerHTML = `
+	                    <div class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+	                        <div class="d-flex">
+	                            <div class="toast-body">
+	                                <i class="bi bi-check-circle me-2"></i> Demande modifiée avec succès!
+	                            </div>
+	                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+	                        </div>
+	                    </div>
+	                `;
+	                document.body.appendChild(toastEl);
+	                
+	                const toast = new bootstrap.Toast(toastEl.querySelector('.toast'));
+	                toast.show();
+	                
+	                // Recharger la page après un délai
+	                setTimeout(() => {
+	                    window.location.reload();
+	                }, 1500);
+	                
+	                // Fermer le modal
+	                editModal.hide();
+	            } else {
+	                alert('Erreur: ' + data.message);
+	                // Réinitialiser le bouton
+	                saveEditBtn.disabled = false;
+	                saveEditBtn.innerHTML = '<i class="bi bi-save me-1"></i> Enregistrer';
+	            }
+	        })
+	        .catch(error => {
+	            console.error('Erreur:', error);
+	            alert('Une erreur est survenue lors de la mise à jour.');
+	            
+	            // Réinitialiser le bouton
+	            saveEditBtn.disabled = false;
+	            saveEditBtn.innerHTML = '<i class="bi bi-save me-1"></i> Enregistrer';
+	        });
+	    });
+	       // Gestion du modal de changement de statut
+    console.log('=== DIAGNOSTIC MODAL: Initialisation du gestionnaire de changement de statut ===');
     const statusButtons = document.querySelectorAll('.status-btn');
-    const statusModal = new bootstrap.Modal(document.getElementById('statusModal'));
+    console.log(`Nombre de boutons de statut trouvés: ${statusButtons.length}`);
+    
+    // Vérifions la structure des boutons de statut en détail
+    statusButtons.forEach((btn, index) => {
+        console.log(`Bouton #${index} - classe: ${btn.className}, data-id: ${btn.getAttribute('data-id')}, data-etat: ${btn.getAttribute('data-etat')}`);
+        console.log(`Bouton #${index} - HTML:`, btn.outerHTML);
+        console.log(`Bouton #${index} - Parent:`, btn.parentElement ? btn.parentElement.tagName : 'Aucun');
+    });
+    
+    const statusModalElement = document.getElementById('statusModal');
+    console.log('Modal de statut trouvé:', statusModalElement ? 'Oui' : 'Non');
+    
+    if (statusModalElement) {
+        console.log('Structure du modal:', statusModalElement.outerHTML);
+        console.log('ID du modal:', statusModalElement.id);
+        console.log('Classes du modal:', statusModalElement.className);
+        console.log('Attributs data-bs-* du modal:', {
+            backdrop: statusModalElement.getAttribute('data-bs-backdrop'),
+            keyboard: statusModalElement.getAttribute('data-bs-keyboard')
+        });
+    } else {
+        console.error("ERREUR CRITIQUE: Élément modal de statut non trouvé dans le DOM!");
+        showToast('Erreur: Modal de statut non initialisé', 'danger');
+    }
+    
+    // Vérifier si Bootstrap est disponible et sa version
+    console.log('=== DIAGNOSTIC BOOTSTRAP ===');
+    console.log('window.bootstrap:', typeof window.bootstrap);
+    
+    if (typeof bootstrap !== 'undefined') {
+        // Tenter d'accéder à la version de Bootstrap s'il est disponible
+        console.log('Bootstrap version:', bootstrap.Tooltip?.VERSION || bootstrap.Modal?.VERSION || 'Version non détectable');
+        console.log('bootstrap.Modal disponible:', typeof bootstrap.Modal === 'function' ? 'Oui' : 'Non');
+        console.log('bootstrap.Modal.prototype:', bootstrap.Modal?.prototype ? Object.keys(bootstrap.Modal.prototype) : 'Non disponible');
+    } else {
+        console.error("ERREUR CRITIQUE: Bootstrap n'est pas disponible dans la page!");
+        
+        // Vérifier si jQuery est disponible comme alternative
+        console.log('jQuery disponible:', typeof jQuery !== 'undefined' ? 'Oui' : 'Non');
+        if (typeof jQuery !== 'undefined') {
+            console.log('Version de jQuery:', jQuery.fn.jquery);
+            console.log('jQuery.fn.modal disponible:', typeof jQuery.fn.modal === 'function' ? 'Oui' : 'Non');
+        }
+    }
+    
+    let statusModal = null;
+    try {
+        console.log('Tentative de création du modal Bootstrap avec l\'élément:', statusModalElement);
+        
+        // Vérifier que nous avons un élément DOM valide avant de créer le modal
+        if (statusModalElement && typeof bootstrap !== 'undefined' && typeof bootstrap.Modal === 'function') {
+            statusModal = new bootstrap.Modal(statusModalElement, {
+                backdrop: true,
+                keyboard: true,
+                focus: true
+            });
+            console.log('Modal de statut initialisé avec succès:', statusModal);
+        } else {
+            throw new Error('Impossible de créer le modal: Bootstrap ou élément DOM manquant');
+        }
+    } catch (error) {
+        console.error("Erreur lors de l'initialisation du modal:", error);
+        console.error("Détails de l'erreur:", {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+        });
+        showToast('Erreur lors de l\'initialisation du modal de statut: ' + error.message, 'danger');
+    }
+    
+    // Récupérer et vérifier tous les éléments nécessaires pour le formulaire de statut
+    console.log('=== DIAGNOSTIC DES ÉLÉMENTS DU FORMULAIRE ===');
     const statusDemandeId = document.getElementById('statusDemandeId');
+    const modalStatusDemandeId = document.getElementById('modalStatusDemandeId');
     const newEtat = document.getElementById('newEtat');
     const saveStatusBtn = document.getElementById('saveStatusBtn');
-
+    const statusRadios = document.querySelectorAll('input[name="statusOption"]');
+    
+    // Vérification détaillée des éléments du formulaire
+    [
+        { name: 'statusDemandeId', element: statusDemandeId },
+        { name: 'modalStatusDemandeId', element: modalStatusDemandeId },
+        { name: 'newEtat', element: newEtat },
+        { name: 'saveStatusBtn', element: saveStatusBtn }
+    ].forEach(item => {
+        if (item.element) {
+            console.log(`Élément ${item.name} trouvé:`, {
+                id: item.element.id,
+                tagName: item.element.tagName,
+                type: item.element.type,
+                value: item.element.value || item.element.textContent,
+                parent: item.element.parentElement ? item.element.parentElement.tagName : 'Aucun'
+            });
+        } else {
+            console.error(`ERREUR: Élément ${item.name} NON TROUVÉ!`);
+        }
+    });
+    
+    console.log(`Boutons radio de statut trouvés: ${statusRadios.length}`);
+    statusRadios.forEach((radio, i) => {
+        console.log(`Radio #${i}:`, {
+            id: radio.id,
+            value: radio.value,
+            checked: radio.checked
+        });
+    });
+	
+	    // Synchroniser les radios avec le select caché
+	    statusRadios.forEach(radio => {
+	        radio.addEventListener('change', function() {
+	            if (this.checked) {
+	                newEtat.value = this.value;
+	                console.log(`Status changed to: ${this.value}`);
+	            }
+	        });
+	    });
+    // Attacher des gestionnaires d'événements aux boutons de statut
     statusButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
-            statusDemandeId.value = this.getAttribute('data-id');
-            newEtat.value = this.getAttribute('data-etat');
-            statusModal.show();
-        });
-    });
-
-    saveStatusBtn.addEventListener('click', function() {
-        const demandeId = statusDemandeId.value;
-        const etat = newEtat.value;
-        saveStatusBtn.disabled = true;
-        saveStatusBtn.innerHTML = '<i class="spinner-border spinner-border-sm me-1"></i> Traitement...';
-        fetch(`/demande/achat/${demandeId}/status`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ etat })
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                window.location.reload();
+        console.log(`Ajout d'un écouteur d'événement click au bouton status-btn pour demande ${btn.getAttribute('data-id')}`);
+        
+        // Vérifier si le bouton est correctement dans le DOM
+        const isInDOM = document.body.contains(btn);
+        console.log(`Bouton pour demande ${btn.getAttribute('data-id')} est dans le DOM: ${isInDOM ? 'Oui' : 'Non'}`);
+        
+        // Ajouter un gestionnaire direct au clic
+        btn.addEventListener('click', function(event) {
+            // Ajouter une bordure temporaire pour voir si l'élément est bien celui qui reçoit le clic
+            const originalBorder = this.style.border;
+            this.style.border = '3px solid red';
+            setTimeout(() => {
+                this.style.border = originalBorder;
+            }, 1000);
+            
+            event.preventDefault(); // Empêcher le comportement par défaut du bouton
+            event.stopPropagation(); // Empêcher la propagation de l'événement
+            
+            console.log('=== DIAGNOSTIC CLICK: Bouton statut cliqué ===');
+            console.log('Timestamp:', new Date().toISOString());
+            console.log('event.target:', event.target);
+            console.log('event.currentTarget:', event.currentTarget);
+            console.log('this:', this);
+            
+            // Vérifier que l'événement n'est pas bloqué
+            console.log('event.defaultPrevented:', event.defaultPrevented);
+            console.log('event.cancelBubble:', event.cancelBubble);
+            
+            const currentState = this.getAttribute('data-etat');
+            const demandeId = this.getAttribute('data-id');
+            
+            console.log(`Clic sur le bouton statut pour demande ${demandeId}, état actuel: ${currentState}`);
+            
+            // Vérifier l'état des éléments de formulaire au moment du clic
+            console.log('=== DIAGNOSTIC ÉLÉMENTS AU MOMENT DU CLIC ===');
+            
+            // Définir l'ID de la demande dans le champ caché et dans le titre du modal
+            if (statusDemandeId) {
+                statusDemandeId.value = demandeId;
+                console.log(`statusDemandeId défini à ${demandeId} (${statusDemandeId.value === demandeId ? 'succès' : 'échec'})`);
             } else {
-                alert('Erreur: ' + data.message);
+                console.error("ERREUR CRITIQUE: statusDemandeId est null ou non défini!");
+                showToast('Erreur: Champ ID manquant', 'danger');
+                return; // Sortir si l'élément est manquant
             }
-        })
-        .catch(() => alert('Erreur serveur'))
-        .finally(() => {
-            saveStatusBtn.disabled = false;
-            saveStatusBtn.innerHTML = '<i class="bi bi-save me-1"></i>Enregistrer';
+            
+            if (modalStatusDemandeId) {
+                modalStatusDemandeId.textContent = demandeId;
+                console.log(`modalStatusDemandeId défini à ${demandeId}`);
+            } else {
+                console.error("ERREUR CRITIQUE: modalStatusDemandeId est null ou non défini!");
+            }
+            
+            // Mettre à jour la sélection du statut
+            if (currentState) {
+                // Mettre à jour le select caché
+                if (newEtat) {
+                    newEtat.value = currentState;
+                    console.log(`Select newEtat défini à ${currentState} (${newEtat.value === currentState ? 'succès' : 'échec'})`);
+                } else {
+                    console.error("ERREUR: newEtat est null ou non défini!");
+                }
+                
+                // Mettre à jour les radios
+                let radioFound = false;
+                statusRadios.forEach(radio => {
+                    if (radio.value === currentState) {
+                        radio.checked = true;
+                        radioFound = true;
+                        console.log(`Radio pour l'état ${currentState} coché (${radio.checked ? 'succès' : 'échec'})`);
+                    } else {
+                        radio.checked = false;
+                    }
+                });
+                
+                if (!radioFound) {
+                    console.warn(`ATTENTION: Aucun bouton radio trouvé pour l'état ${currentState}`);
+                }
+            }
+            
+            // Vérifier à nouveau l'état du modal au moment du clic
+            console.log('=== DIAGNOSTIC MODAL AU MOMENT DU CLIC ===');
+            console.log('statusModalElement existe:', statusModalElement ? 'Oui' : 'Non');
+            console.log('statusModal existe:', statusModal ? 'Oui' : 'Non');
+            
+            // Tester si le modal existe bien
+            if (!statusModalElement) {
+                console.error("ERREUR CRITIQUE: Modal non trouvé dans le DOM au moment du clic!");
+                showToast('Erreur: Modal de statut non trouvé', 'danger');
+                return;
+            }
+            
+            // Vérifier la classe actuelle du modal (s'il est déjà ouvert)
+            console.log('Classes actuelles du modal:', statusModalElement.className);
+            console.log('Le modal est-il déjà affiché?', statusModalElement.classList.contains('show'));
+            
+            // Recréer le modal si nécessaire
+            if (!statusModal) {
+                console.warn("L'instance bootstrap.Modal n'existe pas, tentative de recréation...");
+                
+                try {
+                    if (typeof bootstrap !== 'undefined' && typeof bootstrap.Modal === 'function') {
+                        statusModal = new bootstrap.Modal(statusModalElement);
+                        console.log('Modal recréé avec succès:', statusModal);
+                    } else {
+                        throw new Error('Bootstrap non disponible pour recréer le modal');
+                    }
+                } catch (recreateError) {
+                    console.error("Erreur lors de la recréation du modal:", recreateError);
+                    showToast('Erreur: Modal non initialisable', 'danger');
+                }
+            }
+            
+            // Tenter d'ouvrir le modal avec plusieurs méthodes
+            console.log('=== TENTATIVES D\'OUVERTURE DU MODAL ===');
+            
+            // Méthode 1: Bootstrap natif avec try/catch détaillé
+            try {
+                console.log('Méthode 1: Tentative avec bootstrap.Modal.show()');
+                if (statusModal && typeof statusModal.show === 'function') {
+                    console.log('Type de statusModal:', typeof statusModal);
+                    console.log('Méthodes disponibles:', Object.keys(statusModal));
+                    statusModal.show();
+                    console.log('Modal affiché avec succès via bootstrap.Modal.show()');
+                    return; // Sortir si réussi
+                } else {
+                    console.error("ERREUR: statusModal n'a pas de méthode show()");
+                }
+            } catch (error) {
+                console.error("Erreur lors de l'ouverture du modal avec bootstrap.Modal.show():", error);
+                console.error("Stack trace:", error.stack);
+            }
+            
+            // Méthode 2: jQuery (si disponible)
+            try {
+                console.log('Méthode 2: Tentative avec jQuery');
+                if (window.jQuery && $('#statusModal').length > 0) {
+                    console.log('jQuery disponible, tentative avec .modal("show")');
+                    $('#statusModal').modal('show');
+                    console.log('Modal affiché avec succès via jQuery');
+                    return; // Sortir si réussi
+                } else {
+                    console.error('jQuery non disponible ou modal non trouvé par jQuery');
+                }
+            } catch (jqError) {
+                console.error("Erreur avec jQuery:", jqError);
+            }
+            
+            // Méthode 3: Manipulation directe du DOM (dernier recours)
+            try {
+                console.log('Méthode 3: Manipulation directe du DOM');
+                statusModalElement.classList.add('show');
+                statusModalElement.style.display = 'block';
+                statusModalElement.setAttribute('aria-modal', 'true');
+                statusModalElement.setAttribute('role', 'dialog');
+                statusModalElement.removeAttribute('aria-hidden');
+                
+                // Créer un backdrop manuellement
+                let backdropElement = document.querySelector('.modal-backdrop');
+                if (!backdropElement) {
+                    backdropElement = document.createElement('div');
+                    backdropElement.className = 'modal-backdrop fade show';
+                    document.body.appendChild(backdropElement);
+                }
+                
+                document.body.classList.add('modal-open');
+                
+                console.log('Modal affiché manuellement via DOM');
+                
+                // Attacher un gestionnaire au bouton de fermeture dans le modal
+                const closeButtons = statusModalElement.querySelectorAll('[data-bs-dismiss="modal"]');
+                closeButtons.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        statusModalElement.classList.remove('show');
+                        statusModalElement.style.display = 'none';
+                        statusModalElement.setAttribute('aria-hidden', 'true');
+                        statusModalElement.removeAttribute('aria-modal');
+                        statusModalElement.removeAttribute('role');
+                        
+                        if (backdropElement) backdropElement.remove();
+                        document.body.classList.remove('modal-open');
+                    });
+                });
+            } catch (domError) {
+                console.error("Erreur lors de la manipulation directe du DOM:", domError);
+                showToast("Impossible d'ouvrir le modal: " + domError.message, 'danger');
+            }
         });
     });
-});
-</script>
+    // Aucun code inutile ici
+    });
+	    
+	    // Gestion de l'exportation PDF
+	    console.log('Initialisation des boutons PDF');
+	    const exportPdfButtons = document.querySelectorAll('.export-pdf-btn');
+	    console.log(`${exportPdfButtons.length} boutons d'export PDF trouvés`);
+	    
+	    exportPdfButtons.forEach(btn => {
+	        btn.addEventListener('click', function(e) {
+	            e.preventDefault();
+	            console.log('Bouton export PDF cliqué');
+	            const demandeId = this.getAttribute('data-id');
+	            console.log(`ID de la demande: ${demandeId}`);
+	            const exportButton = this;
+	            
+	            // Changer l'apparence du bouton pendant le chargement
+	            exportButton.disabled = true;
+	            exportButton.innerHTML = '<i class="spinner-border spinner-border-sm"></i>';
+	            
+	            // Afficher un toast de chargement
+	            showToast('Génération du PDF en cours...', 'info');
+	            
+	            // Utiliser la route dédiée pour la génération PDF côté serveur
+	            console.log(`Génération du PDF côté serveur pour la demande ${demandeId}`);
+	            
+	            // Ouvrir le PDF dans un nouvel onglet
+	            const pdfUrl = `/demande/achat/${demandeId}/pdf`;
+	            const newTab = window.open(pdfUrl, '_blank');
+	            
+	            // Si le nouvel onglet n'a pas pu être ouvert (bloqué par popup), télécharger le fichier
+	            if (!newTab || newTab.closed || typeof newTab.closed === 'undefined') {
+	                console.log('Ouverture dans un nouvel onglet bloquée, téléchargement direct');
+	                
+	                // Créer un lien invisible et simuler un clic
+	                const link = document.createElement('a');
+	                link.href = pdfUrl;
+	                link.download = `demande_achat_${demandeId}.pdf`;
+	                document.body.appendChild(link);
+	                link.click();
+	                document.body.removeChild(link);
+	            }
+	            
+	            // Réinitialiser le bouton après un court délai
+	            setTimeout(() => {
+	                exportButton.disabled = false;
+	                exportButton.innerHTML = '<i class="bi bi-file-earmark-pdf"></i>';
+	                
+	                // Afficher un message de confirmation
+	                showToast('PDF généré avec succès!', 'success');
+	            }, 1500);
+	        });
+	    });
+	      // La génération PDF est entièrement gérée côté serveur via la route /demande/achat/{id}/pdf
+	});
+	</script>
+{% endblock %}
+
+{% block page_footer %}
+	<!-- Boutons de test pour vérifier l'accessibilité globale de la fonction openStatusModal -->
+
 {% endblock %}
