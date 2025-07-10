@@ -102,7 +102,7 @@
             <div class="dropdown me-3" id="chantier-dropdown">
                 <button class="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                     {% if app.session.get('selected_chantier') %}
-                        {{ chantier_nom|default('Aucun chantier sélectionné') }}
+                        {{ app.session.get('selected_chantier').nom|default('Aucun chantier sélectionné') }}
                     {% else %}
                         Sélectionner un chantier
                     {% endif %}
@@ -120,39 +120,7 @@
 
     <div class="content">
         {% block body %}
-            <div class="container mt-4">
-                <h2>Liste des Chantiers</h2>
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Nom</th>
-                            <th>Type</th>
-                            <th>Responsable</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for chantier in chantiers %}
-                            <tr>
-                                <td>{{ chantier.nom }}</td>
-                                <td>{{ chantier.type }}</td>
-                                <td>{{ chantier.responsable }}</td>
-                                <td>
-                                    <a href="{{ path('app_chantier_show', {'id': chantier.id}) }}" class="btn btn-sm btn-info">Voir</a>
-                                    <a href="{{ path('app_chantier_edit', {'id': chantier.id}) }}" class="btn btn-sm btn-warning">Modifier</a>
-                                    {% if is_granted('ROLE_ADMIN') %}
-                                        <a href="{{ path('app_chantier_delete', {'id': chantier.id}) }}" class="btn btn-sm btn-danger" onclick="return confirm('Voulez-vous vraiment supprimer ce chantier ?')">Supprimer</a>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                        {% else %}
-                            <tr>
-                                <td colspan="4">Aucun chantier trouvé</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+       
         {% endblock %}
     </div>
 
