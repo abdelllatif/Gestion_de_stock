@@ -34,40 +34,46 @@ final class DemandAchatController extends AbstractController
     {
         if ($request->isMethod('POST')) {
             try {
-                $data = json_decode($request->getContent(), true);
+                $requestData = json_decode($request->getContent(), true);
                 
-                if (!isset($data['tva'])) {
+                if (!isset($requestData['tva'])) {
                     return $this->json(['success' => false, 'message' => 'Données incomplètes: TVA manquante'], 400);
                 }
                 
-                if ((empty($data['existingArticles']) || count($data['existingArticles']) === 0) && 
-                    (empty($data['newArticles']) || count($data['newArticles']) === 0)) {
+                if ((empty($requestData['existingArticles']) || count($requestData['existingArticles']) === 0) && 
+                    (empty($requestData['newArticles']) || count($requestData['newArticles']) === 0)) {
                     return $this->json(['success' => false, 'message' => 'Aucun article dans la demande'], 400);
                 }
                 
                 $demandeAchat = new DemandeAchat();
                 $demandeAchat->setDate(new \DateTime('now'));
                 $demandeAchat->setEtat('En attente');
-                $demandeAchat->setTva($data['tva']);
+                $demandeAchat->setTva($requestData['tva']);
+                
+                // Associer l'utilisateur courant à la demande
+                $user = $this->getUser();
+                if ($user) {
+                    $demandeAchat->setUilisateur($user);
+                }
                 
                 $montantHT = 0;
                 
-                if (!empty($data['newArticles'])) {
-                    foreach ($data['newArticles'] as $newArticleData) {
+                if (!empty($requestData['newArticles'])) {
+                    foreach ($requestData['newArticles'] as $newArticleData) {
 
-                        $data = new Article();
-                        $data->setReference($newArticleData['reference']);
-                        $data->setNom($newArticleData['nom']);
-                        $data->setMarque($newArticleData['marque'] ?? '');
-                        $data->setUnite($newArticleData['unite'] ?? 'Unité');
-                        $data->setType($newArticleData['type'] ?? 'Consommable');
-                        $data->setDescription($newArticleData['description'] ?? '');
-                        $data->setPrix($newArticleData['prix']);
+                        $article = new Article();
+                        $article->setReference($newArticleData['reference']);
+                        $article->setNom($newArticleData['nom']);
+                        $article->setMarque($newArticleData['marque'] ?? '');
+                        $article->setUnite($newArticleData['unite'] ?? 'Unité');
+                        $article->setType($newArticleData['type'] ?? 'Consommable');
+                        $article->setDescription($newArticleData['description'] ?? '');
+                        $article->setPrix($newArticleData['prix']);
                         
-                        $entityManager->persist($data);
+                        $entityManager->persist($article);
                         
                         $demandeDetail = new DemandeDetails();
-                        $demandeDetail->setArticle($data);
+                        $demandeDetail->setArticle($article);
                         $demandeDetail->setQuantite($newArticleData['quantite']);
                         $demandeDetail->setPrixUnitaire($newArticleData['prix']);
                         $demandeDetail->setFournisseur($newArticleData['fournisseur'] ?? '');
@@ -83,17 +89,17 @@ final class DemandAchatController extends AbstractController
                 }
                 
 
-                if (!empty($data['existingArticles'])) {
-                    foreach ($data['existingArticles'] as $existingArticleData) {
-                        $data = $articleRepository->find($existingArticleData['articleId']);
+                if (!empty($requestData['existingArticles'])) {
+                    foreach ($requestData['existingArticles'] as $existingArticleData) {
+                        $article = $articleRepository->find($existingArticleData['articleId']);
                         
-                        if (!$data) {
+                        if (!$article) {
                             continue;
                         }
                         
                         // Créer les détails de demande
                         $demandeDetail = new DemandeDetails();
-                        $demandeDetail->setArticle($data);
+                        $demandeDetail->setArticle($article);
                         $demandeDetail->setQuantite($existingArticleData['quantite']);
                         $demandeDetail->setPrixUnitaire($existingArticleData['prixUnitaire']);
                         $demandeDetail->setFournisseur($existingArticleData['fournisseur'] ?? '');
@@ -112,7 +118,7 @@ final class DemandAchatController extends AbstractController
                 
                 // Calculer les montants
                 $demandeAchat->setMontantHT($montantHT);
-                $montantTTC = $montantHT * (1 + ($data['tva'] / 100));
+                $montantTTC = $montantHT * (1 + ($requestData['tva'] / 100));
                 $demandeAchat->setMontantTTC($montantTTC);
                 
                 // Persister la demande
@@ -126,9 +132,13 @@ final class DemandAchatController extends AbstractController
                 ]);
                 
             } catch (\Exception $e) {
+                // Log the error for server-side debugging
+                error_log('Error creating purchase request: ' . $e->getMessage() . ' - ' . $e->getTraceAsString());
+                
                 return $this->json([
                     'success' => false, 
-                    'message' => 'Erreur lors de la création: ' . $e->getMessage()
+                    'message' => 'Erreur lors de la création: ' . $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
                 ], 500);
             }
         }
