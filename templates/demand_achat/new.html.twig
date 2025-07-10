@@ -103,29 +103,7 @@
     
     <div class="row">
         <div class="col-md-12">
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-white py-3">
-                    <h5 class="card-title mb-0">Informations de la Demande</h5>
-                </div>
-                <div class="card-body">
-                    <form id="demandeForm">
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="date" class="form-label">Date</label>
-                                <input type="date" class="form-control" id="date" name="date" required value="{{ 'now'|date('Y-m-d') }}">
-                            </div>
-                            <div class="col-md-6">
-                                <label for="etat" class="form-label">État</label>
-                                <select class="form-select" id="etat" name="etat" required>
-                                    <option value="En attente">En attente</option>
-                                    <option value="Approuvée">Approuvée</option>
-                                    <option value="Rejetée">Rejetée</option>
-                                </select>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
+            
             
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
@@ -240,7 +218,7 @@
                                     <td>{{ article.reference }}</td>
                                     <td>{{ article.nom }}</td>
                                     <td>{{ article.marque }}</td>
-                                    <td>{{ article.prix|number_format(2, ',', ' ') }} DH</td>
+                                    <td><span class="fw-bold text-danger">{{ article.prix|number_format(2, ',', ' ') }} DH</span></td>
                                     <td>
                                         <button type="button" class="btn btn-sm btn-primary select-article" 
                                                 data-id="{{ article.id }}" 
@@ -678,8 +656,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const existingArticles = articles.filter(article => !article.id.toString().startsWith('new_'));
         
         const demandeData = {
-            date: document.getElementById('date').value,
-            etat: document.getElementById('etat').value,
+            // Date et état gérés côté serveur
             tva: parseInt(tvaInput.value),
             // Pour les articles existants, on envoie simplement l'ID
             existingArticles: existingArticles.map(article => ({

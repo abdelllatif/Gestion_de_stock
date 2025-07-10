@@ -60,8 +60,7 @@
 
 {% block head_javascripts %}
 {{ parent() }}
-<!-- Inclure html2pdf -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<!-- Le PDF est maintenant généré côté serveur, nous n'avons plus besoin de bibliothèques JavaScript supplémentaires -->
 {% endblock %}
 
 {% block body %}
@@ -119,7 +118,7 @@
                         </tr>
                         <tr>
                             <th>Total HT</th>
-                            <td>{{ demande.montantHT|number_format(2, ',', ' ') }} DH</td>
+                            <td><span class="fw-bold text-danger">{{ demande.montantHT|number_format(2, ',', ' ') }} DH</span></td>
                         </tr>
                         <tr>
                             <th>TVA</th>
@@ -127,7 +126,7 @@
                         </tr>
                         <tr>
                             <th>Total TTC</th>
-                            <td class="h5 text-primary">{{ demande.montantTTC|number_format(2, ',', ' ') }} DH</td>
+                            <td class="h5 fw-bold text-danger">{{ demande.montantTTC|number_format(2, ',', ' ') }} DH</td>
                         </tr>
                     </table>
                     
@@ -181,8 +180,8 @@
                                             </td>
                                             <td>{{ detail.fournisseur }}</td>
                                             <td>{{ detail.quantite }}</td>
-                                            <td>{{ detail.prixUnitaire|number_format(2, ',', ' ') }} DH</td>
-                                            <td>{{ detail.prixTotal|number_format(2, ',', ' ') }} DH</td>
+                                            <td><span class="fw-bold text-danger">{{ detail.prixUnitaire|number_format(2, ',', ' ') }} DH</span></td>
+                                            <td><span class="fw-bold text-danger">{{ detail.prixTotal|number_format(2, ',', ' ') }} DH</span></td>
                                         </tr>
                                     {% endfor %}
                                 </tbody>
@@ -190,17 +189,17 @@
                                     <tr>
                                         <td colspan="3"></td>
                                         <td class="fw-bold">Total HT</td>
-                                        <td>{{ demande.montantHT|number_format(2, ',', ' ') }} DH</td>
+                                        <td><span class="fw-bold text-danger">{{ demande.montantHT|number_format(2, ',', ' ') }} DH</span></td>
                                     </tr>
                                     <tr>
                                         <td colspan="3"></td>
                                         <td class="fw-bold">TVA ({{ demande.tva }}%)</td>
-                                        <td>{{ (demande.montantTTC - demande.montantHT)|number_format(2, ',', ' ') }} DH</td>
+                                        <td><span class="fw-bold text-danger">{{ (demande.montantTTC - demande.montantHT)|number_format(2, ',', ' ') }} DH</span></td>
                                     </tr>
                                     <tr>
                                         <td colspan="3"></td>
                                         <td class="fw-bold">Total TTC</td>
-                                        <td class="fw-bold">{{ demande.montantTTC|number_format(2, ',', ' ') }} DH</td>
+                                        <td class="fw-bold text-danger">{{ demande.montantTTC|number_format(2, ',', ' ') }} DH</td>
                                     </tr>
                                 </tfoot>
                             </table>
@@ -487,148 +486,29 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Fonction pour générer le PDF avec html2pdf
+    // Fonction pour générer le PDF côté serveur via la route dédiée
     function generatePdf() {
-        // Préparer le contenu du PDF
         const demandeId = {{ demande.id }};
-        const element = prepareContentForPdf();
+        const pdfUrl = `/demande/achat/${demandeId}/pdf`;
         
-        // Configuration html2pdf
-        const options = {
-            margin: 10,
-            filename: `Demande_Achat_${demandeId}_${new Date().toISOString().slice(0, 10)}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true, logging: false },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-
-        // Générer le PDF
-        return html2pdf().from(element).set(options).save();
-    }
-
-    // Fonction pour préparer le contenu HTML qui sera transformé en PDF
-    function prepareContentForPdf() {
-        // Créer un élément div qui contiendra le contenu du PDF
-        const element = document.createElement('div');
-        element.classList.add('pdf-content');
+        // Ouvrir le PDF dans un nouvel onglet
+        const newTab = window.open(pdfUrl, '_blank');
         
-        // Entête du document
-        const header = document.createElement('div');
-        header.style.textAlign = 'center';
-        header.style.marginBottom = '20px';
-        header.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <div style="text-align: left;">
-                    <h3>DinoTrav</h3>
-                    <p>Entreprise de construction</p>
-                    <p>Téléphone: +212 XXX XXXXXX</p>
-                    <p>Email: contact@dinotrav.com</p>
-                </div>
-                <div>
-                    <h2>DEMANDE D'ACHAT</h2>
-                    <h3>N° {{ demande.id }}</h3>
-                </div>
-            </div>
-            <div style="text-align: right; margin-bottom: 20px;">
-                <p><strong>Date:</strong> {{ demande.date|date('d/m/Y') }}</p>
-                <p><strong>État:</strong> {{ demande.etat }}</p>
-            </div>
-        `;
-        element.appendChild(header);
+        // Si le nouvel onglet n'a pas pu être ouvert (bloqué par popup), télécharger le fichier
+        if (!newTab || newTab.closed || typeof newTab.closed === 'undefined') {
+            console.log('Ouverture dans un nouvel onglet bloquée, téléchargement direct');
+            
+            // Créer un lien invisible et simuler un clic
+            const link = document.createElement('a');
+            link.href = pdfUrl;
+            link.download = `demande_achat_${demandeId}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
         
-        // Informations de la demande
-        const demandeInfo = document.createElement('div');
-        demandeInfo.style.marginBottom = '20px';
-        demandeInfo.innerHTML = `
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-                <tr>
-                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Utilisateur</th>
-                    <td style="border: 1px solid #ddd; padding: 8px;">{{ demande.uilisateur ? demande.uilisateur.nom ~ ' ' ~ demande.uilisateur.prenom : 'N/A' }}</td>
-                </tr>
-                <tr>
-                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Total HT</th>
-                    <td style="border: 1px solid #ddd; padding: 8px;">{{ demande.montantHT|number_format(2, ',', ' ') }} DH</td>
-                </tr>
-                <tr>
-                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">TVA</th>
-                    <td style="border: 1px solid #ddd; padding: 8px;">{{ demande.tva }}%</td>
-                </tr>
-                <tr>
-                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Total TTC</th>
-                    <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold;">{{ demande.montantTTC|number_format(2, ',', ' ') }} DH</td>
-                </tr>
-            </table>
-        `;
-        element.appendChild(demandeInfo);
-        
-        // Tableau des articles
-        const articlesTable = document.createElement('div');
-        articlesTable.innerHTML = `
-            <h3 style="margin-bottom: 10px;">Articles Demandés</h3>
-            <table style="width: 100%; border-collapse: collapse;">
-                <thead>
-                    <tr style="background-color: #f2f2f2;">
-                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Article</th>
-                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Fournisseur</th>
-                        <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Quantité</th>
-                        <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Prix Unitaire</th>
-                        <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for detail in demande.demandeDetails %}
-                        <tr>
-                            <td style="border: 1px solid #ddd; padding: 8px;">
-                                {{ detail.article.nom }}
-                                <br><small>{{ detail.article.reference }}</small>
-                            </td>
-                            <td style="border: 1px solid #ddd; padding: 8px;">{{ detail.fournisseur }}</td>
-                            <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">{{ detail.quantite }}</td>
-                            <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">{{ detail.prixUnitaire|number_format(2, ',', ' ') }} DH</td>
-                            <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">{{ detail.prixTotal|number_format(2, ',', ' ') }} DH</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <td colspan="3" style="border: 1px solid #ddd; padding: 8px;"></td>
-                        <td style="border: 1px solid #ddd; padding: 8px; text-align: right; font-weight: bold;">Total HT</td>
-                        <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">{{ demande.montantHT|number_format(2, ',', ' ') }} DH</td>
-                    </tr>
-                    <tr>
-                        <td colspan="3" style="border: 1px solid #ddd; padding: 8px;"></td>
-                        <td style="border: 1px solid #ddd; padding: 8px; text-align: right; font-weight: bold;">TVA ({{ demande.tva }}%)</td>
-                        <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">{{ (demande.montantTTC - demande.montantHT)|number_format(2, ',', ' ') }} DH</td>
-                    </tr>
-                    <tr>
-                        <td colspan="3" style="border: 1px solid #ddd; padding: 8px;"></td>
-                        <td style="border: 1px solid #ddd; padding: 8px; text-align: right; font-weight: bold;">Total TTC</td>
-                        <td style="border: 1px solid #ddd; padding: 8px; text-align: right; font-weight: bold;">{{ demande.montantTTC|number_format(2, ',', ' ') }} DH</td>
-                    </tr>
-                </tfoot>
-            </table>
-        `;
-        element.appendChild(articlesTable);
-        
-        // Pied de page
-        const footer = document.createElement('div');
-        footer.style.marginTop = '30px';
-        footer.style.textAlign = 'center';
-        footer.innerHTML = `
-            <div style="margin-top: 50px; display: flex; justify-content: space-between;">
-                <div style="width: 40%; text-align: center;">
-                    <p style="margin-bottom: 50px;">Signature du demandeur</p>
-                    <div style="border-top: 1px solid #000;"></div>
-                </div>
-                <div style="width: 40%; text-align: center;">
-                    <p style="margin-bottom: 50px;">Signature du responsable</p>
-                    <div style="border-top: 1px solid #000;"></div>
-                </div>
-            </div>
-        `;
-        element.appendChild(footer);
-        
-        return element;
+        // Renvoyer une promesse résolue pour compatibilité avec le code existant
+        return Promise.resolve();
     }
     
     // Fonction pour gérer l'export PDF
@@ -638,12 +518,19 @@ document.addEventListener('DOMContentLoaded', function() {
         const originalContent = button.innerHTML;
         button.innerHTML = '<i class="spinner-border spinner-border-sm me-2"></i> Génération en cours...';
         
+        // Afficher un message de chargement avec toast
+        showToast('Génération du PDF en cours...', 'info');
+        
         try {
-            // Générer le PDF avec html2pdf côté client
+            // Générer le PDF côté serveur
             generatePdf()
                 .then(() => {
                     console.log('PDF généré avec succès');
-                    showToast('Le PDF a été généré et téléchargé avec succès.', 'success');
+                    
+                    // Afficher un message de confirmation
+                    setTimeout(() => {
+                        showToast('Le PDF a été généré avec succès.', 'success');
+                    }, 500);
                 })
                 .catch(error => {
                     console.error('Erreur lors de la génération du PDF:', error);
@@ -656,7 +543,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
         } catch (error) {
             console.error('Erreur inattendue:', error);
-            showToast('Une erreur inattendue est survenue.', 'danger');
+            showToast('Une erreur inattendue est survenue lors de la génération du PDF.', 'danger');
             
             // Réactiver le bouton
             button.disabled = false;
@@ -808,5 +695,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 {% endblock %}
 {% endblock %}
