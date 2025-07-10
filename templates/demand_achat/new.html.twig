@@ -679,6 +679,19 @@ document.addEventListener('DOMContentLoaded', function() {
             }))
         };
         
+        // Vérifier que les données sont valides pour JSON
+        let jsonData;
+        try {
+            jsonData = JSON.stringify(demandeData);
+            console.log('Données envoyées au serveur:', demandeData);
+        } catch (e) {
+            console.error('Erreur lors de la conversion en JSON:', e, demandeData);
+            alert('Erreur: Données invalides pour JSON. Voir console pour détails.');
+            saveDemandeBtn.disabled = false;
+            saveDemandeBtn.innerHTML = 'Enregistrer la Demande';
+            return;
+        }
+        
         // Créer la demande d'achat via une requête AJAX
         fetch('{{ path('app_demand_achat_new') }}', {
             method: 'POST',
@@ -686,11 +699,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 'Content-Type': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
             },
-            body: JSON.stringify(demandeData)
+            body: jsonData
         })
         .then(response => {
             if (!response.ok) {
-                throw new Error('Erreur réseau: ' + response.status);
+                // Si la réponse est une erreur, essayons quand même de récupérer le message JSON
+                return response.json().then(errorData => {
+                    console.error('Erreur serveur détaillée:', errorData);
+                    throw new Error('Erreur réseau: ' + response.status + 
+                        (errorData.message ? ' - ' + errorData.message : ''));
+                }).catch(e => {
+                    // Si on ne peut pas parser la réponse en JSON, on utilise l'erreur standard
+                    throw new Error('Erreur réseau: ' + response.status);
+                });
             }
             return response.json();
         })
@@ -719,7 +740,33 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(error => {
             console.error('Erreur:', error);
-            alert('Erreur: ' + error.message);
+            
+            // Créer un toast d'erreur plus détaillé
+            const toast = document.createElement('div');
+            toast.className = 'position-fixed bottom-0 end-0 p-3';
+            toast.style.zIndex = '5';
+            toast.innerHTML = `
+                <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="toast-header bg-danger text-white">
+                        <i class="bi bi-exclamation-circle me-2"></i>
+                        <strong class="me-auto">Erreur</strong>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                    <div class="toast-body">
+                        <p><strong>${error.message}</strong></p>
+                        <p class="mb-0">Merci de réessayer ou de contacter l'administrateur si le problème persiste.</p>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            
+            // Fermer le toast après 10 secondes
+            setTimeout(() => {
+                const toastElement = toast.querySelector('.toast');
+                const bsToast = new bootstrap.Toast(toastElement);
+                bsToast.hide();
+            }, 10000);
+            
             // Réactiver le bouton
             saveDemandeBtn.disabled = false;
             saveDemandeBtn.innerHTML = 'Enregistrer la Demande';
