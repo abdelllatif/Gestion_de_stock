@@ -340,13 +340,36 @@ final class BonController extends AbstractController
     }
     
     #[Route('/bon/{id}/delete', name: 'app_bon_delete', requirements: ['id' => '\d+'], methods: ['DELETE'])]
-    public function delete(Bon $bon, EntityManagerInterface $entityManager): JsonResponse
+    public function delete(Bon $bon, EntityManagerInterface $entityManager, SessionInterface $session): JsonResponse
     {
         try {
-            // Pour chaque détail du bon, inverser l'effet sur le stock
+            // Stocker les données du bon dans la session pour une éventuelle restauration
+            $bonData = [
+                'id' => $bon->getId(),
+                'numeroSerie' => $bon->getNumeroSerie(),
+                'type' => $bon->getType(),
+                'date' => $bon->getDate()->format('Y-m-d H:i:s'),
+                'note' => $bon->getNote(),
+                'chantier_id' => $bon->getChantier() ? $bon->getChantier()->getId() : null,
+                // Stocker les détails du bon
+                'details' => []
+            ];
+            
+            // Parcourir les détails pour les stocker
             foreach ($bon->getBonDetails() as $detail) {
+                $detailData = [
+                    'id' => $detail->getId(),
+                    'quantite' => $detail->getQuantite(),
+                    'article_id' => ($detail->getArticle() !== null) ? $detail->getArticle()->getId() : null,
+                    'machine_id' => ($detail->getMachine() !== null) ? $detail->getMachine()->getId() : null
+                ];
+                $bonData['details'][] = $detailData;
+                
                 // Logique de mise à jour du stock à implémenter
             }
+            
+            // Sauvegarder les données dans la session
+            $session->set('deleted_bon', $bonData);
             
             $entityManager->remove($bon);
             $entityManager->flush();
@@ -356,6 +379,81 @@ final class BonController extends AbstractController
             return $this->json([
                 'success' => false, 
                 'message' => 'Erreur lors de la suppression: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    #[Route('/bon/{id}/restore', name: 'app_bon_restore', requirements: ['id' => '\d+'], methods: ['POST'])]
+    public function restore(int $id, EntityManagerInterface $entityManager, SessionInterface $session, ChantierRepository $chantierRepository, ArticleRepository $articleRepository, MachineRepository $machineRepository): JsonResponse
+    {
+        // Récupérer les données du bon supprimé depuis la session
+        $bonData = $session->get('deleted_bon');
+        
+        if (!$bonData || $bonData['id'] != $id) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Impossible de restaurer ce bon. Les informations ne sont plus disponibles.'
+            ], 404);
+        }
+        
+        try {
+            // Recréer le bon
+            $bon = new Bon();
+            $bon->setNumeroSerie($bonData['numeroSerie']);
+            $bon->setType($bonData['type']);
+            $bon->setDate(new \DateTime($bonData['date']));
+            $bon->setNote($bonData['note']);
+            
+            // Rattacher le chantier
+            if (!empty($bonData['chantier_id'])) {
+                $chantier = $chantierRepository->find($bonData['chantier_id']);
+                if ($chantier) {
+                    $bon->setChantier($chantier);
+                }
+            }
+            
+            $entityManager->persist($bon);
+            
+            // Recréer les détails du bon
+            foreach ($bonData['details'] as $detailData) {
+                $detail = new BonDetails();
+                $detail->setQuantite($detailData['quantite']);
+                $detail->setBon($bon);
+                
+                // Rattacher l'article si présent
+                if (!empty($detailData['article_id'])) {
+                    $article = $articleRepository->find($detailData['article_id']);
+                    if ($article) {
+                        $detail->setArticle($article);
+                    }
+                }
+                
+                // Rattacher la machine si présente
+                if (!empty($detailData['machine_id'])) {
+                    $machine = $machineRepository->find($detailData['machine_id']);
+                    if ($machine) {
+                        $detail->setMachine($machine);
+                    }
+                }
+                
+                $entityManager->persist($detail);
+                
+                // Logique de mise à jour du stock à implémenter (inverse de la suppression)
+            }
+            
+            $entityManager->flush();
+            
+            // Supprimer les données de la session
+            $session->remove('deleted_bon');
+            
+            return $this->json([
+                'success' => true,
+                'message' => 'Bon restauré avec succès'
+            ]);
+        } catch (\Exception $e) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Erreur lors de la restauration: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -400,5 +498,63 @@ final class BonController extends AbstractController
         }
         
         $entityManager->persist($mouvement);
+    }
+    
+    /**
+     * Génère un PDF pour un bon spécifique
+     */
+    #[Route('/bon/{id}/pdf', name: 'app_bon_pdf', requirements: ['id' => '\d+'], methods: ['GET'])]
+    public function generatePdf(Bon $bon): Response
+    {
+        // Création du contenu HTML pour le PDF
+        $html = $this->renderView('bon/pdf.html.twig', [
+            'bon' => $bon,
+        ]);
+        
+        // Création du PDF avec configuration appropriée (simplifié)
+        $pdf = new \Spipu\Html2Pdf\Html2Pdf(
+            'P',                // Orientation: P=Portrait, L=Landscape
+            'A4',               // Format du papier
+            'fr'                // Langue
+        );
+        
+        try {
+            // Définition de la police par défaut
+            $pdf->setDefaultFont('DejaVu Sans');
+            
+            // Écriture du contenu HTML
+            $pdf->writeHTML($html);
+            
+            // Génération du nom de fichier
+            $filename = 'bon_' . $bon->getNumeroSerie() . '_' . $bon->getDate()->format('Y-m-d') . '.pdf';
+            
+            // Renvoi du PDF au navigateur
+            return new Response(
+                $pdf->output($filename, 'S'),
+                200,
+                [
+                    'Content-Type' => 'application/pdf',
+                    'Content-Disposition' => 'inline; filename="' . $filename . '"'
+                ]
+            );
+        } catch (\Spipu\Html2Pdf\Exception\Html2PdfException $e) {
+            // Log de l'erreur détaillée
+            $html2pdf_error = $e->getMessage();
+            
+            return $this->render('error/pdf_error.html.twig', [
+                'error' => $html2pdf_error,
+                'bon_id' => $bon->getId(),
+                'bon_numero' => $bon->getNumeroSerie()
+            ], new Response(null, 500));
+        } catch (\Exception $e) {
+            // Attraper toute autre erreur
+            $error = $e->getMessage();
+            
+            return $this->render('error/pdf_error.html.twig', [
+                'error' => $error,
+                'bon_id' => $bon->getId(),
+                'bon_numero' => $bon->getNumeroSerie()
+            ], new Response(null, 500));
+        }
     }
 }

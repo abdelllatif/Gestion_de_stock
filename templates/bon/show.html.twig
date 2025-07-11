@@ -66,8 +66,11 @@
             <a href="{{ path('app_bon') }}" class="btn btn-outline-secondary me-2">
                 <i class="bi bi-arrow-left me-2"></i>Retour
             </a>
-            <a href="{{ path('app_bon_edit', {'id': bon.id}) }}" class="btn btn-outline-primary">
+            <a href="{{ path('app_bon_edit', {'id': bon.id}) }}" class="btn btn-outline-primary me-2">
                 <i class="bi bi-pencil me-2"></i>Modifier
+            </a>
+            <a href="{{ path('app_bon_pdf', {'id': bon.id}) }}" class="btn btn-danger" target="_blank">
+                <i class="bi bi-file-earmark-pdf me-2"></i>Exporter PDF
             </a>
         </div>
     </div>
