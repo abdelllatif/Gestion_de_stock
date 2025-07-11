@@ -5,32 +5,145 @@ namespace App\Controller;
 use App\Entity\Bon;
 use App\Entity\BonDetails;
 use App\Entity\Article;
+use App\Entity\Machine;
+use App\Entity\MouvementStock;
 use App\Repository\BonRepository;
 use App\Repository\ArticleRepository;
 use App\Repository\ChantierRepository;
+use App\Repository\MachineRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\HttpFoundation\Session\SessionInterface;
 
 final class BonController extends AbstractController
 {
-    #[Route('/bon', name: 'app_bon')]
-    public function index(BonRepository $bonRepository): Response
+    #[Route('/api/articles', name: 'api_articles')]
+    public function getArticles(ArticleRepository $articleRepository): JsonResponse
     {
-        $bons = $bonRepository->findBy([], ['date' => 'DESC']);
+        $articles = $articleRepository->findAll();
+        $data = [];
         
+        foreach ($articles as $article) {
+            $data[] = [
+                'id' => $article->getId(),
+                'nom' => $article->getNom(),
+                'reference' => $article->getReference(),
+                'marque' => $article->getMarque(),
+                'unite' => $article->getUnite()
+            ];
+        }
+        
+        return $this->json($data);
+    }
+    
+    #[Route('/api/machines', name: 'api_machines')]
+    public function getMachines(MachineRepository $machineRepository): JsonResponse
+    {
+        $machines = $machineRepository->findAll();
+        $data = [];
+        
+        foreach ($machines as $machine) {
+            $data[] = [
+                'id' => $machine->getId(),
+                'nom' => $machine->getNom(),
+                'code' => $machine->getCode()
+            ];
+        }
+        
+        return $this->json($data);
+    }
+
+    #[Route('/bon', name: 'app_bon')]
+    public function index(BonRepository $bonRepository, Request $request): Response
+    {
+        // Gestion de la requête AJAX pour DataTables
+        if ($request->isXmlHttpRequest()) {
+            try {
+                $draw = $request->query->getInt('draw', 1);
+                $start = $request->query->getInt('start', 0);
+                $length = $request->query->getInt('length', 10);
+                $search = $request->query->all('search')['value'] ?? '';
+                $orders = $request->query->all('order');
+                
+                // Colonnes pour l'ordre
+                $columns = [
+                    'id',
+                    'numeroSerie',
+                    'type',
+                    'date',
+                    'chantier',
+                    'details',
+                    'actions'
+                ];
+                
+                // Construction de l'ordre
+                $orderColumnIdx = $orders[0]['column'] ?? 3;
+                $orderColumn = $columns[$orderColumnIdx] ?? 'date';
+                $orderDir = ($orders[0]['dir'] ?? 'desc') === 'desc' ? 'DESC' : 'ASC';
+                
+                // Récupération des données avec filtre, ordre et pagination
+                $results = $bonRepository->findForDataTable($search, $orderColumn, $orderDir, $start, $length);
+                $totalBons = $bonRepository->countTotal();
+                $filteredBons = $bonRepository->countFiltered($search);
+                
+                // Formater les données pour DataTables
+                $data = [];
+                foreach ($results as $bon) {
+                    $detailsCount = count($bon->getBonDetails());
+                    
+                    $data[] = [
+                        'id' => $bon->getId(),
+                        'numeroSerie' => $bon->getNumeroSerie(),
+                        'type' => $bon->getType(),
+                        'date' => $bon->getDate()->format('d/m/Y'),
+                        'chantier' => $bon->getChantier() ? $bon->getChantier()->getNom() : 'N/A',
+                        'details' => $detailsCount,
+                        'actions' => $this->renderView('bon/_actions.html.twig', ['bon' => $bon])
+                    ];
+                }
+                
+                return $this->json([
+                    'draw' => $draw,
+                    'recordsTotal' => $totalBons,
+                    'recordsFiltered' => $filteredBons,
+                    'data' => $data
+                ]);
+            } catch (\Exception $e) {
+                return $this->json([
+                    'error' => true,
+                    'message' => $e->getMessage()
+                ], 400);
+            }
+        }
+        
+        // Affichage de la page principale
         return $this->render('bon/index.html.twig', [
-            'bons' => $bons,
             'activeLink' => 'bon',
         ]);
     }
     
     #[Route('/bon/nouveau', name: 'app_bon_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager, ArticleRepository $articleRepository, ChantierRepository $chantierRepository): Response
+    public function new(
+        Request $request, 
+        EntityManagerInterface $entityManager, 
+        ArticleRepository $articleRepository, 
+        MachineRepository $machineRepository, 
+        ChantierRepository $chantierRepository, 
+        SessionInterface $session
+    ): Response
     {
+        // Si c'est une requête GET, afficher le formulaire
+        if ($request->isMethod('GET')) {
+            return $this->render('bon/new.html.twig', [
+                'activeLink' => 'bon',
+            ]);
+        }
+        
+        // Traitement de la requête POST (AJAX)
         if ($request->isMethod('POST')) {
             try {
                 $data = json_decode($request->getContent(), true);
@@ -51,9 +164,27 @@ final class BonController extends AbstractController
                 $bon->setType($data['type']);
                 $bon->setNumeroSerie($data['numero_serie']);
                 $bon->setNote($data['note'] ?? '');
-                $bon->setDate(new \DateTime($data['date'] ?? 'now'));
                 
-                // Associer le chantier si fourni
+                // Convertir la date du format dd/mm/yyyy au format Y-m-d
+                $dateStr = $data['date'] ?? 'now';
+                if ($dateStr !== 'now') {
+                    $dateParts = explode('/', $dateStr);
+                    if (count($dateParts) === 3) {
+                        $dateStr = $dateParts[2] . '-' . $dateParts[1] . '-' . $dateParts[0];
+                    }
+                }
+                $bon->setDate(new \DateTime($dateStr));
+                
+                // Récupérer le chantier depuis la session
+                $selectedChantier = $session->get('selected_chantier');
+                if ($selectedChantier && isset($selectedChantier['id'])) {
+                    $chantier = $chantierRepository->find($selectedChantier['id']);
+                    if ($chantier) {
+                        $bon->setChantier($chantier);
+                    }
+                }
+                
+                // Utiliser le chantier_id fourni dans les données si disponible
                 if (!empty($data['chantier_id'])) {
                     $chantier = $chantierRepository->find($data['chantier_id']);
                     if ($chantier) {
@@ -71,6 +202,7 @@ final class BonController extends AbstractController
                         }
                         
                         $bonDetail = new BonDetails();
+                        $bonDetail->setArticle($article);
                         $bonDetail->setQuantite($articleData['quantite']);
                         $bonDetail->setFournisseur($articleData['fournisseur'] ?? '');
                         $bonDetail->setUnite($article->getUnite() ?? 'Unité');
@@ -78,6 +210,26 @@ final class BonController extends AbstractController
                         
                         // Gestion du stock selon le type de bon
                         $this->updateStockForBonDetail($entityManager, $bon, $article, $articleData['quantite']);
+                        
+                        $entityManager->persist($bonDetail);
+                    }
+                }
+                
+                // Traiter les machines du bon
+                if (!empty($data['machines'])) {
+                    foreach ($data['machines'] as $machineData) {
+                        // Vérifier si la machine existe
+                        $machine = $machineRepository->find($machineData['id']);
+                        if (!$machine) {
+                            continue;
+                        }
+                        
+                        $bonDetail = new BonDetails();
+                        $bonDetail->setMachine($machine);
+                        $bonDetail->setQuantite($machineData['quantite']);
+                        $bonDetail->setFournisseur($machineData['fournisseur'] ?? '');
+                        $bonDetail->setUnite('Unité'); // Par défaut pour les machines
+                        $bonDetail->setBon($bon);
                         
                         $entityManager->persist($bonDetail);
                     }
@@ -102,12 +254,7 @@ final class BonController extends AbstractController
         }
         
         // Si requête GET, afficher le formulaire
-        $articles = $articleRepository->findAll();
-        $chantiers = $chantierRepository->findAll();
-        
         return $this->render('bon/new.html.twig', [
-            'articles' => $articles,
-            'chantiers' => $chantiers,
             'activeLink' => 'bon',
         ]);
     }
@@ -218,10 +365,40 @@ final class BonController extends AbstractController
      */
     private function updateStockForBonDetail(EntityManagerInterface $entityManager, Bon $bon, Article $article, int $quantite): void
     {
-        // TODO: Implémenter la logique de mise à jour du stock selon le type de bon
-        // Par exemple:
-        // - Si c'est un bon de sortie, diminuer le stock
-        // - Si c'est un bon d'entrée, augmenter le stock
-        // - Si c'est un transfert, ajuster les stocks entre chantiers
+        $chantier = $bon->getChantier();
+        
+        // Si pas de chantier, on ne peut pas gérer le stock
+        if (!$chantier) {
+            return;
+        }
+        
+        // Créer un mouvement de stock pour tracer cette opération
+        $mouvement = new MouvementStock();
+        $mouvement->setArticle($article);
+        $mouvement->setQuantite($quantite);
+        $mouvement->setType($bon->getType());
+        $mouvement->setDate(new \DateTime());
+        $mouvement->setFournisseur('');
+        $mouvement->setObservation('Mouvement généré par le bon ' . $bon->getNumeroSerie());
+        
+        switch ($bon->getType()) {
+            case 'Entrée':
+                // Pour une entrée, le chantier de réception est le chantier du bon
+                $mouvement->setChantierRec($chantier);
+                break;
+                
+            case 'Sortie':
+                // Pour une sortie, le chantier d'expédition est le chantier du bon
+                $mouvement->setChantierExp($chantier);
+                break;
+                
+            case 'Transfert':
+                // Pour un transfert, le chantier d'expédition est le chantier du bon
+                $mouvement->setChantierExp($chantier);
+                // Note: Le chantier de réception devrait être spécifié dans une future implémentation
+                break;
+        }
+        
+        $entityManager->persist($mouvement);
     }
 }

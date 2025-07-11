@@ -3,74 +3,82 @@
 {% block title %}Nouveau Bon{% endblock %}
 
 {% block stylesheets %}
+{{ parent() }}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <style>
-    .article-row {
-        transition: all 0.2s;
-        border-left: 3px solid transparent;
+    .step {
+        display: none;
     }
-    .article-row:hover {
-        background-color: #f8f9fa;
-        border-left: 3px solid #3b82f6;
+    .step.active {
+        display: block;
     }
-    .delete-row {
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-    .delete-row:hover {
-        color: #dc3545;
-    }
-    .fournisseur-input, .quantite-input {
-        border: none;
-        border-bottom: 1px solid #dee2e6;
-        border-radius: 0;
-        padding: 0.25rem;
-        transition: all 0.2s;
-    }
-    .fournisseur-input:focus, .quantite-input:focus {
-        border-bottom: 2px solid #3b82f6;
-        box-shadow: none;
-    }
-    .article-select {
+    .form-label {
         font-weight: 500;
     }
-    .type-toggle .btn {
-        width: 33.33%;
-        text-align: center;
+    .item-row {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 10px;
+        position: relative;
     }
-    .type-toggle .btn-outline-primary:not(.active):hover {
-        background-color: rgba(59, 130, 246, 0.1);
+    .remove-item {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        cursor: pointer;
     }
-    .type-toggle .btn-outline-primary.active {
-        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
-    }
-    
-    /* Styles personnalisés pour les types de bons */
-    .type-toggle .btn-sortie.active {
-        background-color: #ef4444;
-        border-color: #ef4444;
+    .badge-article {
+        background-color: #3b82f6;
         color: white;
     }
-    
-    .type-toggle .btn-entree.active {
+    .badge-machine {
+        background-color: #8b5cf6;
+        color: white;
+    }
+    .item-title {
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+    .step-indicator {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 30px;
+        position: relative;
+    }
+    .step-indicator::before {
+        content: '';
+        position: absolute;
+        top: 15px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background-color: #e5e7eb;
+        z-index: 0;
+    }
+    .step-circle {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background-color: #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        z-index: 1;
+    }
+    .step-circle.active {
+        background-color: #3b82f6;
+        color: white;
+    }
+    .step-circle.completed {
         background-color: #10b981;
-        border-color: #10b981;
         color: white;
     }
-    
-    .type-toggle .btn-transfert.active {
-        background-color: #f59e0b;
-        border-color: #f59e0b;
-        color: white;
-    }
-    
-    /* Animation pour les nouveaux articles */
-    @keyframes highlightNew {
-        0% { background-color: rgba(25, 135, 84, 0.2); }
-        100% { background-color: transparent; }
-    }
-    
-    .article-row.new-article {
-        animation: highlightNew 2s ease-out;
+    .step-text {
+        text-align: center;
+        margin-top: 8px;
+        font-size: 0.875rem;
     }
 </style>
 {% endblock %}
@@ -78,343 +86,688 @@
 {% block body %}
 <div class="container-fluid px-4 py-3">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3">Créer un Nouveau Bon</h1>
-        <a href="{{ path('app_bon') }}" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-2"></i>Retour à la liste
-        </a>
+        <h1 class="h3">Nouveau Bon</h1>
+        <div>
+            <a href="{{ path('app_bon') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Retour à la liste
+            </a>
+        </div>
     </div>
     
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-white py-3">
-                    <h5 class="card-title mb-0">Informations du Bon</h5>
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white py-3">
+            <div class="step-indicator">
+                <div class="step-item">
+                    <div class="step-circle active" id="step-circle-1">1</div>
+                    <div class="step-text">Informations</div>
                 </div>
-                <div class="card-body">
-                    <form id="bonInfoForm">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Type de Bon</label>
-                                <div class="btn-group type-toggle w-100" role="group">
-                                    <input type="radio" class="btn-check" name="bonType" id="typeSortie" value="Sortie" autocomplete="off" checked>
-                                    <label class="btn btn-outline-primary btn-sortie" for="typeSortie">
-                                        <i class="bi bi-box-arrow-right me-2"></i>Sortie
-                                    </label>
-                                    
-                                    <input type="radio" class="btn-check" name="bonType" id="typeEntree" value="Entrée" autocomplete="off">
-                                    <label class="btn btn-outline-primary btn-entree" for="typeEntree">
-                                        <i class="bi bi-box-arrow-in-right me-2"></i>Entrée
-                                    </label>
-                                    
-                                    <input type="radio" class="btn-check" name="bonType" id="typeTransfert" value="Transfert" autocomplete="off">
-                                    <label class="btn btn-outline-primary btn-transfert" for="typeTransfert">
-                                        <i class="bi bi-arrow-left-right me-2"></i>Transfert
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="bonNumero" class="form-label">Numéro de Série</label>
-                                <input type="text" class="form-control" id="bonNumero" placeholder="Ex: BON-2025-001" required>
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="bonDate" class="form-label">Date</label>
-                                <input type="date" class="form-control" id="bonDate" value="{{ "now"|date('Y-m-d') }}">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="bonChantier" class="form-label">Chantier</label>
-                                <select class="form-select" id="bonChantier">
-                                    <option value="">Sélectionner un chantier</option>
-                                    {% for chantier in chantiers %}
-                                        <option value="{{ chantier.id }}">{{ chantier.nom }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="bonNote" class="form-label">Note/Commentaire</label>
-                            <textarea class="form-control" id="bonNote" rows="2" placeholder="Ajouter des informations complémentaires sur ce bon"></textarea>
-                        </div>
-                    </form>
+                <div class="step-item">
+                    <div class="step-circle" id="step-circle-2">2</div>
+                    <div class="step-text">Articles/Machines</div>
+                </div>
+                <div class="step-item">
+                    <div class="step-circle" id="step-circle-3">3</div>
+                    <div class="step-text">Confirmation</div>
                 </div>
             </div>
-            
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">Articles</h5>
-                    <button type="button" class="btn btn-sm btn-primary" id="addArticleBtn">
-                        <i class="bi bi-plus-circle me-1"></i>Ajouter un Article
-                    </button>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table" id="articlesTable">
-                            <thead>
-                                <tr>
-                                    <th style="width: 40%">Article</th>
-                                    <th style="width: 25%">Fournisseur</th>
-                                    <th style="width: 20%">Quantité</th>
-                                    <th style="width: 15%">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="articlesBody">
-                                <!-- Les articles seront ajoutés dynamiquement -->
-                            </tbody>
-                        </table>
+        </div>
+        <div class="card-body">
+            <form id="bonForm">
+                <!-- Étape 1: Informations générales -->
+                <div class="step active" id="step1">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="typeSelect" class="form-label required">Type de Bon</label>
+                            <select id="typeSelect" class="form-select" required>
+                                <option value="" selected disabled>Choisir un type</option>
+                                <option value="Entrée">Entrée</option>
+                                <option value="Sortie">Sortie</option>
+                                <option value="Livraison">Livraison</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="dateInput" class="form-label required">Date</label>
+                            <input type="text" id="dateInput" class="form-control" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="numeroSerieInput" class="form-label required">Numéro de Série</label>
+                            <input type="text" id="numeroSerieInput" class="form-control" required>
+                        </div>
                     </div>
                     
-                    <div class="alert alert-info mt-3" id="emptyArticlesMessage">
-                        <i class="bi bi-info-circle me-2"></i>
-                        Aucun article n'a été ajouté à ce bon. Cliquez sur "Ajouter un Article" pour commencer.
+                    <div class="row mb-3" id="fournisseurRow" style="display: none;">
+                        <div class="col-md-6">
+                            <label for="fournisseurInput" class="form-label">Fournisseur</label>
+                            <input type="text" id="fournisseurInput" class="form-control">
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label for="noteInput" class="form-label">Note</label>
+                            <textarea id="noteInput" class="form-control" rows="3"></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end mt-4">
+                        <button type="button" id="nextToStep2" class="btn btn-primary">
+                            Continuer <i class="bi bi-arrow-right ms-2"></i>
+                        </button>
                     </div>
                 </div>
-            </div>
-            
-            <div class="text-end mb-4">
-                <button type="button" class="btn btn-secondary me-2">Annuler</button>
-                <button type="button" class="btn btn-primary" id="saveBonBtn">Enregistrer le Bon</button>
-            </div>
+                
+                <!-- Étape 2: Articles et Machines -->
+                <div class="step" id="step2">
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Ajouter des articles ou machines</h5>
+                                <div>
+                                    <button type="button" class="btn btn-outline-primary me-2" id="addArticleBtn">
+                                        <i class="bi bi-plus-circle me-2"></i>Article
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary" id="addMachineBtn">
+                                        <i class="bi bi-plus-circle me-2"></i>Machine
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="itemsContainer">
+                        <!-- Les articles et machines seront ajoutés ici -->
+                        <div class="text-center py-5 text-muted" id="emptyItemsMessage">
+                            <i class="bi bi-inbox fs-2"></i>
+                            <p class="mt-2">Aucun article ou machine ajouté</p>
+                            <p class="small">Utilisez les boutons ci-dessus pour ajouter des éléments au bon</p>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <button type="button" id="backToStep1" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>Retour
+                        </button>
+                        <button type="button" id="nextToStep3" class="btn btn-primary">
+                            Continuer <i class="bi bi-arrow-right ms-2"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Étape 3: Récapitulatif et confirmation -->
+                <div class="step" id="step3">
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="mb-3">Récapitulatif du bon</h5>
+                            
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <tbody>
+                                        <tr>
+                                            <th style="width: 200px;">Type de Bon</th>
+                                            <td id="recap-type"></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Numéro de Série</th>
+                                            <td id="recap-numero"></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Date</th>
+                                            <td id="recap-date"></td>
+                                        </tr>
+                                        <tr id="recap-fournisseur-row" style="display: none;">
+                                            <th>Fournisseur</th>
+                                            <td id="recap-fournisseur"></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Note</th>
+                                            <td id="recap-note"><em class="text-muted">Aucune note</em></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <h5 class="mb-3 mt-4">Éléments du bon</h5>
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="recapItemsTable">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Type</th>
+                                            <th>Désignation</th>
+                                            <th>Quantité</th>
+                                            <th>Unité</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recap-items">
+                                        <!-- Rempli par JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <button type="button" id="backToStep2" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>Retour
+                        </button>
+                        <button type="submit" id="submitBon" class="btn btn-success">
+                            <i class="bi bi-check-circle me-2"></i>Enregistrer le bon
+                        </button>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
-<!-- Modal Sélection d'Article -->
-<div class="modal fade" id="articleModal" tabindex="-1" aria-labelledby="articleModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+<!-- Modal pour ajouter un article -->
+<div class="modal fade" id="addArticleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="articleModalLabel">Sélectionner un Article</h5>
+                <h5 class="modal-title">Ajouter un article</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <div class="flex-grow-1 me-2">
-                        <input type="text" class="form-control" id="articleSearch" placeholder="Rechercher un article...">
-                    </div>
+                <div class="mb-3">
+                    <label for="articleSelect" class="form-label">Sélectionner un article</label>
+                    <select id="articleSelect" class="form-select">
+                        <option value="" selected disabled>Choisir un article</option>
+                        <!-- Les articles seront chargés par AJAX -->
+                    </select>
                 </div>
-                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                    <table class="table table-hover" id="articlesModalTable">
-                        <thead class="sticky-top bg-light">
-                            <tr>
-                                <th>Référence</th>
-                                <th>Nom</th>
-                                <th>Marque</th>
-                                <th>Unité</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for article in articles %}
-                                <tr>
-                                    <td>{{ article.reference }}</td>
-                                    <td>{{ article.nom }}</td>
-                                    <td>{{ article.marque }}</td>
-                                    <td>{{ article.unite }}</td>
-                                    <td>
-                                        <button type="button" class="btn btn-sm btn-primary select-article" 
-                                                data-id="{{ article.id }}" 
-                                                data-reference="{{ article.reference }}" 
-                                                data-nom="{{ article.nom }}"
-                                                data-unite="{{ article.unite }}">
-                                            Sélectionner
-                                        </button>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                <div class="mb-3">
+                    <label for="articleQuantite" class="form-label">Quantité</label>
+                    <input type="number" id="articleQuantite" class="form-control" min="1" value="1">
+                </div>
+                <div class="mb-3" id="articleFournisseurGroup" style="display: none;">
+                    <label for="articleFournisseur" class="form-label">Fournisseur</label>
+                    <input type="text" id="articleFournisseur" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label for="articleUnite" class="form-label">Unité</label>
+                    <input type="text" id="articleUnite" class="form-control" readonly>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" id="confirmAddArticle">Ajouter</button>
             </div>
         </div>
     </div>
 </div>
 
-{% block page_javascripts %}
+<!-- Modal pour ajouter une machine -->
+<div class="modal fade" id="addMachineModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Ajouter une machine</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="machineSelect" class="form-label">Sélectionner une machine</label>
+                    <select id="machineSelect" class="form-select">
+                        <option value="" selected disabled>Choisir une machine</option>
+                        <!-- Les machines seront chargées par AJAX -->
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="machineQuantite" class="form-label">Quantité</label>
+                    <input type="number" id="machineQuantite" class="form-control" min="1" value="1">
+                </div>
+                <div class="mb-3" id="machineFournisseurGroup" style="display: none;">
+                    <label for="machineFournisseur" class="form-label">Fournisseur</label>
+                    <input type="text" id="machineFournisseur" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label for="machineUnite" class="form-label">Unité</label>
+                    <input type="text" id="machineUnite" class="form-control" value="Unité" readonly>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" id="confirmAddMachine">Ajouter</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast pour les notifications -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 5" id="toastContainer">
+    <!-- Les toasts seront insérés ici -->
+</div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/fr.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialisation des variables
-    const articleModal = new bootstrap.Modal(document.getElementById('articleModal'));
-    const articlesBody = document.getElementById('articlesBody');
-    const emptyArticlesMessage = document.getElementById('emptyArticlesMessage');
-    const addArticleBtn = document.getElementById('addArticleBtn');
-    const articleSearch = document.getElementById('articleSearch');
-    const saveBonBtn = document.getElementById('saveBonBtn');
+    // Initialisation de Flatpickr pour le sélecteur de date
+    flatpickr("#dateInput", {
+        locale: "fr",
+        dateFormat: "d/m/Y",
+        defaultDate: new Date(),
+    });
     
-    // Stockage des articles sélectionnés
-    let selectedArticles = [];
+    // Gestion des étapes du formulaire
+    const steps = document.querySelectorAll('.step');
+    const stepCircles = document.querySelectorAll('.step-circle');
     
-    // Fonction pour afficher/masquer le message d'articles vides
-    function toggleEmptyMessage() {
-        if (selectedArticles.length === 0) {
-            emptyArticlesMessage.style.display = 'block';
-        } else {
-            emptyArticlesMessage.style.display = 'none';
+    function showStep(stepNumber) {
+        steps.forEach((step, index) => {
+            step.classList.remove('active');
+            stepCircles[index].classList.remove('active', 'completed');
+        });
+        
+        steps[stepNumber - 1].classList.add('active');
+        stepCircles[stepNumber - 1].classList.add('active');
+        
+        // Marquer les étapes précédentes comme complétées
+        for (let i = 0; i < stepNumber - 1; i++) {
+            stepCircles[i].classList.add('completed');
         }
     }
     
-    // Fonction pour ajouter un article à la table
-    function addArticleToTable(article) {
-        const newRow = document.createElement('tr');
-        newRow.className = 'article-row';
-        newRow.dataset.id = article.id;
+    // Afficher/masquer le champ fournisseur selon le type de bon
+    document.getElementById('typeSelect').addEventListener('change', function() {
+        const selectedType = this.value;
+        const fournisseurRow = document.getElementById('fournisseurRow');
         
-        newRow.innerHTML = `
-            <td class="article-select">
-                ${article.nom} 
-                <small class="text-muted d-block">${article.reference}</small>
-            </td>
-            <td>
-                <input type="text" class="form-control fournisseur-input" value="${article.fournisseur}" placeholder="Fournisseur">
-            </td>
-            <td>
-                <input type="number" class="form-control quantite-input" value="${article.quantite}" min="1">
-            </td>
-            <td>
-                <button type="button" class="btn btn-sm btn-outline-danger delete-article">
-                    <i class="bi bi-trash"></i>
-                </button>
-            </td>
+        if (selectedType === 'Livraison') {
+            fournisseurRow.style.display = 'flex';
+            document.getElementById('articleFournisseurGroup').style.display = 'block';
+            document.getElementById('machineFournisseurGroup').style.display = 'block';
+        } else {
+            fournisseurRow.style.display = 'none';
+            document.getElementById('articleFournisseurGroup').style.display = 'none';
+            document.getElementById('machineFournisseurGroup').style.display = 'none';
+        }
+    });
+    
+    // Navigation entre les étapes
+    document.getElementById('nextToStep2').addEventListener('click', function() {
+        // Valider l'étape 1
+        const typeSelect = document.getElementById('typeSelect');
+        const dateInput = document.getElementById('dateInput');
+        const numeroSerieInput = document.getElementById('numeroSerieInput');
+        const fournisseurInput = document.getElementById('fournisseurInput');
+        
+        if (!typeSelect.value) {
+            showToast('Veuillez sélectionner un type de bon', 'danger');
+            return;
+        }
+        
+        if (!dateInput.value) {
+            showToast('Veuillez sélectionner une date', 'danger');
+            return;
+        }
+        
+        if (!numeroSerieInput.value) {
+            showToast('Veuillez entrer un numéro de série', 'danger');
+            return;
+        }
+        
+        // Si c'est un bon de livraison, le fournisseur est obligatoire
+        if (typeSelect.value === 'Livraison' && !fournisseurInput.value) {
+            showToast('Veuillez entrer un fournisseur', 'danger');
+            return;
+        }
+        
+        showStep(2);
+    });
+    
+    document.getElementById('backToStep1').addEventListener('click', function() {
+        showStep(1);
+    });
+    
+    document.getElementById('nextToStep3').addEventListener('click', function() {
+        // Vérifier qu'il y a au moins un élément
+        const itemsContainer = document.getElementById('itemsContainer');
+        const items = itemsContainer.querySelectorAll('.item-row');
+        
+        if (items.length === 0) {
+            showToast('Veuillez ajouter au moins un article ou une machine', 'danger');
+            return;
+        }
+        
+        // Mettre à jour le récapitulatif
+        updateRecap();
+        showStep(3);
+    });
+    
+    document.getElementById('backToStep2').addEventListener('click', function() {
+        showStep(2);
+    });
+    
+    // Fonction pour mettre à jour le récapitulatif
+    function updateRecap() {
+        const type = document.getElementById('typeSelect').value;
+        const numero = document.getElementById('numeroSerieInput').value;
+        const date = document.getElementById('dateInput').value;
+        const fournisseur = document.getElementById('fournisseurInput').value;
+        const note = document.getElementById('noteInput').value;
+        
+        document.getElementById('recap-type').textContent = type;
+        document.getElementById('recap-numero').textContent = numero;
+        document.getElementById('recap-date').textContent = date;
+        
+        if (type === 'Livraison') {
+            document.getElementById('recap-fournisseur-row').style.display = 'table-row';
+            document.getElementById('recap-fournisseur').textContent = fournisseur;
+        } else {
+            document.getElementById('recap-fournisseur-row').style.display = 'none';
+        }
+        
+        if (note) {
+            document.getElementById('recap-note').textContent = note;
+        }
+        
+        // Récupérer tous les éléments et les ajouter au tableau récapitulatif
+        const recapItems = document.getElementById('recap-items');
+        recapItems.innerHTML = '';
+        
+        const items = document.querySelectorAll('.item-row');
+        items.forEach(item => {
+            const itemType = item.getAttribute('data-type');
+            const itemId = item.getAttribute('data-id');
+            const itemName = item.getAttribute('data-name');
+            const itemQuantity = item.getAttribute('data-quantity');
+            const itemUnit = item.getAttribute('data-unit');
+            
+            const row = document.createElement('tr');
+            
+            const typeCell = document.createElement('td');
+            const badgeClass = itemType === 'article' ? 'badge-article' : 'badge-machine';
+            const icon = itemType === 'article' ? 'bi-box' : 'bi-truck';
+            typeCell.innerHTML = `<span class="badge ${badgeClass}"><i class="bi ${icon} me-1"></i>${itemType === 'article' ? 'Article' : 'Machine'}</span>`;
+            
+            const nameCell = document.createElement('td');
+            nameCell.textContent = itemName;
+            
+            const quantityCell = document.createElement('td');
+            quantityCell.textContent = itemQuantity;
+            
+            const unitCell = document.createElement('td');
+            unitCell.textContent = itemUnit;
+            
+            row.appendChild(typeCell);
+            row.appendChild(nameCell);
+            row.appendChild(quantityCell);
+            row.appendChild(unitCell);
+            
+            recapItems.appendChild(row);
+        });
+    }
+    
+    // Chargement des articles par AJAX
+    let articlesLoaded = false;
+    document.getElementById('addArticleBtn').addEventListener('click', function() {
+        const modal = new bootstrap.Modal(document.getElementById('addArticleModal'));
+        
+        if (!articlesLoaded) {
+            // Charger les articles par AJAX
+            fetch('/api/articles')
+                .then(response => response.json())
+                .then(data => {
+                    const articleSelect = document.getElementById('articleSelect');
+                    articleSelect.innerHTML = '<option value="" selected disabled>Choisir un article</option>';
+                    
+                    data.forEach(article => {
+                        const option = document.createElement('option');
+                        option.value = article.id;
+                        option.textContent = `${article.nom} - ${article.reference}`;
+                        option.setAttribute('data-unite', article.unite);
+                        articleSelect.appendChild(option);
+                    });
+                    
+                    articlesLoaded = true;
+                })
+                .catch(error => {
+                    console.error('Erreur:', error);
+                    showToast('Erreur lors du chargement des articles', 'danger');
+                });
+        }
+        
+        modal.show();
+    });
+    
+    // Chargement des machines par AJAX
+    let machinesLoaded = false;
+    document.getElementById('addMachineBtn').addEventListener('click', function() {
+        const modal = new bootstrap.Modal(document.getElementById('addMachineModal'));
+        
+        if (!machinesLoaded) {
+            // Charger les machines par AJAX
+            fetch('/api/machines')
+                .then(response => response.json())
+                .then(data => {
+                    const machineSelect = document.getElementById('machineSelect');
+                    machineSelect.innerHTML = '<option value="" selected disabled>Choisir une machine</option>';
+                    
+                    data.forEach(machine => {
+                        const option = document.createElement('option');
+                        option.value = machine.id;
+                        option.textContent = `${machine.nom} - ${machine.code || 'Sans code'}`;
+                        machineSelect.appendChild(option);
+                    });
+                    
+                    machinesLoaded = true;
+                })
+                .catch(error => {
+                    console.error('Erreur:', error);
+                    showToast('Erreur lors du chargement des machines', 'danger');
+                });
+        }
+        
+        modal.show();
+    });
+    
+    // Mise à jour de l'unité lors de la sélection d'un article
+    document.getElementById('articleSelect').addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const unite = selectedOption.getAttribute('data-unite');
+        document.getElementById('articleUnite').value = unite || 'Unité';
+    });
+    
+    // Ajouter un article au bon
+    document.getElementById('confirmAddArticle').addEventListener('click', function() {
+        const articleSelect = document.getElementById('articleSelect');
+        const articleQuantite = document.getElementById('articleQuantite');
+        const articleFournisseur = document.getElementById('articleFournisseur');
+        const articleUnite = document.getElementById('articleUnite');
+        
+        if (!articleSelect.value) {
+            showToast('Veuillez sélectionner un article', 'danger');
+            return;
+        }
+        
+        if (!articleQuantite.value || articleQuantite.value < 1) {
+            showToast('Veuillez entrer une quantité valide', 'danger');
+            return;
+        }
+        
+        const articleId = articleSelect.value;
+        const articleName = articleSelect.options[articleSelect.selectedIndex].textContent;
+        const fournisseur = articleFournisseur.value || '';
+        const quantite = articleQuantite.value;
+        const unite = articleUnite.value;
+        
+        addItemToList('article', articleId, articleName, quantite, unite, fournisseur);
+        
+        // Fermer le modal
+        bootstrap.Modal.getInstance(document.getElementById('addArticleModal')).hide();
+        
+        // Réinitialiser les champs
+        articleSelect.value = '';
+        articleQuantite.value = 1;
+        articleFournisseur.value = '';
+        articleUnite.value = '';
+    });
+    
+    // Ajouter une machine au bon
+    document.getElementById('confirmAddMachine').addEventListener('click', function() {
+        const machineSelect = document.getElementById('machineSelect');
+        const machineQuantite = document.getElementById('machineQuantite');
+        const machineFournisseur = document.getElementById('machineFournisseur');
+        const machineUnite = document.getElementById('machineUnite');
+        
+        if (!machineSelect.value) {
+            showToast('Veuillez sélectionner une machine', 'danger');
+            return;
+        }
+        
+        if (!machineQuantite.value || machineQuantite.value < 1) {
+            showToast('Veuillez entrer une quantité valide', 'danger');
+            return;
+        }
+        
+        const machineId = machineSelect.value;
+        const machineName = machineSelect.options[machineSelect.selectedIndex].textContent;
+        const fournisseur = machineFournisseur.value || '';
+        const quantite = machineQuantite.value;
+        const unite = machineUnite.value;
+        
+        addItemToList('machine', machineId, machineName, quantite, unite, fournisseur);
+        
+        // Fermer le modal
+        bootstrap.Modal.getInstance(document.getElementById('addMachineModal')).hide();
+        
+        // Réinitialiser les champs
+        machineSelect.value = '';
+        machineQuantite.value = 1;
+        machineFournisseur.value = '';
+    });
+    
+    // Fonction pour ajouter un élément à la liste
+    function addItemToList(type, id, name, quantity, unit, fournisseur) {
+        const itemsContainer = document.getElementById('itemsContainer');
+        const emptyMessage = document.getElementById('emptyItemsMessage');
+        
+        // Cacher le message vide s'il est affiché
+        if (emptyMessage) {
+            emptyMessage.style.display = 'none';
+        }
+        
+        const itemRow = document.createElement('div');
+        itemRow.className = 'item-row';
+        itemRow.setAttribute('data-type', type);
+        itemRow.setAttribute('data-id', id);
+        itemRow.setAttribute('data-name', name);
+        itemRow.setAttribute('data-quantity', quantity);
+        itemRow.setAttribute('data-unit', unit);
+        itemRow.setAttribute('data-fournisseur', fournisseur);
+        
+        const badgeClass = type === 'article' ? 'badge-article' : 'badge-machine';
+        const icon = type === 'article' ? 'bi-box' : 'bi-truck';
+        
+        itemRow.innerHTML = `
+            <div class="item-title d-flex align-items-center">
+                <span class="badge ${badgeClass} me-2"><i class="bi ${icon} me-1"></i>${type === 'article' ? 'Article' : 'Machine'}</span>
+                ${name}
+            </div>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="mb-0">
+                        <label class="form-label small">Quantité</label>
+                        <input type="number" class="form-control form-control-sm item-quantity" value="${quantity}" min="1">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-0">
+                        <label class="form-label small">Unité</label>
+                        <input type="text" class="form-control form-control-sm" value="${unit}" readonly>
+                    </div>
+                </div>
+                <div class="col-md-4 fournisseur-field" style="${document.getElementById('typeSelect').value === 'Livraison' ? '' : 'display: none;'}">
+                    <div class="mb-0">
+                        <label class="form-label small">Fournisseur</label>
+                        <input type="text" class="form-control form-control-sm item-fournisseur" value="${fournisseur}">
+                    </div>
+                </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-danger remove-item">
+                <i class="bi bi-trash"></i>
+            </button>
         `;
         
-        articlesBody.appendChild(newRow);
+        itemsContainer.appendChild(itemRow);
         
-        // Ajouter les écouteurs d'événements
-        const quantiteInput = newRow.querySelector('.quantite-input');
-        const fournisseurInput = newRow.querySelector('.fournisseur-input');
-        const deleteButton = newRow.querySelector('.delete-article');
-        
-        // Mise à jour de la quantité
-        quantiteInput.addEventListener('change', function() {
-            const index = selectedArticles.findIndex(a => a.id === article.id);
-            if (index !== -1) {
-                selectedArticles[index].quantite = parseInt(this.value) || 1;
+        // Ajouter l'événement pour supprimer l'élément
+        itemRow.querySelector('.remove-item').addEventListener('click', function() {
+            itemRow.remove();
+            
+            // Afficher le message vide si la liste est vide
+            if (itemsContainer.querySelectorAll('.item-row').length === 0) {
+                emptyMessage.style.display = 'block';
             }
         });
         
-        // Mise à jour du fournisseur
-        fournisseurInput.addEventListener('change', function() {
-            const index = selectedArticles.findIndex(a => a.id === article.id);
-            if (index !== -1) {
-                selectedArticles[index].fournisseur = this.value;
-            }
+        // Mettre à jour la quantité et le fournisseur lorsqu'ils changent
+        itemRow.querySelector('.item-quantity').addEventListener('change', function() {
+            itemRow.setAttribute('data-quantity', this.value);
         });
         
-        // Suppression de l'article
-        deleteButton.addEventListener('click', function() {
-            const index = selectedArticles.findIndex(a => a.id === article.id);
-            if (index !== -1) {
-                selectedArticles.splice(index, 1);
-                newRow.remove();
-                toggleEmptyMessage();
-            }
-        });
+        if (document.getElementById('typeSelect').value === 'Livraison') {
+            itemRow.querySelector('.item-fournisseur').addEventListener('change', function() {
+                itemRow.setAttribute('data-fournisseur', this.value);
+            });
+        }
     }
     
-    // Afficher le modal pour ajouter un article
-    addArticleBtn.addEventListener('click', function() {
-        articleModal.show();
-    });
-    
-    // Recherche d'articles dans le modal
-    articleSearch.addEventListener('input', function() {
-        const searchTerm = this.value.toLowerCase();
-        const rows = document.querySelectorAll('#articlesModalTable tbody tr');
+    // Soumettre le formulaire
+    document.getElementById('bonForm').addEventListener('submit', function(event) {
+        event.preventDefault();
         
-        rows.forEach(row => {
-            const reference = row.cells[0].textContent.toLowerCase();
-            const name = row.cells[1].textContent.toLowerCase();
-            const marque = row.cells[2].textContent.toLowerCase();
+        const submitBtn = document.getElementById('submitBon');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="spinner-border spinner-border-sm me-2"></i>Traitement en cours...';
+        
+        // Récupérer les données du formulaire
+        const type = document.getElementById('typeSelect').value;
+        const numero_serie = document.getElementById('numeroSerieInput').value;
+        const date = document.getElementById('dateInput').value;
+        const note = document.getElementById('noteInput').value;
+        const fournisseur = document.getElementById('fournisseurInput').value || '';
+        
+        // Récupérer tous les articles et machines
+        const items = document.querySelectorAll('.item-row');
+        const articles = [];
+        const machines = [];
+        
+        items.forEach(item => {
+            const itemType = item.getAttribute('data-type');
+            const itemId = item.getAttribute('data-id');
+            const itemQuantity = item.getAttribute('data-quantity');
+            const itemFournisseur = item.getAttribute('data-fournisseur') || '';
             
-            if (reference.includes(searchTerm) || name.includes(searchTerm) || marque.includes(searchTerm)) {
-                row.style.display = '';
+            if (itemType === 'article') {
+                articles.push({
+                    id: itemId,
+                    quantite: itemQuantity,
+                    fournisseur: itemFournisseur
+                });
             } else {
-                row.style.display = 'none';
+                machines.push({
+                    id: itemId,
+                    quantite: itemQuantity,
+                    fournisseur: itemFournisseur
+                });
             }
         });
-    });
-    
-    // Sélection d'un article dans le modal
-    document.querySelectorAll('.select-article').forEach(button => {
-        button.addEventListener('click', function() {
-            const id = this.dataset.id;
-            const reference = this.dataset.reference;
-            const nom = this.dataset.nom;
-            const unite = this.dataset.unite;
-            
-            // Vérifier si l'article est déjà dans la liste
-            if (selectedArticles.some(a => a.id === id)) {
-                alert('Cet article est déjà dans la liste.');
-                return;
-            }
-            
-            const article = {
-                id: id,
-                reference: reference,
-                nom: nom,
-                unite: unite,
-                quantite: 1,
-                fournisseur: ''
-            };
-            
-            selectedArticles.push(article);
-            addArticleToTable(article);
-            toggleEmptyMessage();
-            articleModal.hide();
-        });
-    });
-    
-    // Gestion des boutons radio du type de bon
-    document.querySelectorAll('input[name="bonType"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-            // Actions spécifiques selon le type de bon
-            const bonType = this.value;
-            console.log(`Type de bon sélectionné: ${bonType}`);
-            
-            // Vous pouvez ajouter ici une logique pour adapter l'interface selon le type de bon
-        });
-    });
-    
-    // Enregistrement du bon
-    saveBonBtn.addEventListener('click', function() {
-        // Validation basique
-        const bonType = document.querySelector('input[name="bonType"]:checked').value;
-        const bonNumero = document.getElementById('bonNumero').value.trim();
-        const bonDate = document.getElementById('bonDate').value;
-        const bonChantier = document.getElementById('bonChantier').value;
-        const bonNote = document.getElementById('bonNote').value.trim();
         
-        if (!bonNumero) {
-            alert('Veuillez saisir un numéro de série pour le bon.');
-            return;
-        }
-        
-        if (selectedArticles.length === 0) {
-            alert('Veuillez ajouter au moins un article au bon.');
-            return;
-        }
-        
-        // Désactiver le bouton pour éviter les soumissions multiples
-        saveBonBtn.disabled = true;
-        saveBonBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Traitement en cours...';
-        
-        // Préparer les données à envoyer
-        const bonData = {
-            type: bonType,
-            numero_serie: bonNumero,
-            date: bonDate,
-            chantier_id: bonChantier || null,
-            note: bonNote,
-            articles: selectedArticles.map(article => ({
-                id: article.id,
-                quantite: article.quantite,
-                fournisseur: article.fournisseur
-            }))
+        // Préparer les données pour l'envoi
+        const formData = {
+            type: type,
+            numero_serie: numero_serie,
+            date: date,
+            note: note,
+            fournisseur: fournisseur,
+            articles: articles,
+            machines: machines,
+            chantier_id: {{ app.session.get('selected_chantier') ? app.session.get('selected_chantier').id : 'null' }}
         };
         
         // Envoyer les données au serveur
@@ -424,42 +777,86 @@ document.addEventListener('DOMContentLoaded', function() {
                 'Content-Type': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
             },
-            body: JSON.stringify(bonData)
+            body: JSON.stringify(formData)
         })
         .then(response => {
             if (!response.ok) {
-                return response.json().then(errorData => {
-                    throw new Error(errorData.message || `Erreur réseau: ${response.status}`);
-                });
+                throw new Error('Erreur réseau: ' + response.status);
             }
             return response.json();
         })
         .then(data => {
             if (data.success) {
-                // Afficher un message de confirmation
-                alert('Bon créé avec succès. Redirection vers la liste des bons...');
+                showToast('Bon créé avec succès', 'success');
                 
-                // Rediriger vers la liste des bons
-                window.location.href = '{{ path('app_bon') }}';
+                // Rediriger vers la liste des bons après 1 seconde
+                setTimeout(() => {
+                    window.location.href = '{{ path('app_bon') }}';
+                }, 1000);
             } else {
-                alert('Erreur: ' + (data.message || 'Une erreur est survenue'));
-                // Réactiver le bouton
-                saveBonBtn.disabled = false;
-                saveBonBtn.innerHTML = 'Enregistrer le Bon';
+                showToast('Erreur: ' + data.message, 'danger');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Enregistrer le bon';
             }
         })
         .catch(error => {
             console.error('Erreur:', error);
-            alert('Erreur: ' + error.message);
-            // Réactiver le bouton
-            saveBonBtn.disabled = false;
-            saveBonBtn.innerHTML = 'Enregistrer le Bon';
+            showToast('Erreur: ' + error.message, 'danger');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Enregistrer le bon';
         });
     });
     
-    // Initialisation
-    toggleEmptyMessage();
+    // Fonction pour afficher un toast
+    function showToast(message, type) {
+        const toastContainer = document.getElementById('toastContainer');
+        
+        const toast = document.createElement('div');
+        toast.className = 'toast show';
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+        
+        let bgColor = 'bg-primary';
+        let icon = 'bi-info-circle';
+        
+        if (type === 'success') {
+            bgColor = 'bg-success';
+            icon = 'bi-check-circle';
+        } else if (type === 'danger') {
+            bgColor = 'bg-danger';
+            icon = 'bi-exclamation-triangle';
+        } else if (type === 'warning') {
+            bgColor = 'bg-warning';
+            icon = 'bi-exclamation-circle';
+        }
+        
+        toast.innerHTML = `
+            <div class="toast-header ${bgColor} text-white">
+                <i class="bi ${icon} me-2"></i>
+                <strong class="me-auto">${type.charAt(0).toUpperCase() + type.slice(1)}</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                ${message}
+            </div>
+        `;
+        
+        toastContainer.appendChild(toast);
+        
+        // Créer l'instance Toast Bootstrap
+        const bsToast = new bootstrap.Toast(toast);
+        
+        // Supprimer le toast après qu'il soit masqué
+        toast.addEventListener('hidden.bs.toast', function() {
+            toast.remove();
+        });
+        
+        // Masquer automatiquement après 3 secondes
+        setTimeout(() => {
+            bsToast.hide();
+        }, 3000);
+    }
 });
 </script>
-{% endblock %}
 {% endblock %}

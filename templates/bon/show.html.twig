@@ -1,75 +1,59 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Détails du Bon #{{ bon.numeroSerie }}{% endblock %}
+{% block title %}Détails du Bon{% endblock %}
 
 {% block stylesheets %}
+{{ parent() }}
 <style>
-    .bon-header {
-        background: #f8f9fa;
-        border-left: 5px solid #3b82f6;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
+    .detail-section {
+        margin-bottom: 2rem;
     }
     
-    .bon-info {
-        margin-bottom: 0.5rem;
-    }
-    
-    .bon-info .label {
-        font-weight: 600;
-        color: #4b5563;
-    }
-    
-    .bon-type-badge {
-        font-weight: 600;
-        padding: 0.35rem 0.65rem;
-        font-size: 0.9rem;
-        border-radius: 0.25rem;
-        display: inline-block;
-        margin-bottom: 0.5rem;
-    }
-    
-    .bon-sortie {
-        background-color: rgba(239, 68, 68, 0.1);
-        color: #ef4444;
-        border: 1px solid rgba(239, 68, 68, 0.2);
-    }
-    
-    .bon-entrée {
-        background-color: rgba(16, 185, 129, 0.1);
-        color: #10b981;
-        border: 1px solid rgba(16, 185, 129, 0.2);
-    }
-    
-    .bon-transfert {
-        background-color: rgba(245, 158, 11, 0.1);
-        color: #f59e0b;
-        border: 1px solid rgba(245, 158, 11, 0.2);
-    }
-    
-    .article-row {
-        border-left: 3px solid transparent;
-    }
-    
-    .article-row:hover {
-        background-color: #f8f9fa;
-        border-left: 3px solid #3b82f6;
-    }
-    
-    .note-section {
-        background-color: #f8f9fa;
+    .detail-card {
         border-radius: 0.5rem;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-        border-left: 4px solid #6b7280;
+        overflow: hidden;
     }
     
-    .btn-action {
-        transition: all 0.3s ease;
+    .item-row {
+        transition: background-color 0.2s;
     }
     
-    .btn-action:hover {
-        transform: translateY(-2px);
+    .item-row:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .badge-article {
+        background-color: #3b82f6;
+        color: white;
+    }
+    
+    .badge-machine {
+        background-color: #8b5cf6;
+        color: white;
+    }
+    
+    .badge-sortie {
+        background-color: #ef4444;
+        color: white;
+    }
+    
+    .badge-entrée {
+        background-color: #10b981;
+        color: white;
+    }
+    
+    .badge-livraison {
+        background-color: #f59e0b;
+        color: white;
+    }
+    
+    .property-name {
+        font-weight: 600;
+        color: #6b7280;
+    }
+    
+    .property-value {
+        font-weight: 500;
     }
 </style>
 {% endblock %}
@@ -77,100 +61,124 @@
 {% block body %}
 <div class="container-fluid px-4 py-3">
     <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Détails du Bon <span class="text-secondary">#{{ bon.numeroSerie }}</span></h1>
         <div>
-            <a href="{{ path('app_bon') }}" class="btn btn-outline-secondary mb-2">
-                <i class="bi bi-arrow-left me-2"></i>Retour à la liste
+            <a href="{{ path('app_bon') }}" class="btn btn-outline-secondary me-2">
+                <i class="bi bi-arrow-left me-2"></i>Retour
             </a>
-            <h1 class="h3 mt-2">Bon #{{ bon.numeroSerie }}</h1>
-        </div>
-        <div>
-            <a href="{{ path('app_bon_edit', {'id': bon.id}) }}" class="btn btn-outline-primary btn-action me-2">
+            <a href="{{ path('app_bon_edit', {'id': bon.id}) }}" class="btn btn-outline-primary">
                 <i class="bi bi-pencil me-2"></i>Modifier
             </a>
-            <button type="button" class="btn btn-outline-danger btn-action delete-bon-btn" data-id="{{ bon.id }}" data-serie="{{ bon.numeroSerie }}">
-                <i class="bi bi-trash me-2"></i>Supprimer
-            </button>
         </div>
     </div>
     
     <div class="row">
-        <div class="col-md-12">
-            <div class="bon-header">
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="bon-type-badge bon-{{ bon.type|lower }}">
-                            {% if bon.type == 'Sortie' %}
-                                <i class="bi bi-box-arrow-right me-1"></i>
-                            {% elseif bon.type == 'Entrée' %}
-                                <i class="bi bi-box-arrow-in-right me-1"></i>
-                            {% else %}
-                                <i class="bi bi-arrow-left-right me-1"></i>
-                            {% endif %}
-                            {{ bon.type }}
-                        </div>
-                        <div class="bon-info">
-                            <span class="label">Numéro de Série :</span>
-                            <span class="value">{{ bon.numeroSerie }}</span>
-                        </div>
-                        <div class="bon-info">
-                            <span class="label">Date :</span>
-                            <span class="value">{{ bon.date|date('d/m/Y') }}</span>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="bon-info">
-                            <span class="label">Chantier :</span>
-                            <span class="value">{{ bon.chantier ? bon.chantier.nom : 'Non assigné' }}</span>
-                        </div>
-                        <div class="bon-info">
-                            <span class="label">Nombre d'Articles :</span>
-                            <span class="value">{{ bon.bonDetails|length }}</span>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="d-flex justify-content-end">
-                            <button type="button" class="btn btn-primary btn-action" id="printBonBtn">
-                                <i class="bi bi-printer me-2"></i>Imprimer
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            {% if bon.note %}
-            <div class="note-section">
-                <h5 class="mb-3"><i class="bi bi-journal-text me-2"></i>Note / Commentaire</h5>
-                <p class="mb-0">{{ bon.note }}</p>
-            </div>
-            {% endif %}
-            
-            <div class="card shadow-sm mb-4">
+        <div class="col-md-5">
+            <div class="card shadow-sm mb-4 detail-card">
                 <div class="card-header bg-white py-3">
-                    <h5 class="card-title mb-0">Liste des Articles</h5>
+                    <h5 class="card-title mb-0">Informations du Bon</h5>
                 </div>
                 <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="property-name">Type</div>
+                            <div class="property-value">
+                                {% if bon.type == 'Sortie' %}
+                                    <span class="badge badge-sortie"><i class="bi bi-box-arrow-right me-1"></i>{{ bon.type }}</span>
+                                {% elseif bon.type == 'Entrée' %}
+                                    <span class="badge badge-entrée"><i class="bi bi-box-arrow-in-right me-1"></i>{{ bon.type }}</span>
+                                {% elseif bon.type == 'Livraison' %}
+                                    <span class="badge badge-livraison"><i class="bi bi-truck me-1"></i>{{ bon.type }}</span>
+                                {% else %}
+                                    {{ bon.type }}
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="property-name">Date</div>
+                            <div class="property-value">{{ bon.date|date('d/m/Y') }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="property-name">Numéro de Série</div>
+                            <div class="property-value">{{ bon.numeroSerie }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="property-name">Chantier</div>
+                            <div class="property-value">{{ bon.chantier ? bon.chantier.nom : 'Non assigné' }}</div>
+                        </div>
+                        <div class="col-12">
+                            <div class="property-name">Note</div>
+                            <div class="property-value">
+                                {% if bon.note %}
+                                    {{ bon.note|nl2br }}
+                                {% else %}
+                                    <span class="text-muted fst-italic">Aucune note</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-7">
+            <div class="card shadow-sm mb-4 detail-card">
+                <div class="card-header bg-white py-3">
+                    <h5 class="card-title mb-0">Détails des Articles et Machines</h5>
+                </div>
+                <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table">
-                            <thead>
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
                                 <tr>
-                                    <th>Article</th>
-                                    <th>Fournisseur</th>
-                                    <th>Unité</th>
+                                    <th>Type</th>
+                                    <th>Désignation</th>
                                     <th>Quantité</th>
+                                    <th>Unité</th>
+                                    <th>Fournisseur</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for detail in bon.bonDetails %}
-                                    <tr class="article-row">
-                                        <td>
-                                            <strong>{{ detail.article.nom }}</strong>
-                                            <small class="text-muted d-block">{{ detail.article.reference }}</small>
+                                {% if bon.bonDetails|length > 0 %}
+                                    {% for detail in bon.bonDetails %}
+                                        <tr class="item-row">
+                                            <td>
+                                                {% if detail.article %}
+                                                    <span class="badge badge-article">Article</span>
+                                                {% elseif detail.machine %}
+                                                    <span class="badge badge-machine">Machine</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if detail.article %}
+                                                    {{ detail.article.nom }}
+                                                    <small class="text-muted d-block">Réf: {{ detail.article.reference }}</small>
+                                                {% elseif detail.machine %}
+                                                    {{ detail.machine.nom }}
+                                                    {% if detail.machine.code %}
+                                                        <small class="text-muted d-block">Code: {{ detail.machine.code }}</small>
+                                                    {% endif %}
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ detail.quantite }}</td>
+                                            <td>{{ detail.unite }}</td>
+                                            <td>
+                                                {% if detail.fournisseur %}
+                                                    {{ detail.fournisseur }}
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="5" class="text-center py-4 text-muted">
+                                            <i class="bi bi-inbox fs-4 d-block mb-2"></i>
+                                            Aucun élément dans ce bon
                                         </td>
-                                        <td>{{ detail.fournisseur }}</td>
-                                        <td>{{ detail.unite }}</td>
-                                        <td>{{ detail.quantite }}</td>
                                     </tr>
-                                {% endfor %}
+                                {% endif %}
                             </tbody>
                         </table>
                     </div>
@@ -179,105 +187,4 @@
         </div>
     </div>
 </div>
-
-<!-- Modal de confirmation de suppression -->
-<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title">Confirmation de Suppression</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p>Êtes-vous sûr de vouloir supprimer le bon <strong id="bonSerieToDelete"></strong> ?</p>
-                <p class="mb-0 text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Cette action est irréversible.</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                <button type="button" class="btn btn-danger" id="confirmDelete">Supprimer</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-{% block page_javascripts %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Impression du bon
-    const printBonBtn = document.getElementById('printBonBtn');
-    if (printBonBtn) {
-        printBonBtn.addEventListener('click', function() {
-            window.print();
-        });
-    }
-    
-    // Gestion de la suppression du bon
-    const deleteButton = document.querySelector('.delete-bon-btn');
-    const deleteConfirmModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
-    const bonSerieToDelete = document.getElementById('bonSerieToDelete');
-    const confirmDeleteBtn = document.getElementById('confirmDelete');
-    
-    if (deleteButton) {
-        deleteButton.addEventListener('click', function() {
-            const bonId = this.getAttribute('data-id');
-            const bonSerie = this.getAttribute('data-serie');
-            
-            bonSerieToDelete.textContent = bonSerie;
-            confirmDeleteBtn.setAttribute('data-id', bonId);
-            
-            deleteConfirmModal.show();
-        });
-    }
-    
-    if (confirmDeleteBtn) {
-        confirmDeleteBtn.addEventListener('click', function() {
-            const bonId = this.getAttribute('data-id');
-            
-            // Désactiver le bouton pendant la suppression
-            confirmDeleteBtn.disabled = true;
-            confirmDeleteBtn.innerHTML = '<i class="spinner-border spinner-border-sm me-1"></i> Traitement en cours...';
-            
-            // Appel API pour supprimer le bon
-            fetch(`/bon/${bonId}/delete`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Erreur réseau: ' + response.status);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    alert('Bon supprimé avec succès. Redirection vers la liste des bons...');
-                    
-                    // Redirection vers la liste des bons
-                    window.location.href = '{{ path('app_bon') }}';
-                } else {
-                    alert('Erreur: ' + (data.message || 'Une erreur est survenue'));
-                    
-                    // Réactiver le bouton
-                    confirmDeleteBtn.disabled = false;
-                    confirmDeleteBtn.innerHTML = 'Supprimer';
-                    deleteConfirmModal.hide();
-                }
-            })
-            .catch(error => {
-                console.error('Erreur:', error);
-                alert('Erreur: ' + error.message);
-                
-                // Réactiver le bouton
-                confirmDeleteBtn.disabled = false;
-                confirmDeleteBtn.innerHTML = 'Supprimer';
-                deleteConfirmModal.hide();
-            });
-        });
-    }
-});
-</script>
-{% endblock %}
 {% endblock %}
