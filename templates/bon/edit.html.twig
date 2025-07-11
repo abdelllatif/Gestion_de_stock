@@ -255,7 +255,6 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/fr.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialisation de Flatpickr pour le sélecteur de date
     flatpickr("#dateInput", {
         locale: "fr",
         dateFormat: "d/m/Y"
@@ -285,7 +284,6 @@ document.addEventListener('DOMContentLoaded', function() {
         button.addEventListener('click', function() {
             this.closest('.item-row').remove();
             
-            // Afficher le message vide si la liste est vide
             if (itemsContainer.querySelectorAll('.item-row').length === 0) {
                 if (!emptyMessage) {
                     const newEmptyMessage = document.createElement('div');
@@ -304,27 +302,23 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Attacher les gestionnaires d'événements aux inputs de quantité existants
     document.querySelectorAll('.item-quantity').forEach(input => {
         input.addEventListener('change', function() {
             this.closest('.item-row').setAttribute('data-quantity', this.value);
         });
     });
     
-    // Attacher les gestionnaires d'événements aux inputs de fournisseur existants
     document.querySelectorAll('.item-fournisseur').forEach(input => {
         input.addEventListener('change', function() {
             this.closest('.item-row').setAttribute('data-fournisseur', this.value);
         });
     });
     
-    // Chargement des articles par AJAX
     let articlesLoaded = false;
     document.getElementById('addArticleBtn').addEventListener('click', function() {
         const modal = new bootstrap.Modal(document.getElementById('addArticleModal'));
         
         if (!articlesLoaded) {
-            // Charger les articles par AJAX
             fetch('/api/articles')
                 .then(response => response.json())
                 .then(data => {
@@ -350,13 +344,11 @@ document.addEventListener('DOMContentLoaded', function() {
         modal.show();
     });
     
-    // Chargement des machines par AJAX
     let machinesLoaded = false;
     document.getElementById('addMachineBtn').addEventListener('click', function() {
         const modal = new bootstrap.Modal(document.getElementById('addMachineModal'));
         
         if (!machinesLoaded) {
-            // Charger les machines par AJAX
             fetch('/api/machines')
                 .then(response => response.json())
                 .then(data => {
@@ -381,14 +373,12 @@ document.addEventListener('DOMContentLoaded', function() {
         modal.show();
     });
     
-    // Mise à jour de l'unité lors de la sélection d'un article
     document.getElementById('articleSelect').addEventListener('change', function() {
         const selectedOption = this.options[this.selectedIndex];
         const unite = selectedOption.getAttribute('data-unite');
         document.getElementById('articleUnite').value = unite || 'Unité';
     });
     
-    // Ajouter un article au bon
     document.getElementById('confirmAddArticle').addEventListener('click', function() {
         const articleSelect = document.getElementById('articleSelect');
         const articleQuantite = document.getElementById('articleQuantite');
@@ -417,7 +407,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         addItemToList('article', articleId, articleName, quantite, unite, fournisseur);
         
-        // Réinitialiser et fermer le modal
         articleQuantite.value = 1;
         if (articleFournisseur) articleFournisseur.value = '';
         

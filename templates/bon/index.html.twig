@@ -38,9 +38,14 @@
 <div class="container py-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 style="color: #232946; font-family: 'Segoe UI', sans-serif; font-weight: bold; letter-spacing: 1px;">Gestion des Bons</h1>
-        <a href="{{ path('app_bon_new') }}" class="btn btn-primary" style="font-weight: 500;">
-            <i class="bi bi-plus-circle me-2"></i>Nouveau Bon
-        </a>
+        <div>
+            <a href="{{ path('article_movement') }}" class="btn btn-success me-2" style="font-weight: 500;">
+                <i class="bi bi-arrow-left-right me-2"></i>Mouvement Stock
+            </a>
+            <a href="{{ path('app_bon_new') }}" class="btn btn-primary" style="font-weight: 500;">
+                <i class="bi bi-plus-circle me-2"></i>Nouveau Bon
+            </a>
+        </div>
     </div>
     <div class="card shadow-sm p-4">
         <table id="bonsTable" class="table table-striped" style="width:100%">
@@ -56,19 +61,16 @@
                 </tr>
             </thead>
             <tbody>
-                <!-- Les données seront chargées par DataTables -->
             </tbody>
         </table>
     </div>
 </div>
 
-<!-- La suppression des bons n'est plus autorisée -->
 <script src="{{ asset('js/components/alert.js') }}"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
 $(document).ready(function() {
-    // Initialisation de DataTables
     const table = $('#bonsTable').DataTable({
         processing: true,
         serverSide: true,
@@ -82,7 +84,6 @@ $(document).ready(function() {
                 }
                 console.error('Erreur DataTables:', error, thrown);
                 showToast(errorMessage, 'danger');
-                // Afficher un message dans le tableau
                 $('#bonsTable tbody').html('<tr><td colspan="7" class="text-center text-danger py-4"><i class="bi bi-exclamation-triangle me-2"></i>' + errorMessage + '</td></tr>');
             }
         },
@@ -129,7 +130,7 @@ $(document).ready(function() {
                 searchable: false
             }
         ],
-        order: [[3, 'desc']], // Tri par date par défaut
+        order: [[3, 'desc']], 
         language: {
             decimal: ",",
             thousands: " ",
@@ -149,7 +150,6 @@ $(document).ready(function() {
             }
         },
         drawCallback: function() {
-            // Réinitialiser les tooltips après chaque redraw
             const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
             tooltipTriggerList.map(function (tooltipTriggerEl) {
                 return new bootstrap.Tooltip(tooltipTriggerEl);
@@ -157,7 +157,6 @@ $(document).ready(function() {
         }
     });
     
-    // Fonction pour afficher un toast
     function showToast(message, type = 'primary') {
         Swal.fire({
             toast: true,
