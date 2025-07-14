@@ -12,13 +12,13 @@
     background: linear-gradient(90deg, #1e3a8a, #3b82f6);
     color: #fff !important;
 }
-.stock-movement-btn, .categories-btn {
+.stock-movement-btn, .categories-btn, .entretien-btn {
     color: #b9c6e0;
     background: none;
     border-radius: 8px;
     transition: background 0.2s, color 0.2s;
 }
-.stock-movement-btn.active, .categories-btn.active {
+.stock-movement-btn.active, .categories-btn.active, .entretien-btn.active {
     background: linear-gradient(90deg, #1e3a8a, #3b82f6);
     color: #fff !important;
 }
@@ -62,6 +62,19 @@
                 </a>
             </li>
             <li class="nav-item mb-2">
+                <button type="button" id="entretienToggle" class="nav-link w-100 text-start entretien-btn{% if activeLink == 'entretien' %} active{% endif %}" style="display: flex; align-items: center; justify-content: space-between;">
+                    <span><i class="bi bi-tools me-2"></i> Entretien</span>
+                    <span id="chevronEntretien" style="transition: transform 0.2s;">›</span>
+                </button>
+                <div id="entretienSubmenu" style="display: none;">
+                    <a href="/entretien" class="nav-link submenu-link mb-1{% if app.request.getRequestUri() starts with '/entretien' and not app.request.getRequestUri() starts with '/entretien/vidange' and not app.request.getRequestUri() starts with '/entretien/reparation' %} active{% endif %}">Gestion des entretiens</a>
+                    <a href="/entretien/vidange" class="nav-link submenu-link mb-1{% if app.request.getRequestUri() starts with '/entretien/vidange' %} active{% endif %}">Vidanges</a>
+                    <a href="/entretien/reparation" class="nav-link submenu-link mb-1{% if app.request.getRequestUri() starts with '/entretien/reparation' %} active{% endif %}">Réparations</a>
+                    <a href="/mecanicien" class="nav-link submenu-link mb-1{% if app.request.getRequestUri() starts with '/mecanicien' %} active{% endif %}">Mécaniciens</a>
+                    <a href="/chauffeur" class="nav-link submenu-link{% if app.request.getRequestUri() starts with '/chauffeur' %} active{% endif %}">Chauffeurs</a>               
+                </div>
+            </li>
+            <li class="nav-item mb-2">
                 <a href="/facture" class="nav-link {% if activeLink == 'facture' %}text-white{% endif %}" style="{% if activeLink == 'facture' %}background: linear-gradient(90deg, #1e3a8a, #3b82f6); border-radius: 8px;{% else %}border-radius: 8px;{% endif %}">
                     <i class="bi bi-receipt me-2"></i> Factures
                 </a>
@@ -81,11 +94,7 @@
                     <i class="bi bi-person-badge me-2"></i> Clients
                 </a>
             </li>
-            <li class="nav-item mb-2">
-                <a href="/chauffeur" class="nav-link {% if activeLink == 'chauffeur' %}text-white{% endif %}" style="{% if activeLink == 'chauffeur' %}text-white{% endif %}" style="{% if activeLink == 'chauffeur' %}background: linear-gradient(90deg, #1e3a8a, #3b82f6); border-radius: 8px;{% else %}border-radius: 8px;{% endif %}">
-                    <i class="bi bi-truck me-2"></i> Chauffeurs
-                </a>
-            </li>
+         
             <li class="nav-item mb-2">
                 <a href="/chantier" class="nav-link {% if activeLink == 'chantier' %}text-white{% endif %}" style="{% if activeLink == 'chantier' %}background: linear-gradient(90deg, #1e3a8a, #3b82f6); border-radius: 8px;{% else %}border-radius: 8px;{% endif %}">
                     <i class="bi bi-building me-2"></i> Chantiers
@@ -167,6 +176,27 @@ document.addEventListener('DOMContentLoaded', function() {
     {% if activeLink == 'categories' %}
     categoriesSubmenu.style.display = 'block';
     categoriesChevron.style.transform = 'rotate(90deg)';
+    {% endif %}
+    
+    // Entretien Toggle
+    var entretienToggle = document.getElementById('entretienToggle');
+    var entretienSubmenu = document.getElementById('entretienSubmenu');
+    var entretienChevron = document.getElementById('chevronEntretien');
+    if (entretienToggle) {
+        entretienToggle.addEventListener('click', function() {
+            if (entretienSubmenu.style.display === 'none' || entretienSubmenu.style.display === '') {
+                entretienSubmenu.style.display = 'block';
+                entretienChevron.style.transform = 'rotate(90deg)';
+            } else {
+                entretienSubmenu.style.display = 'none';
+                entretienChevron.style.transform = 'rotate(0deg)';
+            }
+        });
+    }
+    // Open entretien submenu if active
+    {% if activeLink == 'entretien' or activeLink == 'mecanicien' %}
+    entretienSubmenu.style.display = 'block';
+    entretienChevron.style.transform = 'rotate(90deg)';
     {% endif %}
 });
 </script>

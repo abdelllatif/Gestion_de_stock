@@ -1,0 +1,421 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier l'Entretien{% endblock %}
+
+{% block body %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- Flatpickr pour le sélecteur de date -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/fr.js"></script>
+
+<div class="container py-5">
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 style="color: #232946; font-family: 'Segoe UI', sans-serif; font-weight: bold; letter-spacing: 1px;">
+                    <i class="bi bi-tools me-2"></i>Modifier l'Entretien
+                </h1>
+                <a href="{{ path('app_entretien') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-2"></i>Retour à la liste
+                </a>
+            </div>
+            
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <form id="editEntretienForm" data-entretien-id="{{ entretien.id }}">
+                        <!-- Informations générales -->
+                        <h5 class="card-title border-bottom pb-2 mb-3">Informations générales</h5>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="entretien_numero" class="form-label">Numéro d'entretien*</label>
+                                    <input type="text" class="form-control" id="entretien_numero" name="numero" value="{{ entretien.numero }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="entretien_date" class="form-label">Date*</label>
+                                    <input type="text" class="form-control datepicker" id="entretien_date" name="date" value="{{ entretien.date|date('d/m/Y') }}" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="entretien_machine" class="form-label">Machine*</label>
+                                    <select class="form-select" id="entretien_machine" name="machine" required>
+                                        <option value="">Sélectionnez une machine</option>
+                                        <!-- Les options seront chargées par AJAX -->
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="entretien_chantier" class="form-label">Chantier*</label>
+                                    <select class="form-select" id="entretien_chantier" name="chantier" required>
+                                        <option value="">Sélectionnez un chantier</option>
+                                        <!-- Les options seront chargées par AJAX -->
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="entretien_mecanicien" class="form-label">Mécanicien</label>
+                                    <select class="form-select" id="entretien_mecanicien" name="mecanicien">
+                                        <option value="">Sélectionnez un mécanicien</option>
+                                        <!-- Les options seront chargées par AJAX -->
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="entretien_chauffeur" class="form-label">Chauffeur</label>
+                                    <select class="form-select" id="entretien_chauffeur" name="chauffeur">
+                                        <option value="">Sélectionnez un chauffeur</option>
+                                        <!-- Les options seront chargées par AJAX -->
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Type d'intervention -->
+                        <h5 class="card-title border-bottom pb-2 mb-3 mt-4">Type d'intervention</h5>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="entretien_has_vidange" name="has_vidange" {% if vidange is not null %}checked{% endif %}>
+                                    <label class="form-check-label" for="entretien_has_vidange">
+                                        <i class="bi bi-droplet me-1"></i> Vidange
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="entretien_has_reparation" name="has_reparation" {% if reparation is not null %}checked{% endif %}>
+                                    <label class="form-check-label" for="entretien_has_reparation">
+                                        <i class="bi bi-wrench me-1"></i> Réparation
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Section Vidange (initialement cachée si pas sélectionnée) -->
+                        <div id="vidange-section" class="mt-4 p-3 border rounded bg-light" style="display: {% if vidange is not null %}block{% else %}none{% endif %};">
+                            <h5 class="card-subtitle mb-3"><i class="bi bi-droplet me-2"></i>Détails de la vidange</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="vidange_type_huile" class="form-label">Type d'huile*</label>
+                                        <input type="text" class="form-control" id="vidange_type_huile" name="vidange_type_huile" {% if vidange is not null %}value="{{ vidange.typeChangment }}"{% endif %}>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="vidange_quantite" class="form-label">Quantité (litres)*</label>
+                                        <input type="number" step="0.1" class="form-control" id="vidange_quantite" name="vidange_quantite" {% if vidange is not null %}value="{{ vidange.consomation }}"{% endif %}>
+                                    </div>
+                                </div>
+                                <div class="col-md-12">
+                                    <div class="mb-3">
+                                        <label for="vidange_notes" class="form-label">Notes</label>
+                                        <textarea class="form-control" id="vidange_notes" name="vidange_notes" rows="2"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Section Réparation (initialement cachée si pas sélectionnée) -->
+                        <div id="reparation-section" class="mt-4 p-3 border rounded bg-light" style="display: {% if reparation is not null %}block{% else %}none{% endif %};">
+                            <h5 class="card-subtitle mb-3"><i class="bi bi-wrench me-2"></i>Détails de la réparation</h5>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="mb-3">
+                                        <label for="reparation_description" class="form-label">Description*</label>
+                                        <textarea class="form-control" id="reparation_description" name="reparation_description" rows="3">{% if reparation is not null %}{{ reparation.designations }}{% endif %}</textarea>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="reparation_cout" class="form-label">Coût estimé (DH)</label>
+                                        <input type="number" step="0.01" class="form-control" id="reparation_cout" name="reparation_cout" {% if reparation is not null %}value="{{ reparation.montantTtc }}"{% endif %}>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="reparation_priorite" class="form-label">Priorité</label>
+                                        <select class="form-select" id="reparation_priorite" name="reparation_priorite">
+                                            <option value="basse">Basse</option>
+                                            <option value="moyenne" selected>Moyenne</option>
+                                            <option value="haute">Haute</option>
+                                            <option value="critique">Critique</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-danger d-none mt-3" id="form-errors"></div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{{ path('app_entretien') }}" class="btn btn-outline-secondary me-2">
+                                Annuler
+                            </a>
+                            <button type="button" class="btn btn-primary" id="updateEntretienBtn">
+                                <i class="bi bi-save me-2"></i>Mettre à jour l'entretien
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Initialisation du sélecteur de date
+    flatpickr(".datepicker", {
+        locale: "fr",
+        dateFormat: "d/m/Y",
+        altInput: true,
+        altFormat: "d/m/Y"
+    });
+    
+    // Validation minimale: au moins une option doit être sélectionnée
+    function updateInterventionValidation() {
+        const hasVidange = $('#entretien_has_vidange').is(':checked');
+        const hasReparation = $('#entretien_has_reparation').is(':checked');
+        
+        if (hasVidange) {
+            $('#vidange_type_huile').prop('required', true);
+            $('#vidange_quantite').prop('required', true);
+        } else {
+            $('#vidange_type_huile').prop('required', false);
+            $('#vidange_quantite').prop('required', false);
+        }
+        
+        if (hasReparation) {
+            $('#reparation_description').prop('required', true);
+        } else {
+            $('#reparation_description').prop('required', false);
+        }
+        
+        // Si aucune intervention n'est sélectionnée, désactiver le bouton d'enregistrement
+        if (!hasVidange && !hasReparation) {
+            $('#updateEntretienBtn').prop('disabled', true);
+            $('#intervention-warning').removeClass('d-none');
+        } else {
+            $('#updateEntretienBtn').prop('disabled', false);
+            $('#intervention-warning').addClass('d-none');
+        }
+    }
+    
+    // Affichage/masquage des sections en fonction des checkbox
+    $('#entretien_has_vidange').on('change', function() {
+        if ($(this).is(':checked')) {
+            $('#vidange-section').slideDown(300);
+        } else {
+            $('#vidange-section').slideUp(300);
+        }
+        updateInterventionValidation();
+    });
+    
+    $('#entretien_has_reparation').on('change', function() {
+        if ($(this).is(':checked')) {
+            $('#reparation-section').slideDown(300);
+        } else {
+            $('#reparation-section').slideUp(300);
+        }
+        updateInterventionValidation();
+    });
+    
+    // État initial des boutons
+    updateInterventionValidation();
+    
+    // Chargement des machines avec pré-sélection
+    $.ajax({
+        url: '/api/machines',
+        type: 'GET',
+        success: function(machines) {
+            const selectMachine = $('#entretien_machine');
+            const machineId = {{ entretien.machine.id }};
+            
+            machines.forEach(function(machine) {
+                const option = new Option(machine.nom, machine.id, false, machine.id == machineId);
+                selectMachine.append(option);
+            });
+        },
+        error: function() {
+            console.error('Erreur lors du chargement des machines');
+        }
+    });
+    
+    // Chargement des chantiers avec pré-sélection
+    $.ajax({
+        url: '/api/chantiers',
+        type: 'GET',
+        success: function(chantiers) {
+            const selectChantier = $('#entretien_chantier');
+            const chantierId = {{ entretien.chantier.id }};
+            
+            chantiers.forEach(function(chantier) {
+                const option = new Option(chantier.nom, chantier.id, false, chantier.id == chantierId);
+                selectChantier.append(option);
+            });
+        },
+        error: function() {
+            console.error('Erreur lors du chargement des chantiers');
+        }
+    });
+    
+    // Chargement des mécaniciens avec pré-sélection
+    $.ajax({
+        url: '/api/mecaniciens',
+        type: 'GET',
+        success: function(mecaniciens) {
+            const selectMecanicien = $('#entretien_mecanicien');
+            {% if entretien.mecanicien %}
+            const mecanicienId = {{ entretien.mecanicien.id }};
+            {% else %}
+            const mecanicienId = null;
+            {% endif %}
+            
+            mecaniciens.forEach(function(mecanicien) {
+                const option = new Option(mecanicien.nom, mecanicien.id, false, mecanicien.id == mecanicienId);
+                selectMecanicien.append(option);
+            });
+        },
+        error: function() {
+            console.error('Erreur lors du chargement des mécaniciens');
+        }
+    });
+    
+    // Chargement des chauffeurs avec pré-sélection
+    $.ajax({
+        url: '/api/chauffeurs',
+        type: 'GET',
+        success: function(chauffeurs) {
+            const selectChauffeur = $('#entretien_chauffeur');
+            {% if entretien.chauffeur %}
+            const chauffeurId = {{ entretien.chauffeur.id }};
+            {% else %}
+            const chauffeurId = null;
+            {% endif %}
+            
+            chauffeurs.forEach(function(chauffeur) {
+                const option = new Option(chauffeur.nom, chauffeur.id, false, chauffeur.id == chauffeurId);
+                selectChauffeur.append(option);
+            });
+        },
+        error: function() {
+            console.error('Erreur lors du chargement des chauffeurs');
+        }
+    });
+    
+    // Mise à jour de l'entretien
+    $('#updateEntretienBtn').on('click', function() {
+        const updateBtn = $(this);
+        const entretienId = $('#editEntretienForm').data('entretien-id');
+        const hasVidange = $('#entretien_has_vidange').is(':checked');
+        const hasReparation = $('#entretien_has_reparation').is(':checked');
+        
+        // Vérifier qu'au moins un type d'intervention est sélectionné
+        if (!hasVidange && !hasReparation) {
+            $('#form-errors').removeClass('d-none').html('Veuillez sélectionner au moins un type d\'intervention (vidange et/ou réparation).');
+            return;
+        }
+        
+        // Validation du formulaire
+        const form = document.getElementById('editEntretienForm');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+        
+        // Préparation des données
+        const formData = {
+            numero: $('#entretien_numero').val(),
+            date: $('#entretien_date').val(),
+            machine_id: $('#entretien_machine').val(),
+            chantier_id: $('#entretien_chantier').val(),
+            mecanicien_id: $('#entretien_mecanicien').val() || null,
+            chauffeur_id: $('#entretien_chauffeur').val() || null,
+            has_vidange: hasVidange,
+            has_reparation: hasReparation,
+        };
+        
+        // Ajouter les données de vidange si nécessaire
+        if (hasVidange) {
+            formData.vidange = {
+                type_huile: $('#vidange_type_huile').val(),
+                quantite: $('#vidange_quantite').val(),
+                notes: $('#vidange_notes').val()
+            };
+        }
+        
+        // Ajouter les données de réparation si nécessaire
+        if (hasReparation) {
+            formData.reparation = {
+                description: $('#reparation_description').val(),
+                cout: $('#reparation_cout').val() || 0,
+                priorite: $('#reparation_priorite').val()
+            };
+        }
+        
+        // Désactiver le bouton pendant la soumission
+        updateBtn.prop('disabled', true);
+        updateBtn.html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Mise à jour...');
+        
+        // Envoyer les données
+        $.ajax({
+            url: `/entretien/${entretienId}/edit`,
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(formData),
+            success: function(response) {
+                if (response.success) {
+                    // Afficher un message de succès
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Succès',
+                        text: 'L\'entretien a été mis à jour avec succès',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                    
+                    // Rediriger vers la page de détails de l'entretien
+                    setTimeout(function() {
+                        window.location.href = '/entretien/' + response.entretien_id;
+                    }, 1500);
+                } else {
+                    $('#form-errors').removeClass('d-none').html(response.message || 'Une erreur est survenue lors de la mise à jour de l\'entretien.');
+                }
+            },
+            error: function(xhr) {
+                const response = xhr.responseJSON;
+                if (response && response.errors) {
+                    // Afficher les erreurs dans l'alerte
+                    const errorList = response.errors.map(error => `<li>${error}</li>`).join('');
+                    $('#form-errors').removeClass('d-none').html(`<ul class="mb-0">${errorList}</ul>`);
+                } else {
+                    $('#form-errors').removeClass('d-none').html('Une erreur est survenue. Veuillez réessayer.');
+                }
+            },
+            complete: function() {
+                // Réactiver le bouton
+                updateBtn.prop('disabled', false);
+                updateBtn.html('<i class="bi bi-save me-2"></i>Mettre à jour l\'entretien');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
