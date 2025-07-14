@@ -45,6 +45,7 @@
         <button type="button" class="btn btn-primary" id="saveCategorieBtn" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); border: none;">
             <i class="bi bi-save me-1"></i> Enregistrer
         </button>
+
       </div>
     </div>
   </div>
@@ -127,12 +128,7 @@
                                         title="Modifier">
                                     <i class="bi bi-pencil"></i>
                                 </button>
-                                <button class="btn btn-sm btn-outline-danger"
-                                        onclick="confirmDelete({{ categorie.id }})"
-                                        title="Supprimer"
-                                        {% if categorie.machines|length > 0 %}disabled{% endif %}>
-                                    <i class="bi bi-trash"></i>
-                                </button>
+                              
                             </div>
                         </td>
                     </tr>
