@@ -107,27 +107,91 @@
                             </div>
                         </div>
                         
-                        <!-- Section Vidange (initialement cachée si pas sélectionnée) -->
-                        <div id="vidange-section" class="mt-4 p-3 border rounded bg-light" style="display: {% if vidange is not null %}block{% else %}none{% endif %};">
+                        <!-- Section Vidange (initialement cachée) -->
+                        <div id="vidange-section" class="mt-4 p-3 border rounded bg-light" style="display: none;">
                             <h5 class="card-subtitle mb-3"><i class="bi bi-droplet me-2"></i>Détails de la vidange</h5>
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="mb-3">
+                                        <label for="vidange_km" class="form-label">Kilométrage actuel*</label>
+                                        <input type="number" class="form-control" id="vidange_km" name="vidange_km" value="{{ vidange is defined ? vidange.kilometre : '' }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="vidange_montant" class="form-label">Montant TTC (DH)*</label>
+                                        <input type="number" step="0.01" class="form-control" id="vidange_montant" name="vidange_montant" value="{{ vidange is defined ? vidange.cout : '' }}">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <h6 class="card-subtitle mb-3 mt-3">Éléments changés</h6>
+                            <div class="row">
+                                <div class="col-md-5">
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" id="vidange_huile" name="vidange_huile" {{ vidange is defined and vidange.typeChangment is defined and 'huile' in vidange.typeChangment ? 'checked' : '' }}>
+                                        <label class="form-check-label" for="vidange_huile">
+                                            Huile
+                                        </label>
+                                    </div>
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input filter-checkbox" type="checkbox" id="vidange_filtre_huile" name="vidange_filtre_huile" {{ vidange is defined and vidange.typeChangment is defined and 'filtre_huile' in vidange.typeChangment ? 'checked' : '' }}>
+                                        <label class="form-check-label" for="vidange_filtre_huile">
+                                            Filtre à huile
+                                        </label>
+                                    </div>
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input filter-checkbox" type="checkbox" id="vidange_filtre_gasoil" name="vidange_filtre_gasoil" {{ vidange is defined and vidange.typeChangment is defined and 'filtre_gasoil' in vidange.typeChangment ? 'checked' : '' }}>
+                                        <label class="form-check-label" for="vidange_filtre_gasoil">
+                                            Filtre à gasoil
+                                        </label>
+                                    </div>
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input filter-checkbox" type="checkbox" id="vidange_filtre_air" name="vidange_filtre_air" {{ vidange is defined and vidange.typeChangment is defined and 'filtre_air' in vidange.typeChangment ? 'checked' : '' }}>
+                                        <label class="form-check-label" for="vidange_filtre_air">
+                                            Filtre à air
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-7">
+                                    <div id="prochaine_vidange_container" class="mb-3">
+                                        <label for="vidange_km_prochaine" class="form-label">Km prochaine vidange*</label>
+                                        <input type="number" class="form-control" id="vidange_km_prochaine" name="vidange_km_prochaine" value="{{ vidange is defined and vidange.prochaineVidange is defined ? vidange.prochaineVidange : '' }}">
+                                    </div>
+                                    <div id="filtre_huile_container" class="mb-3" style="display: {{ vidange is defined and vidange.typeChangment is defined and 'filtre_huile' in vidange.typeChangment ? 'block' : 'none' }}">
+                                        <label for="vidange_km_filtre_huile" class="form-label">Km prochain filtre à huile</label>
+                                        <input type="number" class="form-control" id="vidange_km_filtre_huile" name="vidange_km_filtre_huile" value="{{ vidange is defined and vidange.kmFiltreHuile is defined ? vidange.kmFiltreHuile : '' }}">
+                                    </div>
+                                    <div id="filtre_gasoil_container" class="mb-3" style="display: {{ vidange is defined and vidange.typeChangment is defined and 'filtre_gasoil' in vidange.typeChangment ? 'block' : 'none' }}">
+                                        <label for="vidange_km_filtre_gasoil" class="form-label">Km prochain filtre à gasoil</label>
+                                        <input type="number" class="form-control" id="vidange_km_filtre_gasoil" name="vidange_km_filtre_gasoil" value="{{ vidange is defined and vidange.kmFiltreGasoil is defined ? vidange.kmFiltreGasoil : '' }}">
+                                    </div>
+                                    <div id="filtre_air_container" class="mb-3" style="display: {{ vidange is defined and vidange.typeChangment is defined and 'filtre_air' in vidange.typeChangment ? 'block' : 'none' }}">
+                                        <label for="vidange_km_filtre_air" class="form-label">Km prochain filtre à air</label>
+                                        <input type="number" class="form-control" id="vidange_km_filtre_air" name="vidange_km_filtre_air" value="{{ vidange is defined and vidange.kmFiltreAir is defined ? vidange.kmFiltreAir : '' }}">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
                                         <label for="vidange_type_huile" class="form-label">Type d'huile*</label>
-                                        <input type="text" class="form-control" id="vidange_type_huile" name="vidange_type_huile" {% if vidange is not null %}value="{{ vidange.typeChangment }}"{% endif %}>
+                                        <input type="text" class="form-control" id="vidange_type_huile" name="vidange_type_huile" value="{{ vidange is defined and vidange.typeHuile is defined ? vidange.typeHuile : '' }}">
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="mb-3">
                                         <label for="vidange_quantite" class="form-label">Quantité (litres)*</label>
-                                        <input type="number" step="0.1" class="form-control" id="vidange_quantite" name="vidange_quantite" {% if vidange is not null %}value="{{ vidange.consomation }}"{% endif %}>
+                                        <input type="number" step="0.1" class="form-control" id="vidange_quantite" name="vidange_quantite" value="{{ vidange is defined and vidange.quantite is defined ? vidange.quantite : '' }}">
                                     </div>
                                 </div>
-                                <div class="col-md-12">
-                                    <div class="mb-3">
-                                        <label for="vidange_notes" class="form-label">Notes</label>
-                                        <textarea class="form-control" id="vidange_notes" name="vidange_notes" rows="2"></textarea>
-                                    </div>
+                            </div>
+                            
+                            <div class="col-md-12">
+                                <div class="mb-3">
+                                    <label for="vidange_notes" class="form-label">Notes</label>
+                                    <textarea class="form-control" id="vidange_notes" name="vidange_notes" rows="2">{{ vidange is defined and vidange.notes is defined ? vidange.notes : '' }}</textarea>
                                 </div>
                             </div>
                         </div>
@@ -186,8 +250,42 @@ $(document).ready(function() {
         locale: "fr",
         dateFormat: "d/m/Y",
         altInput: true,
-        altFormat: "d/m/Y"
+        altFormat: "d/m/Y",
     });
+    
+    // Gestion de l'affichage des champs "prochain changement" en fonction des filtres sélectionnés
+    $('#vidange_filtre_huile').on('change', function() {
+        if ($(this).is(':checked')) {
+            $('#filtre_huile_container').slideDown(300);
+        } else {
+            $('#filtre_huile_container').slideUp(300);
+        }
+    });
+    
+    $('#vidange_filtre_gasoil').on('change', function() {
+        if ($(this).is(':checked')) {
+            $('#filtre_gasoil_container').slideDown(300);
+        } else {
+            $('#filtre_gasoil_container').slideUp(300);
+        }
+    });
+    
+    $('#vidange_filtre_air').on('change', function() {
+        if ($(this).is(':checked')) {
+            $('#filtre_air_container').slideDown(300);
+        } else {
+            $('#filtre_air_container').slideUp(300);
+        }
+    });
+    
+    // État initial des sections en fonction des valeurs existantes
+    if($('#entretien_has_vidange').is(':checked')) {
+        $('#vidange-section').show();
+    }
+    
+    if($('#entretien_has_reparation').is(':checked')) {
+        $('#reparation-section').show();
+    }
     
     // Validation minimale: au moins une option doit être sélectionnée
     function updateInterventionValidation() {
@@ -355,9 +453,19 @@ $(document).ready(function() {
         // Ajouter les données de vidange si nécessaire
         if (hasVidange) {
             formData.vidange = {
-                type_huile: $('#vidange_type_huile').val(),
-                quantite: $('#vidange_quantite').val(),
-                notes: $('#vidange_notes').val()
+                vidange_km: $('#vidange_km').val() || 0,
+                vidange_montant: $('#vidange_montant').val() || 0,
+                vidange_huile: $('#vidange_huile').is(':checked'),
+                vidange_filtre_huile: $('#vidange_filtre_huile').is(':checked'),
+                vidange_filtre_gasoil: $('#vidange_filtre_gasoil').is(':checked'),
+                vidange_filtre_air: $('#vidange_filtre_air').is(':checked'),
+                vidange_type_huile: $('#vidange_type_huile').val(),
+                vidange_quantite: $('#vidange_quantite').val(),
+                vidange_km_prochaine: $('#vidange_km_prochaine').val() || 0,
+                vidange_km_filtre_huile: $('#vidange_filtre_huile').is(':checked') ? $('#vidange_km_filtre_huile').val() || 0 : 0,
+                vidange_km_filtre_gasoil: $('#vidange_filtre_gasoil').is(':checked') ? $('#vidange_km_filtre_gasoil').val() || 0 : 0,
+                vidange_km_filtre_air: $('#vidange_filtre_air').is(':checked') ? $('#vidange_km_filtre_air').val() || 0 : 0,
+                vidange_notes: $('#vidange_notes').val()
             };
         }
         

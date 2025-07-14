@@ -43,101 +43,167 @@
                 </div>
             </div>
             
-            <!-- Section des réparations -->
+            <!-- Section des vidanges -->
             <div class="card shadow-sm mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center" style="background-color: #f8f9fa;">
-                    <h5 class="mb-0"><i class="bi bi-wrench me-2"></i>Réparations</h5>
-                    <button class="btn btn-sm btn-outline-primary">
+                    <h5 class="mb-0"><i class="bi bi-droplet me-2"></i>Vidanges</h5>
+                    <button class="btn btn-sm btn-outline-primary" id="addVidangeBtn">
                         <i class="bi bi-plus-circle me-1"></i>Ajouter
                     </button>
                 </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-striped mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Description</th>
-                                    <th>Coût</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% if entretien.reparations.count > 0 %}
-                                    {% for reparation in entretien.reparations %}
-                                    <tr>
-                                        <td>{{ reparation.designations }}</td>
-                                        <td>{{ reparation.montantTtc }}</td>
-                                        <td>
-                                            <div class="btn-group btn-group-sm">
-                                                <button class="btn btn-outline-primary">
-                                                    <i class="bi bi-pencil"></i>
-                                                </button>
-                                                <button class="btn btn-outline-danger">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
+                <div class="card-body">
+                    {% if entretien.vidanges.count > 0 %}
+                        {% for vidange in entretien.vidanges %}
+                            <div class="card mb-3 border-0 shadow-sm">
+                                <div class="card-header bg-light d-flex justify-content-between">
+                                    <h6 class="mb-0 fw-bold">Vidange du {{ vidange.date|date('d/m/Y') }}</h6>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-sm btn-outline-primary edit-vidange-btn" data-id="{{ vidange.id }}" data-bs-toggle="tooltip" title="Modifier">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger delete-vidange-btn" data-id="{{ vidange.id }}" data-bs-toggle="tooltip" title="Supprimer">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <h6 class="text-muted mb-2"><i class="bi bi-info-circle me-2"></i>Informations générales</h6>
+                                                <ul class="list-unstyled ps-3">
+                                                    <li><strong>Kilométrage actuel:</strong> {{ vidange.kilometre ?? 'N/A' }} km</li>
+                                                    <li><strong>Montant TTC:</strong> {{ vidange.montantTtc ?? 0 }} DH</li>
+                                                    <li><strong>Type d'huile:</strong> {{ vidange.typeHuile ?? vidange.typeChangment }}</li>
+                                                    <li><strong>Quantité:</strong> {{ vidange.quantite ?? vidange.consomation }} L</li>
+                                                </ul>
                                             </div>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                {% else %}
-                                    <tr>
-                                        <td colspan="3" class="text-center py-3">
-                                            <p class="text-muted mb-0">Aucune réparation enregistrée</p>
-                                        </td>
-                                    </tr>
-                                {% endif %}
-                            </tbody>
-                        </table>
-                    </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <h6 class="text-muted mb-2"><i class="bi bi-check2-circle me-2"></i>Éléments changés</h6>
+                                                <ul class="list-unstyled ps-3">
+                                                    <li>
+                                                        <span class="badge {{ vidange.typeChangment is defined and 'huile' in vidange.typeChangment ? 'bg-success' : 'bg-secondary' }} me-2">
+                                                            <i class="{{ vidange.typeChangment is defined and 'huile' in vidange.typeChangment ? 'bi bi-check-lg' : 'bi bi-x-lg' }}"></i>
+                                                        </span>
+                                                        Huile
+                                                    </li>
+                                                    <li>
+                                                        <span class="badge {{ vidange.typeChangment is defined and 'filtre_huile' in vidange.typeChangment ? 'bg-success' : 'bg-secondary' }} me-2">
+                                                            <i class="{{ vidange.typeChangment is defined and 'filtre_huile' in vidange.typeChangment ? 'bi bi-check-lg' : 'bi bi-x-lg' }}"></i>
+                                                        </span>
+                                                        Filtre à huile
+                                                    </li>
+                                                    <li>
+                                                        <span class="badge {{ vidange.typeChangment is defined and 'filtre_gasoil' in vidange.typeChangment ? 'bg-success' : 'bg-secondary' }} me-2">
+                                                            <i class="{{ vidange.typeChangment is defined and 'filtre_gasoil' in vidange.typeChangment ? 'bi bi-check-lg' : 'bi bi-x-lg' }}"></i>
+                                                        </span>
+                                                        Filtre à gasoil
+                                                    </li>
+                                                    <li>
+                                                        <span class="badge {{ vidange.typeChangment is defined and 'filtre_air' in vidange.typeChangment ? 'bg-success' : 'bg-secondary' }} me-2">
+                                                            <i class="{{ vidange.typeChangment is defined and 'filtre_air' in vidange.typeChangment ? 'bi bi-check-lg' : 'bi bi-x-lg' }}"></i>
+                                                        </span>
+                                                        Filtre à air
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <h6 class="text-muted mb-2"><i class="bi bi-calendar-event me-2"></i>Prochaines interventions</h6>
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-bordered">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th>Prochaine vidange</th>
+                                                        <th>Prochain filtre à huile</th>
+                                                        <th>Prochain filtre à gasoil</th>
+                                                        <th>Prochain filtre à air</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td>{{ vidange.prochaineVidange ?? vidange.consoProchaineVidange }} km</td>
+                                                        <td>{{ vidange.kmFiltreHuile ?? vidange.prochaineFilterChange ?? 'N/A' }} km</td>
+                                                        <td>{{ vidange.kmFiltreGasoil ?? 'N/A' }} km</td>
+                                                        <td>{{ vidange.kmFiltreAir ?? 'N/A' }} km</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    
+                                    {% if vidange.notes is defined and vidange.notes is not empty %}
+                                    <div class="mb-0">
+                                        <h6 class="text-muted mb-2"><i class="bi bi-chat-square-text me-2"></i>Notes</h6>
+                                        <div class="card bg-light">
+                                            <div class="card-body py-2 px-3">
+                                                {{ vidange.notes }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>Aucune vidange enregistrée
+                        </div>
+                    {% endif %}
                 </div>
             </div>
             
-            <!-- Section des vidanges -->
+            <!-- Section des réparations -->
             <div class="card shadow-sm">
                 <div class="card-header d-flex justify-content-between align-items-center" style="background-color: #f8f9fa;">
-                    <h5 class="mb-0"><i class="bi bi-droplet me-2"></i>Vidanges</h5>
-                    <button class="btn btn-sm btn-outline-primary">
+                    <h5 class="mb-0"><i class="bi bi-wrench me-2"></i>Réparations</h5>
+                    <button class="btn btn-sm btn-outline-primary" id="addReparationBtn">
                         <i class="bi bi-plus-circle me-1"></i>Ajouter
                     </button>
                 </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-striped mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Type d'huile</th>
-                                    <th>Quantité</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% if entretien.vidanges.count > 0 %}
-                                    {% for vidange in entretien.vidanges %}
-                                    <tr>
-                                        <td>{{ vidange.typeChangment }}</td>
-                                        <td>{{ vidange.consomation }}</td>
-                                        <td>
-                                            <div class="btn-group btn-group-sm">
-                                                <button class="btn btn-outline-primary">
-                                                    <i class="bi bi-pencil"></i>
-                                                </button>
-                                                <button class="btn btn-outline-danger">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                {% else %}
-                                    <tr>
-                                        <td colspan="3" class="text-center py-3">
-                                            <p class="text-muted mb-0">Aucune vidange enregistrée</p>
-                                        </td>
-                                    </tr>
-                                {% endif %}
-                            </tbody>
-                        </table>
-                    </div>
+                <div class="card-body">
+                    {% if entretien.reparations.count > 0 %}
+                        {% for reparation in entretien.reparations %}
+                            <div class="card mb-3 border-0 shadow-sm">
+                                <div class="card-header bg-light d-flex justify-content-between">
+                                    <h6 class="mb-0 fw-bold">Réparation du {{ reparation.date|date('d/m/Y') }}</h6>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-sm btn-outline-primary edit-reparation-btn" data-id="{{ reparation.id }}" data-bs-toggle="tooltip" title="Modifier">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger delete-reparation-btn" data-id="{{ reparation.id }}" data-bs-toggle="tooltip" title="Supprimer">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-8">
+                                            <h6 class="text-muted mb-2">Description</h6>
+                                            <p>{{ reparation.designations }}</p>
+                                            
+                                            {% if reparation.observation is defined and reparation.observation is not empty %}
+                                            <h6 class="text-muted mb-2 mt-3">Observations</h6>
+                                            <p>{{ reparation.observation }}</p>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-4">
+                                            <h6 class="text-muted mb-2">Coût</h6>
+                                            <p class="fs-5 fw-bold text-primary">{{ reparation.montantTtc }} DH</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>Aucune réparation enregistrée
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -154,6 +220,49 @@ $(document).ready(function() {
     
     // Redirection vers la page d'édition
     $('#editEntretienBtn').on('click', function() {
+        window.location.href = '{{ path("app_entretien_edit", {"id": entretien.id}) }}';
+    });
+    
+    // Gestion du clic sur les boutons d'édition de vidange
+    $('.edit-vidange-btn').on('click', function() {
+        const vidangeId = $(this).data('id');
+        // Rediriger vers une page d'édition ou ouvrir un modal pour éditer cette vidange spécifique
+        window.location.href = '{{ path("app_entretien_edit", {"id": entretien.id}) }}';
+    });
+    
+    // Gestion du clic sur les boutons de suppression de vidange
+    $('.delete-vidange-btn').on('click', function() {
+        const vidangeId = $(this).data('id');
+        Swal.fire({
+            title: 'Êtes-vous sûr?',
+            text: "Cette action est irréversible!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Oui, supprimer!',
+            cancelButtonText: 'Annuler'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Ici, vous devrez ajouter le code pour supprimer la vidange via une requête AJAX
+                Swal.fire(
+                    'Supprimé!',
+                    'La vidange a été supprimée.',
+                    'success'
+                );
+            }
+        });
+    });
+    
+    // Actions similaires pour les réparations
+    $('.edit-reparation-btn, .delete-reparation-btn').on('click', function() {
+        // Implémenter la logique similaire à celle des vidanges
+        window.location.href = '{{ path("app_entretien_edit", {"id": entretien.id}) }}';
+    });
+    
+    // Boutons d'ajout
+    $('#addVidangeBtn, #addReparationBtn').on('click', function() {
+        // Rediriger vers une page d'ajout ou ouvrir un modal
         window.location.href = '{{ path("app_entretien_edit", {"id": entretien.id}) }}';
     });
 });

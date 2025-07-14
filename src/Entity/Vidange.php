@@ -34,6 +34,30 @@ class Vidange
 
     #[ORM\ManyToOne(inversedBy: 'vidanges')]
     private ?Entretien $entretien = null;
+    
+    #[ORM\Column(nullable: true)]
+    private ?int $kilometre = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $type_huile = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?float $quantite = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $prochaineVidange = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $km_filtre_huile = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $km_filtre_gasoil = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $km_filtre_air = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $notes = null;
 
     public function getId(): ?int
     {
@@ -121,6 +145,102 @@ class Vidange
     public function setEntretien(?Entretien $entretien): static
     {
         $this->entretien = $entretien;
+
+        return $this;
+    }
+    
+    public function getKilometre(): ?int
+    {
+        return $this->kilometre;
+    }
+
+    public function setKilometre(?int $kilometre): static
+    {
+        $this->kilometre = $kilometre;
+
+        return $this;
+    }
+
+    public function getTypeHuile(): ?string
+    {
+        return $this->type_huile;
+    }
+
+    public function setTypeHuile(?string $type_huile): static
+    {
+        $this->type_huile = $type_huile;
+
+        return $this;
+    }
+
+    public function getQuantite(): ?float
+    {
+        return $this->quantite;
+    }
+
+    public function setQuantite(?float $quantite): static
+    {
+        $this->quantite = $quantite;
+
+        return $this;
+    }
+
+    public function getProchaineVidange(): ?int
+    {
+        return $this->prochaineVidange;
+    }
+
+    public function setProchaineVidange(?int $prochaineVidange): static
+    {
+        $this->prochaineVidange = $prochaineVidange;
+
+        return $this;
+    }
+
+    public function getKmFiltreHuile(): ?int
+    {
+        return $this->km_filtre_huile;
+    }
+
+    public function setKmFiltreHuile(?int $km_filtre_huile): static
+    {
+        $this->km_filtre_huile = $km_filtre_huile;
+
+        return $this;
+    }
+
+    public function getKmFiltreGasoil(): ?int
+    {
+        return $this->km_filtre_gasoil;
+    }
+
+    public function setKmFiltreGasoil(?int $km_filtre_gasoil): static
+    {
+        $this->km_filtre_gasoil = $km_filtre_gasoil;
+
+        return $this;
+    }
+
+    public function getKmFiltreAir(): ?int
+    {
+        return $this->km_filtre_air;
+    }
+
+    public function setKmFiltreAir(?int $km_filtre_air): static
+    {
+        $this->km_filtre_air = $km_filtre_air;
+
+        return $this;
+    }
+
+    public function getNotes(): ?string
+    {
+        return $this->notes;
+    }
+
+    public function setNotes(?string $notes): static
+    {
+        $this->notes = $notes;
 
         return $this;
     }

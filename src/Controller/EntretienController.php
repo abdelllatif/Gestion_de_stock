@@ -145,14 +145,64 @@ final class EntretienController extends AbstractController
                     $vidange->setDate($dateEntretien); // Utiliser la même date que l'entretien
                     $vidange->setTypeChangment($data['vidange']['type_huile']);
                     $vidange->setConsomation((string)$data['vidange']['quantite']);
-                    $vidange->setConsoProchaineVidange(0.0); // Valeurs par défaut
-                    $vidange->setProchaineFilterChange(0.0); // Valeurs par défaut
-                    $vidange->setMontantTtc(0.0); // Valeur par défaut
                     
-                    if (!empty($data['vidange']['notes'])) {
-                        // Si vous n'avez pas de champ pour les notes, vous pouvez les mettre dans un autre champ
-                        // ou les ignorer
+                    // Nouveaux champs pour la vidange
+                    if (!empty($data['vidange']['km_prochaine_vidange'])) {
+                        $vidange->setConsoProchaineVidange((float)$data['vidange']['km_prochaine_vidange']);
+                        // Nouveau champ pour km_prochaine_vidange
+                        $vidange->setProchaineVidange((int)$data['vidange']['km_prochaine_vidange']);
+                    } else {
+                        $vidange->setConsoProchaineVidange(0.0);
                     }
+                    
+                    if (!empty($data['vidange']['vidange_km_filtre_huile'])) {
+                        $vidange->setProchaineFilterChange((float)$data['vidange']['vidange_km_filtre_huile']);
+                        // Nouveau champ pour km_filtre_huile
+                        $vidange->setKmFiltreHuile((int)$data['vidange']['vidange_km_filtre_huile']);
+                    } else {
+                        $vidange->setProchaineFilterChange(0.0);
+                    }
+                    
+                    if (!empty($data['vidange']['vidange_km_filtre_gasoil'])) {
+                        $vidange->setKmFiltreGasoil((int)$data['vidange']['vidange_km_filtre_gasoil']);
+                    }
+                    
+                    if (!empty($data['vidange']['vidange_km_filtre_air'])) {
+                        $vidange->setKmFiltreAir((int)$data['vidange']['vidange_km_filtre_air']);
+                    }
+                    
+                    if (!empty($data['vidange']['vidange_montant'])) {
+                        $vidange->setMontantTtc((float)$data['vidange']['vidange_montant']);
+                    } else {
+                        $vidange->setMontantTtc(0.0);
+                    }
+                    
+                    // Nouveaux champs pour la vidange
+                    if (!empty($data['vidange']['vidange_km'])) {
+                        $vidange->setKilometre((int)$data['vidange']['vidange_km']);
+                    }
+                    
+                    if (!empty($data['vidange']['vidange_type_huile'])) {
+                        $vidange->setTypeHuile($data['vidange']['vidange_type_huile']);
+                    }
+                    
+                    if (!empty($data['vidange']['vidange_quantite'])) {
+                        $vidange->setQuantite((float)$data['vidange']['vidange_quantite']);
+                    }
+                    
+                    if (!empty($data['vidange']['vidange_notes'])) {
+                        $vidange->setNotes($data['vidange']['vidange_notes']);
+                    }
+                    
+                    // Stockage des informations sur les éléments changés
+                    $elementsChanges = [];
+                    if (!empty($data['vidange']['vidange_huile'])) $elementsChanges[] = 'huile';
+                    if (!empty($data['vidange']['vidange_filtre_huile'])) $elementsChanges[] = 'filtre_huile';
+                    if (!empty($data['vidange']['vidange_filtre_gasoil'])) $elementsChanges[] = 'filtre_gasoil';
+                    if (!empty($data['vidange']['vidange_filtre_air'])) $elementsChanges[] = 'filtre_air';
+                    
+                    $typeChangement = !empty($elementsChanges) ? implode(',', $elementsChanges) : 'huile';
+                    $vidange->setTypeChangment($typeChangement);
                     
                     $vidange->setEntretien($entretien);
                     $entityManager->persist($vidange);
@@ -276,16 +326,64 @@ final class EntretienController extends AbstractController
                     $vidange->setDate($dateEntretien);
                     $vidange->setTypeChangment($data['vidange']['type_huile']);
                     $vidange->setConsomation((string)$data['vidange']['quantite']);
-                    // Conserver les autres valeurs si elles existent déjà
-                    if (!$vidange->getConsoProchaineVidange()) {
+                    
+                    // Nouveaux champs pour la vidange
+                    if (!empty($data['vidange']['km_prochaine_vidange'])) {
+                        $vidange->setConsoProchaineVidange((float)$data['vidange']['km_prochaine_vidange']);
+                        // Nouveau champ pour km_prochaine_vidange
+                        $vidange->setProchaineVidange((int)$data['vidange']['km_prochaine_vidange']);
+                    } else if (!$vidange->getConsoProchaineVidange()) {
                         $vidange->setConsoProchaineVidange(0.0);
                     }
-                    if (!$vidange->getProchaineFilterChange()) {
+                    
+                    if (!empty($data['vidange']['vidange_km_filtre_huile'])) {
+                        $vidange->setProchaineFilterChange((float)$data['vidange']['vidange_km_filtre_huile']);
+                        // Nouveau champ pour km_filtre_huile
+                        $vidange->setKmFiltreHuile((int)$data['vidange']['vidange_km_filtre_huile']);
+                    } else if (!$vidange->getProchaineFilterChange()) {
                         $vidange->setProchaineFilterChange(0.0);
                     }
-                    if (!$vidange->getMontantTtc()) {
+                    
+                    if (!empty($data['vidange']['vidange_km_filtre_gasoil'])) {
+                        $vidange->setKmFiltreGasoil((int)$data['vidange']['vidange_km_filtre_gasoil']);
+                    }
+                    
+                    if (!empty($data['vidange']['vidange_km_filtre_air'])) {
+                        $vidange->setKmFiltreAir((int)$data['vidange']['vidange_km_filtre_air']);
+                    }
+                    
+                    if (!empty($data['vidange']['vidange_montant'])) {
+                        $vidange->setMontantTtc((float)$data['vidange']['vidange_montant']);
+                    } else if (!$vidange->getMontantTtc()) {
                         $vidange->setMontantTtc(0.0);
                     }
+                    
+                    // Nouveaux champs pour la vidange
+                    if (!empty($data['vidange']['vidange_km'])) {
+                        $vidange->setKilometre((int)$data['vidange']['vidange_km']);
+                    }
+                    
+                    if (!empty($data['vidange']['vidange_type_huile'])) {
+                        $vidange->setTypeHuile($data['vidange']['vidange_type_huile']);
+                    }
+                    
+                    if (!empty($data['vidange']['vidange_quantite'])) {
+                        $vidange->setQuantite((float)$data['vidange']['vidange_quantite']);
+                    }
+                    
+                    if (!empty($data['vidange']['vidange_notes'])) {
+                        $vidange->setNotes($data['vidange']['vidange_notes']);
+                    }
+                    
+                    // Stockage des informations sur les éléments changés
+                    $elementsChanges = [];
+                    if (!empty($data['vidange']['vidange_huile'])) $elementsChanges[] = 'huile';
+                    if (!empty($data['vidange']['vidange_filtre_huile'])) $elementsChanges[] = 'filtre_huile';
+                    if (!empty($data['vidange']['vidange_filtre_gasoil'])) $elementsChanges[] = 'filtre_gasoil';
+                    if (!empty($data['vidange']['vidange_filtre_air'])) $elementsChanges[] = 'filtre_air';
+                    
+                    $typeChangement = !empty($elementsChanges) ? implode(',', $elementsChanges) : 'huile';
+                    $vidange->setTypeChangment($typeChangement);
                 } else if ($vidange) {
                     // Si on avait une vidange mais qu'on ne l'a plus sélectionné, on la supprime
                     $entityManager->remove($vidange);

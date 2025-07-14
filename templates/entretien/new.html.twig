@@ -113,6 +113,69 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="mb-3">
+                                        <label for="vidange_km" class="form-label">Kilométrage actuel*</label>
+                                        <input type="number" class="form-control" id="vidange_km" name="vidange_km">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="vidange_montant" class="form-label">Montant TTC (DH)*</label>
+                                        <input type="number" step="0.01" class="form-control" id="vidange_montant" name="vidange_montant">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <h6 class="card-subtitle mb-3 mt-3">Éléments changés</h6>
+                            <div class="row">
+                                <div class="col-md-5">
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" id="vidange_huile" name="vidange_huile" checked>
+                                        <label class="form-check-label" for="vidange_huile">
+                                            Huile
+                                        </label>
+                                    </div>
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input filter-checkbox" type="checkbox" id="vidange_filtre_huile" name="vidange_filtre_huile">
+                                        <label class="form-check-label" for="vidange_filtre_huile">
+                                            Filtre à huile
+                                        </label>
+                                    </div>
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input filter-checkbox" type="checkbox" id="vidange_filtre_gasoil" name="vidange_filtre_gasoil">
+                                        <label class="form-check-label" for="vidange_filtre_gasoil">
+                                            Filtre à gasoil
+                                        </label>
+                                    </div>
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input filter-checkbox" type="checkbox" id="vidange_filtre_air" name="vidange_filtre_air">
+                                        <label class="form-check-label" for="vidange_filtre_air">
+                                            Filtre à air
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-7">
+                                    <div id="prochaine_vidange_container" class="mb-3">
+                                        <label for="vidange_km_prochaine" class="form-label">Km prochaine vidange*</label>
+                                        <input type="number" class="form-control" id="vidange_km_prochaine" name="vidange_km_prochaine">
+                                    </div>
+                                    <div id="filtre_huile_container" class="mb-3" style="display: none;">
+                                        <label for="vidange_km_filtre_huile" class="form-label">Km prochain filtre à huile</label>
+                                        <input type="number" class="form-control" id="vidange_km_filtre_huile" name="vidange_km_filtre_huile">
+                                    </div>
+                                    <div id="filtre_gasoil_container" class="mb-3" style="display: none;">
+                                        <label for="vidange_km_filtre_gasoil" class="form-label">Km prochain filtre à gasoil</label>
+                                        <input type="number" class="form-control" id="vidange_km_filtre_gasoil" name="vidange_km_filtre_gasoil">
+                                    </div>
+                                    <div id="filtre_air_container" class="mb-3" style="display: none;">
+                                        <label for="vidange_km_filtre_air" class="form-label">Km prochain filtre à air</label>
+                                        <input type="number" class="form-control" id="vidange_km_filtre_air" name="vidange_km_filtre_air">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
                                         <label for="vidange_type_huile" class="form-label">Type d'huile*</label>
                                         <input type="text" class="form-control" id="vidange_type_huile" name="vidange_type_huile">
                                     </div>
@@ -123,11 +186,12 @@
                                         <input type="number" step="0.1" class="form-control" id="vidange_quantite" name="vidange_quantite">
                                     </div>
                                 </div>
-                                <div class="col-md-12">
-                                    <div class="mb-3">
-                                        <label for="vidange_notes" class="form-label">Notes</label>
-                                        <textarea class="form-control" id="vidange_notes" name="vidange_notes" rows="2"></textarea>
-                                    </div>
+                            </div>
+                            
+                            <div class="col-md-12">
+                                <div class="mb-3">
+                                    <label for="vidange_notes" class="form-label">Notes</label>
+                                    <textarea class="form-control" id="vidange_notes" name="vidange_notes" rows="2"></textarea>
                                 </div>
                             </div>
                         </div>
@@ -188,6 +252,31 @@ $(document).ready(function() {
         altInput: true,
         altFormat: "d/m/Y",
         defaultDate: new Date()
+    });
+    
+    // Gestion de l'affichage des champs "prochain changement" en fonction des filtres sélectionnés
+    $('#vidange_filtre_huile').on('change', function() {
+        if ($(this).is(':checked')) {
+            $('#filtre_huile_container').slideDown(300);
+        } else {
+            $('#filtre_huile_container').slideUp(300);
+        }
+    });
+    
+    $('#vidange_filtre_gasoil').on('change', function() {
+        if ($(this).is(':checked')) {
+            $('#filtre_gasoil_container').slideDown(300);
+        } else {
+            $('#filtre_gasoil_container').slideUp(300);
+        }
+    });
+    
+    $('#vidange_filtre_air').on('change', function() {
+        if ($(this).is(':checked')) {
+            $('#filtre_air_container').slideDown(300);
+        } else {
+            $('#filtre_air_container').slideUp(300);
+        }
     });
     
     // Validation minimale: au moins une option doit être sélectionnée
@@ -335,8 +424,18 @@ $(document).ready(function() {
         // Ajouter les données de vidange si nécessaire
         if (hasVidange) {
             formData.vidange = {
+                km: $('#vidange_km').val() || 0,
+                montant_ttc: $('#vidange_montant').val() || 0,
+                huile: $('#vidange_huile').is(':checked'),
+                filtre_huile: $('#vidange_filtre_huile').is(':checked'),
+                filtre_gasoil: $('#vidange_filtre_gasoil').is(':checked'),
+                filtre_air: $('#vidange_filtre_air').is(':checked'),
                 type_huile: $('#vidange_type_huile').val(),
                 quantite: $('#vidange_quantite').val(),
+                km_prochaine_vidange: $('#vidange_km_prochaine').val() || 0,
+                km_prochain_filtre_huile: $('#vidange_filtre_huile').is(':checked') ? $('#vidange_km_filtre_huile').val() || 0 : 0,
+                km_prochain_filtre_gasoil: $('#vidange_filtre_gasoil').is(':checked') ? $('#vidange_km_filtre_gasoil').val() || 0 : 0,
+                km_prochain_filtre_air: $('#vidange_filtre_air').is(':checked') ? $('#vidange_km_filtre_air').val() || 0 : 0,
                 notes: $('#vidange_notes').val()
             };
         }
