@@ -72,7 +72,7 @@
                 </a>
             </li>
             <li class="nav-item mb-2">
-                <a href="/demande/achat" class="nav-link {% if activeLink == 'demande_achat' %}text-white{% endif %}" style="{% if activeLink == 'commande_client' %}background: linear-gradient(90deg, #1e3a8a, #3b82f6); border-radius: 8px;{% else %}border-radius: 8px;{% endif %}">
+                <a href="/demande/achat" class="nav-link {% if activeLink == 'demande_achat' %}text-white{% endif %}" style="{% if activeLink == 'demande_achat' %}background: linear-gradient(90deg, #1e3a8a, #3b82f6); border-radius: 8px;{% else %}border-radius: 8px;{% endif %}">
                     <i class="bi bi-cart me-2"></i> Demande Achat
                 </a>
             </li>
@@ -82,8 +82,18 @@
                 </a>
             </li>
             <li class="nav-item mb-2">
-                <a href="/chauffeur" class="nav-link {% if activeLink == 'chauffeur' %}text-white{% endif %}" style="{% if activeLink == 'chauffeur' %}text-white{% endif %}" style="{% if activeLink == 'chauffeur' %}background: linear-gradient(90deg, #1e3a8a, #3b82f6); border-radius: 8px;{% else %}border-radius: 8px;{% endif %}">
+                <a href="/chauffeur" class="nav-link {% if activeLink == 'chauffeur' %}text-white{% endif %}" style="{% if activeLink == 'chauffeur' %}background: linear-gradient(90deg, #1e3a8a, #3b82f6); border-radius: 8px;{% else %}border-radius: 8px;{% endif %}">
                     <i class="bi bi-truck me-2"></i> Chauffeurs
+                </a>
+            </li>
+            <li class="nav-item mb-2">
+                <a href="/entretien" class="nav-link {% if activeLink == 'entretien_chauffeur' %}text-white{% endif %}" style="{% if activeLink == 'entretien_chauffeur' %}background: linear-gradient(90deg, #1e3a8a, #3b82f6); border-radius: 8px;{% else %}border-radius: 8px;{% endif %}">
+                    <i class="bi bi-wrench me-2"></i> Entretien 
+                </a>
+            </li>
+            <li class="nav-item mb-2">
+                <a href="/mécanicien" class="nav-link {% if activeLink == 'mécanicien' %}text-white{% endif %}" style="{% if activeLink == 'mécanicien' %}background: linear-gradient(90deg, #1e3a8a, #3b82f6); border-radius: 8px;{% else %}border-radius: 8px;{% endif %}">
+                    <i class="bi bi-tools me-2"></i> Mécanicien
                 </a>
             </li>
             <li class="nav-item mb-2">
