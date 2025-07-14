@@ -15,11 +15,6 @@ class Stock
     #[ORM\Column]
     private ?int $id = null;
 
-    /**
-     * @var Collection<int, Article>
-     */
-    #[ORM\OneToMany(targetEntity: Article::class, mappedBy: 'stock')]
-    private Collection $article;
 
     #[ORM\Column]
     private ?int $quantite_chantier = null;
@@ -39,11 +34,13 @@ class Stock
     #[ORM\ManyToOne(inversedBy: 'stocks')]
     private ?Machine $machine = null;
 
+    #[ORM\ManyToOne(inversedBy: 'stocks')]
+    private ?Article $article = null;
+
    
 
     public function __construct()
     {
-        $this->article = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -51,35 +48,7 @@ class Stock
         return $this->id;
     }
 
-    /**
-     * @return Collection<int, Article>
-     */
-    public function getArticle(): Collection
-    {
-        return $this->article;
-    }
 
-    public function addArticle(Article $article): static
-    {
-        if (!$this->article->contains($article)) {
-            $this->article->add($article);
-            $article->setStock($this);
-        }
-
-        return $this;
-    }
-
-    public function removeArticle(Article $article): static
-    {
-        if ($this->article->removeElement($article)) {
-            // set the owning side to null (unless already changed)
-            if ($article->getStock() === $this) {
-                $article->setStock(null);
-            }
-        }
-
-        return $this;
-    }
 
     public function getQuantiteChantier(): ?int
     {
@@ -149,6 +118,18 @@ class Stock
     public function setMachine(?Machine $machine): static
     {
         $this->machine = $machine;
+
+        return $this;
+    }
+
+    public function getArticle(): ?Article
+    {
+        return $this->article;
+    }
+
+    public function setArticle(?Article $article): static
+    {
+        $this->article = $article;
 
         return $this;
     }

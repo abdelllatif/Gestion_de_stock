@@ -3,8 +3,6 @@
 namespace App\Entity;
 
 use App\Repository\MouvementStockRepository;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -16,10 +14,10 @@ class MouvementStock
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(type: Types::TEXT)]
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $observation = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 255, nullable: true)]
     private ?string $fournisseur = null;
 
     #[ORM\Column]
@@ -34,7 +32,6 @@ class MouvementStock
     #[ORM\ManyToOne(inversedBy: 'mouvementStocks')]
     private ?Chantier $chantierRec = null;
 
-
     #[ORM\ManyToOne(inversedBy: 'mouvementStocks')]
     private ?Article $article = null;
 
@@ -44,26 +41,31 @@ class MouvementStock
     #[ORM\ManyToOne(inversedBy: 'mouvementStocks')]
     private ?Machine $machine = null;
 
-   
+    #[ORM\Column(nullable: true)]
+    private ?int $bon_etat = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?int $mauvais_etat = null;
 
-   
+    #[ORM\Column(nullable: true)]
+    private ?int $feraille_etat = null;
+
+    #[ORM\Column(length: 255, options: ["default" => "waiting"])]
+    private ?string $status = 'waiting';
 
     public function getId(): ?int
     {
         return $this->id;
     }
 
-
     public function getObservation(): ?string
     {
         return $this->observation;
     }
 
-    public function setObservation(string $observation): static
+    public function setObservation(?string $observation): static
     {
         $this->observation = $observation;
-
         return $this;
     }
 
@@ -72,10 +74,9 @@ class MouvementStock
         return $this->fournisseur;
     }
 
-    public function setFournisseur(string $fournisseur): static
+    public function setFournisseur(?string $fournisseur): static
     {
         $this->fournisseur = $fournisseur;
-
         return $this;
     }
 
@@ -87,7 +88,6 @@ class MouvementStock
     public function setQuantite(int $quantite): static
     {
         $this->quantite = $quantite;
-
         return $this;
     }
 
@@ -99,7 +99,6 @@ class MouvementStock
     public function setType(string $type): static
     {
         $this->type = $type;
-
         return $this;
     }
 
@@ -111,7 +110,6 @@ class MouvementStock
     public function setChantierExp(?Chantier $chantierExp): static
     {
         $this->chantierExp = $chantierExp;
-
         return $this;
     }
 
@@ -123,7 +121,6 @@ class MouvementStock
     public function setChantierRec(?Chantier $chantierRec): static
     {
         $this->chantierRec = $chantierRec;
-
         return $this;
     }
 
@@ -135,7 +132,6 @@ class MouvementStock
     public function setArticle(?Article $article): static
     {
         $this->article = $article;
-
         return $this;
     }
 
@@ -147,7 +143,6 @@ class MouvementStock
     public function setDate(\DateTime $date): static
     {
         $this->date = $date;
-
         return $this;
     }
 
@@ -159,9 +154,50 @@ class MouvementStock
     public function setMachine(?Machine $machine): static
     {
         $this->machine = $machine;
-
         return $this;
     }
 
+    public function getBonEtat(): ?int
+    {
+        return $this->bon_etat;
+    }
 
+    public function setBonEtat(?int $bon_etat): static
+    {
+        $this->bon_etat = $bon_etat;
+        return $this;
+    }
+
+    public function getMauvaisEtat(): ?int
+    {
+        return $this->mauvais_etat;
+    }
+
+    public function setMauvaisEtat(?int $mauvais_etat): static
+    {
+        $this->mauvais_etat = $mauvais_etat;
+        return $this;
+    }
+
+    public function getFerailleEtat(): ?int
+    {
+        return $this->feraille_etat;
+    }
+
+    public function setFerailleEtat(?int $feraille_etat): static
+    {
+        $this->feraille_etat = $feraille_etat;
+        return $this;
+    }
+
+    public function getStatus(): ?string
+    {
+        return $this->status;
+    }
+
+    public function setStatus(string $status): static
+    {
+        $this->status = $status;
+        return $this;
+    }
 }

@@ -41,6 +41,11 @@ class Article
 
     #[ORM\Column(length: 255)]
     private ?string $type = null;
+    /**
+     * @var Collection<int, Stock>
+     */
+   #[ORM\OneToMany(targetEntity: Stock::class, mappedBy: 'article')]
+   private Collection $stocks;
 
     /**
      * @var Collection<int, DemandeDetails>
@@ -64,6 +69,7 @@ class Article
     public function __construct()
     {
         $this->demandeDetails = new ArrayCollection();
+        $this->stocks = new ArrayCollection();
         $this->mouvementStocks = new ArrayCollection();
     }
 
@@ -239,6 +245,30 @@ class Article
         return $this;
     }
 
+
+    public function addStock(Stock $stock): static
+    {
+        if (!$this->stocks->contains($stock)) {
+            $this->stocks->add($stock);
+            $stock->setArticle($this);
+        }
+
+        return $this;
+    }
+
+    public function getStocks(): Collection
+    {
+        return $this->stocks;
+    }
+    public function removeStock(Stock $stock): static
+    {
+        if ($this->stocks->removeElement($stock)) {
+            if ($stock->getArticle() === $this) {
+                $stock->setArticle(null);
+            }
+        }
+        return $this;
+    }
 
 
   

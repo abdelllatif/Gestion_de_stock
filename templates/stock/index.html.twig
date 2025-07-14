@@ -1,0 +1,172 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Stock par Chantier{% endblock %}
+
+{% block body %}
+<link rel="stylesheet" href="https://cdn.datatables.net/2.0.7/css/dataTables.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/2.0.7/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="mb-0" style="color: #232946; font-family: 'Segoe UI', sans-serif; font-weight: bold; letter-spacing: 1px;">
+                Stock du Chantier: {{ chantier_nom }}
+            </h1>
+        </div>
+    </div>
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <table class="table table-striped mb-0" id="stockTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>Chantier/Dépôt</th>
+                        <th>Nom</th>
+                        <th>Type</th>
+                        <th>Catégorie</th>
+                        <th>Quantité</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% if stocks is empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4">
+                            <div>
+                                <i class="bi bi-box text-muted" style="font-size: 2rem;"></i>
+                                <div class="mt-2 mb-2" style="color: #232946;">Aucun stock dans ce chantier</div>
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    {% for stock in stocks %}
+                        <tr>
+                            <td>{{ chantier_nom }}</td>
+                            <td>
+                                {% if stock.article %}
+                                    {{ stock.article.nom }}
+                                {% elseif stock.machine %}
+                                    {{ stock.machine.nom }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if stock.article %}Article{% elseif stock.machine %}Machine{% endif %}
+                            </td>
+                            <td>
+                                {% if stock.article and stock.article.getCategory() %}
+                                    {{ stock.article.getCategory().getNom() }}
+                                {% elseif stock.machine and stock.machine.getCategorie() %}
+                                    {{ stock.machine.getCategorie().getNom() }}
+                                {% else %}-{% endif %}
+                            </td>
+                            <td>
+                                {{ stock.getQuantiteChantier() }}
+                            </td>
+                            <td>
+                                {% if stock.article %}
+                                    Bon: {{ stock.getBonEtat() }}, Mauvais: {{ stock.getMauvaisEtat() }}, Ferraille: {{ stock.getFerailleEtat() }}
+                                {% else %}-{% endif %}
+                            </td>
+                            <td>
+                                <button class="btn btn-outline-primary btn-sm add-qty-btn" 
+                                    data-id="{{ stock.article ? stock.article.id : stock.machine.id }}"
+                                    data-type="{{ stock.article ? 'article' : 'machine' }}"
+                                    data-nom="{{ stock.article ? stock.article.nom : stock.machine.nom }}">
+                                    <i class="bi bi-plus-circle"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Ajouter Quantité -->
+<div class="modal fade" id="addQtyModal" tabindex="-1" aria-labelledby="addQtyModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addQtyModalLabel">Ajouter quantité</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="addQtyForm">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Nom</label>
+            <input type="text" class="form-control" id="modalNom" readonly>
+          </div>
+          <div class="mb-3">
+            <label for="modalQuantite" class="form-label">Quantité</label>
+            <input type="number" class="form-control" id="modalQuantite" name="quantite" min="1" required>
+          </div>
+          <div class="mb-3">
+            <label for="modalFournisseur" class="form-label">Fournisseur</label>
+            <input type="text" class="form-control" id="modalFournisseur" name="fournisseur" required>
+          </div>
+          <input type="hidden" id="modalId" name="id">
+          <input type="hidden" id="modalType" name="type">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="submit" class="btn btn-primary">Enregistrer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+$(function() {
+    var addQtyModal = new bootstrap.Modal(document.getElementById('addQtyModal'));
+    $('.add-qty-btn').on('click', function() {
+        var id = $(this).data('id');
+        var type = $(this).data('type');
+        var nom = $(this).data('nom');
+        $('#modalId').val(id);
+        $('#modalType').val(type);
+        $('#modalNom').val(nom);
+        $('#modalQuantite').val('');
+        $('#modalFournisseur').val('');
+        addQtyModal.show();
+    });
+    $('#addQtyForm').on('submit', function(e) {
+        e.preventDefault();
+        var data = {
+            id: $('#modalId').val(),
+            type: $('#modalType').val(),
+            quantite: $('#modalQuantite').val(),
+            fournisseur: $('#modalFournisseur').val(),
+            chantier_nom: '{{ chantier_nom|e('js') }}'
+        };
+        $.ajax({
+            url: '{{ path('stock_ajouter_quantite') }}',
+            method: 'POST',
+            data: data,
+            success: function(response) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Succès',
+                    text: 'Quantité ajoutée avec succès!'
+                });
+                addQtyModal.hide();
+                setTimeout(function() { location.reload(); }, 1000);
+            },
+            error: function(xhr) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erreur',
+                    text: xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Erreur lors de l\'ajout de la quantité.'
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
