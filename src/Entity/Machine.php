@@ -210,7 +210,7 @@ class Machine
 
         return $this;
     }
-
+    
     public function getAnneeFabriq(): ?string
     {
         return $this->anneeFabriq;

@@ -104,7 +104,7 @@ final class ChantierController extends AbstractController
                     }
                 }
             }
-
+            // Validate
             $errors = $validator->validate($chantier);
             if (count($errors) > 0) {
                 $errorMessages = [];
@@ -124,7 +124,7 @@ final class ChantierController extends AbstractController
         }
     }
 
-    // Show chantier details (API)
+    // 
     #[Route('/chantiers/{id}', name: 'app_chantier_show', requirements: ['id' => '\\d+'], methods: ['GET'])]
     public function show(Chantier $chantier): JsonResponse
     {
@@ -198,7 +198,7 @@ final class ChantierController extends AbstractController
         }
     }
 
-    // Delete chantier (API)
+    // Delete chantier 
     #[Route('/chantiers/{id}', name: 'app_chantier_delete', requirements: ['id' => '\\d+'], methods: ['DELETE'])]
     #[IsGranted('ROLE_ADMIN')]
     public function delete(Chantier $chantier, EntityManagerInterface $entityManager): JsonResponse
@@ -213,7 +213,7 @@ final class ChantierController extends AbstractController
         }
     }
 
-    // Search users (API)
+    // Search users 
     #[Route('/users/search', name: 'app_chantier_users_search', methods: ['GET'])]
     public function searchUsers(UserRepository $userRepository, Request $request): JsonResponse
     {
@@ -233,12 +233,11 @@ final class ChantierController extends AbstractController
             }
             return new JsonResponse($results);
         } catch (\Exception $e) {
-            $this->logger->error('Error searching users: ' . $e->getMessage());
             return new JsonResponse(['message' => 'Erreur lors de la recherche des utilisateurs'], 500);
         }
     }
 
-    // Set chantier in session (API)
+    // Set chantier in session with sucsess or error message
     #[Route('/set-chantier-session', name: 'app_set_chantier_session', methods: ['POST'])]
     public function setChantierSession(Request $request, ChantierRepository $chantierRepository): JsonResponse
     {
@@ -247,14 +246,11 @@ final class ChantierController extends AbstractController
             $chantierId = $data['chantierId'] ?? null;
             $chantierNom = $data['chantierNom'] ?? null;
             if (!$chantierId || !$chantierNom) {
-                $this->logger->error('No chantier ID or name provided in setChantierSession');
                 return new JsonResponse(['success' => false, 'message' => 'Aucun ID ou nom de chantier fourni'], 400);
             }
 
-            // Verify chantier exists
             $chantier = $chantierRepository->find($chantierId);
             if (!$chantier) {
-                $this->logger->error('Chantier not found for ID: ' . $chantierId);
                 return new JsonResponse(['success' => false, 'message' => 'Chantier non trouvé'], 404);
             }
 
@@ -263,11 +259,9 @@ final class ChantierController extends AbstractController
                 'id' => $chantierId,
                 'nom' => $chantierNom
             ]);
-            $this->logger->info('Chantier ID and name set in session: ' . $chantierId . ' - ' . $chantierNom);
 
             return new JsonResponse(['success' => true, 'message' => 'Chantier sélectionné avec succès']);
         } catch (\Exception $e) {
-            $this->logger->error('Session error in setChantierSession: ' . $e->getMessage());
             return new JsonResponse(['success' => false, 'message' => 'Erreur lors de la sélection du chantier'], 500);
         }
     }

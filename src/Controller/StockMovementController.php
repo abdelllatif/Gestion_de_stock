@@ -5,41 +5,562 @@ namespace App\Controller;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\HttpFoundation\Request;
+use App\Repository\MouvementStockRepository;
+use App\Repository\ArticleRepository;
+use App\Repository\MachineRepository;
+use App\Repository\ChantierRepository;
+use App\Repository\StockRepository;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 final class StockMovementController extends AbstractController
 {
-
-
     #[Route('/stock/movement', name: 'article_movement', methods: ['GET'])]
-    public function list(): Response
+    public function list(MouvementStockRepository $mouvementStockRepository, ArticleRepository $articleRepository, MachineRepository $machineRepository, ChantierRepository $chantierRepository, StockRepository $stockRepository, Request $request): Response
     {
+        $mouvements = $mouvementStockRepository->findAll();
+        $articles = $articleRepository->findAll();
+        $machines = $machineRepository->findAll();
+        $chantiers = $chantierRepository->findAll();
+        $session = $request->getSession();
+        $selectedChantier = $session->get('selected_chantier');
+        $sessionChantier = [
+            'id' => $selectedChantier['id'] ?? null,
+            'nom' => $selectedChantier['nom'] ?? null,
+        ];
+        $currentChantierStocks = [];
+        if ($sessionChantier['id']) {
+            $currentChantierStocks = $stockRepository->findAllStockForChantier($sessionChantier['id']);
+        }
+        $stockArticleIds = [];
+        $stockMachineIds = [];
+        foreach ($currentChantierStocks as $stock) {
+            if (method_exists($stock, 'getArticle') && $stock->getArticle()) {
+                $stockArticleIds[] = $stock->getArticle()->getId();
+            } elseif (method_exists($stock, 'getMachine') && $stock->getMachine()) {
+                $stockMachineIds[] = $stock->getMachine()->getId();
+            }
+        }
         return $this->render('stock_movement/index.html.twig', [
             'activeLink' => 'stock_movement',
+            'mouvements' => $mouvements,
+            'sessionChantier' => $sessionChantier,
+            'articles' => $articles,
+            'machines' => $machines,
+            'chantiers' => $chantiers,
+            'currentChantierStocks' => $currentChantierStocks,
+            'stockArticleIds' => $stockArticleIds,
+            'stockMachineIds' => $stockMachineIds,
         ]);
     }
 
-    #[Route('/stock_movement/new', name: 'app_stock_movement_new', methods: ['GET'])]
-    public function new(): Response
+    #[Route('/stock_movement/new', name: 'app_stock_movement_create', methods: ['POST'])]
+    public function create(
+        Request $request,
+        ArticleRepository $articleRepository,
+        MachineRepository $machineRepository,
+        ChantierRepository $chantierRepository,
+        StockRepository $stockRepository,
+        EntityManagerInterface $em
+    ): JsonResponse {
+        $data = $request->request->all();
+        $typeMouvement = $data['type'] ?? null;
+        $itemType = $data['itemType'] ?? null;
+        $itemIdRaw = $data['itemId'] ?? null;
+        $quantite = (int)($data['quantite'] ?? 0);
+        $bonEtat = (int)($data['bonEtat'] ?? 0);
+        $mauvaisEtat = (int)($data['mauvaisEtat'] ?? 0);
+        $ferailleEtat = (int)($data['ferailleEtat'] ?? 0);
+        $fournisseur = $data['fournisseur'] ?? null;
+        $chantierRecId = $data['chantierRec'] ?? null;
+        $observation = $data['observation'] ?? null;
+        $session = $request->getSession();
+        $selectedChantier = $session->get('selected_chantier');
+        $chantierActuelId = $selectedChantier['id'] ?? null;
+
+        if (!$typeMouvement || !$itemIdRaw || !$quantite || !$chantierActuelId) {
+            return new JsonResponse(['success' => false, 'message' => 'Paramètres manquants.'], 400);
+        }
+
+        if ($itemType === 'article' && ($bonEtat + $mauvaisEtat + $ferailleEtat) !== $quantite) {
+            return new JsonResponse(['success' => false, 'message' => 'La somme des états doit être égale à la quantité.'], 400);
+        }
+
+        $mouvement = new \App\Entity\MouvementStock();
+        $mouvement->setType($typeMouvement);
+        $mouvement->setQuantite($quantite);
+        $mouvement->setDate(new \DateTime());
+        $mouvement->setFournisseur($fournisseur);
+        $mouvement->setObservation($observation);
+        $mouvement->setStatus('waiting');
+
+        $isArticle = str_starts_with($itemIdRaw, 'article_');
+        $isMachine = str_starts_with($itemIdRaw, 'machine_');
+        if ($isArticle) {
+            $itemId = (int)str_replace('article_', '', $itemIdRaw);
+            $article = $articleRepository->find($itemId);
+            $mouvement->setArticle($article);
+            $mouvement->setBonEtat($bonEtat);
+            $mouvement->setMauvaisEtat($mauvaisEtat);
+            $mouvement->setFerailleEtat($ferailleEtat);
+        } elseif ($isMachine) {
+            $itemId = (int)str_replace('machine_', '', $itemIdRaw);
+            $machine = $machineRepository->find($itemId);
+            $mouvement->setMachine($machine);
+        } else {
+            return new JsonResponse(['success' => false, 'message' => 'Type d\'élément invalide.'], 400);
+        }
+
+        if ($typeMouvement === 'Augmenter stock') {
+            $chantier = $chantierRepository->find($chantierActuelId);
+            $mouvement->setChantierRec($chantier);
+            $mouvement->setStatus('valid'); // Augmenter stock is valid by default
+            if ($isArticle) {
+                $stock = $stockRepository->findStockForArticleAndChantier($itemId, $chantierActuelId);
+                if (!$stock) {
+                    $stock = new \App\Entity\Stock();
+                    $stock->setArticle($article);
+                    $stock->setChantier($chantier);
+                    $stock->setQuantiteChantier(0);
+                    $stock->setBonEtat(0);
+                    $stock->setMauvaisEtat(0);
+                    $stock->setFerailleEtat(0);
+                    $em->persist($stock);
+                }
+                $stock->setQuantiteChantier($stock->getQuantiteChantier() + $quantite);
+                $stock->setBonEtat($stock->getBonEtat() + $bonEtat);
+                $stock->setMauvaisEtat($stock->getMauvaisEtat() + $mauvaisEtat);
+                $stock->setFerailleEtat($stock->getFerailleEtat() + $ferailleEtat);
+            } elseif ($isMachine) {
+                $stock = $stockRepository->findStockForMachineAndChantier($itemId, $chantierActuelId);
+                if (!$stock) {
+                    $stock = new \App\Entity\Stock();
+                    $stock->setMachine($machine);
+                    $stock->setChantier($chantier);
+                    $stock->setQuantiteChantier(0);
+                    $stock->setBonEtat(0);
+                    $stock->setMauvaisEtat(0);
+                    $stock->setFerailleEtat(0);
+                    $em->persist($stock);
+                }
+                $stock->setQuantiteChantier($stock->getQuantiteChantier() + $quantite);
+            }
+        } elseif ($typeMouvement === 'Transfert') {
+            if (!$chantierRecId) {
+                return new JsonResponse(['success' => false, 'message' => 'Chantier destinataire manquant.'], 400);
+            }
+            $chantierExp = $chantierRepository->find($chantierActuelId);
+            $chantierRec = $chantierRepository->find($chantierRecId);
+            $mouvement->setChantierExp($chantierExp);
+            $mouvement->setChantierRec($chantierRec);
+            // No stock update until validated
+        }
+
+        $em->persist($mouvement);
+        $em->flush();
+        return new JsonResponse(['success' => true, 'message' => 'Mouvement créé en attente de validation.']);
+    }
+
+    #[Route('/stock_movement/check_quantity', name: 'app_stock_movement_check_quantity', methods: ['POST'])]
+    public function checkQuantity(Request $request, StockRepository $stockRepository): JsonResponse
     {
-        return $this->render('stock_movement/new.html.twig', [
-            'activeLink' => 'stock_movement',
-        ]);
+        $itemIdRaw = $request->request->get('itemId');
+        $chantierId = $request->request->get('chantierId');
+        if (!$itemIdRaw || !$chantierId) {
+            return new JsonResponse(['success' => false, 'message' => 'Paramètres manquants.']);
+        }
+        $isArticle = str_starts_with($itemIdRaw, 'article_');
+        $isMachine = str_starts_with($itemIdRaw, 'machine_');
+        if ($isArticle) {
+            $itemId = (int)str_replace('article_', '', $itemIdRaw);
+            $stock = $stockRepository->findStockForArticleAndChantier($itemId, $chantierId);
+        } elseif ($isMachine) {
+            $itemId = (int)str_replace('machine_', '', $itemIdRaw);
+            $stock = $stockRepository->findStockForMachineAndChantier($itemId, $chantierId);
+        } else {
+            return new JsonResponse(['success' => false, 'message' => 'Type d\'élément invalide.']);
+        }
+        $available = $stock ? $stock->getQuantiteChantier() : 0;
+        return new JsonResponse(['success' => true, 'available' => $available]);
+    }
+
+    #[Route('/stock_movement/fetch_items', name: 'app_stock_movement_fetch_items', methods: ['POST'])]
+    public function fetchItems(
+        Request $request,
+        ArticleRepository $articleRepository,
+        MachineRepository $machineRepository,
+        StockRepository $stockRepository
+    ): JsonResponse {
+        $type = $request->request->get('type');
+        $itemType = $request->request->get('itemType');
+        $session = $request->getSession();
+        $selectedChantier = $session->get('selected_chantier');
+        $chantierId = $selectedChantier['id'] ?? null;
+        $results = [];
+
+        if ($type === 'Transfert' && $chantierId) {
+            $currentStocks = $stockRepository->findAllStockForChantier($chantierId);
+            foreach ($currentStocks as $stock) {
+                if ($itemType && $itemType === 'article' && method_exists($stock, 'getArticle') && $stock->getArticle()) {
+                    $article = $stock->getArticle();
+                    $results[] = [
+                        'id' => 'article_' . $article->getId(),
+                        'type' => 'article',
+                        'name' => $article->getNom(),
+                    ];
+                } elseif ($itemType && $itemType === 'machine' && method_exists($stock, 'getMachine') && $stock->getMachine()) {
+                    $machine = $stock->getMachine();
+                    $results[] = [
+                        'id' => 'machine_' . $machine->getId(),
+                        'type' => 'machine',
+                        'name' => $machine->getNom(),
+                    ];
+                } elseif (!$itemType) {
+                    if (method_exists($stock, 'getArticle') && $stock->getArticle()) {
+                        $article = $stock->getArticle();
+                        $results[] = [
+                            'id' => 'article_' . $article->getId(),
+                            'type' => 'article',
+                            'name' => $article->getNom(),
+                        ];
+                    } elseif (method_exists($stock, 'getMachine') && $stock->getMachine()) {
+                        $machine = $stock->getMachine();
+                        $results[] = [
+                            'id' => 'machine_' . $machine->getId(),
+                            'type' => 'machine',
+                            'name' => $machine->getNom(),
+                        ];
+                    }
+                }
+            }
+        } elseif ($type === 'Augmenter stock') {
+            if (!$itemType || $itemType === 'article') {
+                foreach ($articleRepository->findAll() as $article) {
+                    $results[] = [
+                        'id' => 'article_' . $article->getId(),
+                        'type' => 'article',
+                        'name' => $article->getNom(),
+                    ];
+                }
+            }
+            if (!$itemType || $itemType === 'machine') {
+                foreach ($machineRepository->findAll() as $machine) {
+                    $results[] = [
+                        'id' => 'machine_' . $machine->getId(),
+                        'type' => 'machine',
+                        'name' => $machine->getNom(),
+                    ];
+                }
+            }
+        }
+        return new JsonResponse(['success' => true, 'items' => $results]);
     }
 
     #[Route('/stock_movement/{id}/edit', name: 'app_stock_movement_edit', methods: ['GET'])]
-    public function edit(int $id): Response
+    public function edit(int $id, MouvementStockRepository $mouvementStockRepository): JsonResponse
     {
-        return $this->render('stock_movement/edit.html.twig', [
-            'movement_id' => $id,
-            'activeLink' => 'stock_movement',
-        ]);
+        $mouvement = $mouvementStockRepository->find($id);
+        if (!$mouvement) {
+            return new JsonResponse(['success' => false, 'message' => 'Mouvement non trouvé.'], 404);
+        }
+        $data = [
+            'id' => $mouvement->getId(),
+            'type' => $mouvement->getType(),
+            'itemType' => $mouvement->getArticle() ? 'article' : ($mouvement->getMachine() ? 'machine' : ''),
+            'itemId' => $mouvement->getArticle() ? 'article_' . $mouvement->getArticle()->getId() : ($mouvement->getMachine() ? 'machine_' . $mouvement->getMachine()->getId() : ''),
+            'quantite' => $mouvement->getQuantite(),
+            'bonEtat' => $mouvement->getBonEtat() ?? 0,
+            'mauvaisEtat' => $mouvement->getMauvaisEtat() ?? 0,
+            'ferailleEtat' => $mouvement->getFerailleEtat() ?? 0,
+            'chantierRec' => $mouvement->getChantierRec() ? $mouvement->getChantierRec()->getId() : '',
+            'fournisseur' => $mouvement->getFournisseur(),
+            'observation' => $mouvement->getObservation(),
+            'status' => $mouvement->getStatus(),
+        ];
+        return new JsonResponse($data);
     }
 
-    #[Route('/stock_movement/machine', name: 'machine_movement', methods: ['GET'])]
-    public function machine(): Response
+    #[Route('/stock_movement/edit', name: 'app_stock_movement_update', methods: ['POST'])]
+    public function update(
+        Request $request,
+        MouvementStockRepository $mouvementStockRepository,
+        ArticleRepository $articleRepository,
+        MachineRepository $machineRepository,
+        ChantierRepository $chantierRepository,
+        StockRepository $stockRepository,
+        EntityManagerInterface $em
+    ): JsonResponse {
+        $data = $request->request->all();
+        $id = (int)($data['id'] ?? 0);
+        $typeMouvement = $data['type'] ?? null;
+        $itemType = $data['itemType'] ?? null;
+        $itemIdRaw = $data['itemId'] ?? null;
+        $quantite = (int)($data['quantite'] ?? 0);
+        $bonEtat = (int)($data['bonEtat'] ?? 0);
+        $mauvaisEtat = (int)($data['mauvaisEtat'] ?? 0);
+        $ferailleEtat = (int)($data['ferailleEtat'] ?? 0);
+        $fournisseur = $data['fournisseur'] ?? null;
+        $chantierRecId = $data['chantierRec'] ?? null;
+        $observation = $data['observation'] ?? null;
+        $session = $request->getSession();
+        $selectedChantier = $session->get('selected_chantier');
+        $chantierActuelId = $selectedChantier['id'] ?? null;
+
+        if (!$id || !$typeMouvement || !$itemIdRaw || !$quantite || !$chantierActuelId) {
+            return new JsonResponse(['success' => false, 'message' => 'Paramètres manquants.'], 400);
+        }
+
+        if ($itemType === 'article' && ($bonEtat + $mauvaisEtat + $ferailleEtat) !== $quantite) {
+            return new JsonResponse(['success' => false, 'message' => 'La somme des états doit être égale à la quantité.'], 400);
+        }
+
+        $mouvement = $mouvementStockRepository->find($id);
+        if (!$mouvement) {
+            return new JsonResponse(['success' => false, 'message' => 'Mouvement non trouvé.'], 404);
+        }
+
+        // Revert previous stock changes only if previously valid and type is Augmenter stock
+        if ($mouvement->getStatus() === 'valid' && $mouvement->getType() === 'Augmenter stock') {
+            $stock = $stockRepository->findStockForArticleAndChantier(
+                $mouvement->getArticle() ? $mouvement->getArticle()->getId() : null,
+                $chantierActuelId
+            ) ?: $stockRepository->findStockForMachineAndChantier(
+                $mouvement->getMachine() ? $mouvement->getMachine()->getId() : null,
+                $chantierActuelId
+            );
+            if ($stock) {
+                $stock->setQuantiteChantier($stock->getQuantiteChantier() - $mouvement->getQuantite());
+                if ($mouvement->getArticle()) {
+                    $stock->setBonEtat($stock->getBonEtat() - ($mouvement->getBonEtat() ?? 0));
+                    $stock->setMauvaisEtat($stock->getMauvaisEtat() - ($mouvement->getMauvaisEtat() ?? 0));
+                    $stock->setFerailleEtat($stock->getFerailleEtat() - ($mouvement->getFerailleEtat() ?? 0));
+                }
+            }
+        }
+
+        $mouvement->setType($typeMouvement);
+        $mouvement->setQuantite($quantite);
+        $mouvement->setFournisseur($fournisseur);
+        $mouvement->setObservation($observation);
+
+        $isArticle = str_starts_with($itemIdRaw, 'article_');
+        $isMachine = str_starts_with($itemIdRaw, 'machine_');
+        if ($isArticle) {
+            $itemId = (int)str_replace('article_', '', $itemIdRaw);
+            $article = $articleRepository->find($itemId);
+            $mouvement->setArticle($article);
+            $mouvement->setMachine(null);
+            $mouvement->setBonEtat($bonEtat);
+            $mouvement->setMauvaisEtat($mauvaisEtat);
+            $mouvement->setFerailleEtat($ferailleEtat);
+        } elseif ($isMachine) {
+            $itemId = (int)str_replace('machine_', '', $itemIdRaw);
+            $machine = $machineRepository->find($itemId);
+            $mouvement->setMachine($machine);
+            $mouvement->setArticle(null);
+        } else {
+            return new JsonResponse(['success' => false, 'message' => 'Type d\'élément invalide.'], 400);
+        }
+
+        if ($typeMouvement === 'Augmenter stock') {
+            $chantier = $chantierRepository->find($chantierActuelId);
+            $mouvement->setChantierRec($chantier);
+            $mouvement->setChantierExp(null);
+            $mouvement->setStatus('valid');
+            if ($isArticle) {
+                $stock = $stockRepository->findStockForArticleAndChantier($itemId, $chantierActuelId);
+                if (!$stock) {
+                    $stock = new \App\Entity\Stock();
+                    $stock->setArticle($article);
+                    $stock->setChantier($chantier);
+                    $stock->setQuantiteChantier(0);
+                    $stock->setBonEtat(0);
+                    $stock->setMauvaisEtat(0);
+                    $stock->setFerailleEtat(0);
+                    $em->persist($stock);
+                }
+                $stock->setQuantiteChantier($stock->getQuantiteChantier() + $quantite);
+                $stock->setBonEtat($stock->getBonEtat() + $bonEtat);
+                $stock->setMauvaisEtat($stock->getMauvaisEtat() + $mauvaisEtat);
+                $stock->setFerailleEtat($stock->getFerailleEtat() + $ferailleEtat);
+            } elseif ($isMachine) {
+                $stock = $stockRepository->findStockForMachineAndChantier($itemId, $chantierActuelId);
+                if (!$stock) {
+                    $stock = new \App\Entity\Stock();
+                    $stock->setMachine($machine);
+                    $stock->setChantier($chantier);
+                    $stock->setQuantiteChantier(0);
+                    $stock->setBonEtat(0);
+                    $stock->setMauvaisEtat(0);
+                    $stock->setFerailleEtat(0);
+                    $em->persist($stock);
+                }
+                $stock->setQuantiteChantier($stock->getQuantiteChantier() + $quantite);
+            }
+        } elseif ($typeMouvement === 'Transfert') {
+            if (!$chantierRecId) {
+                return new JsonResponse(['success' => false, 'message' => 'Chantier destinataire manquant.'], 400);
+            }
+            $chantierExp = $chantierRepository->find($chantierActuelId);
+            $chantierRec = $chantierRepository->find($chantierRecId);
+            $mouvement->setChantierExp($chantierExp);
+            $mouvement->setChantierRec($chantierRec);
+            $mouvement->setStatus('waiting');
+        }
+
+        $em->persist($mouvement);
+        $em->flush();
+        return new JsonResponse(['success' => true, 'message' => 'Mouvement modifié.']);
+    }
+
+    #[Route('/stock_movement/delete/{id}', name: 'app_stock_movement_delete', methods: ['POST'])]
+    public function delete(int $id, MouvementStockRepository $mouvementStockRepository, StockRepository $stockRepository, EntityManagerInterface $em): JsonResponse
     {
-        return $this->render('stock_movement/machine.html.twig', [
-            'activeLink' => 'stock_movement',
-        ]);
+        $mouvement = $mouvementStockRepository->find($id);
+        if (!$mouvement) {
+            return new JsonResponse(['success' => false, 'message' => 'Mouvement non trouvé.'], 404);
+        }
+
+        if ($mouvement->getStatus() === 'valid') {
+            $stock = $stockRepository->findStockForArticleAndChantier(
+                $mouvement->getArticle() ? $mouvement->getArticle()->getId() : null,
+                $mouvement->getChantierRec()->getId()
+            ) ?: $stockRepository->findStockForMachineAndChantier(
+                $mouvement->getMachine() ? $mouvement->getMachine()->getId() : null,
+                $mouvement->getChantierRec()->getId()
+            );
+            if ($stock) {
+                $stock->setQuantiteChantier($stock->getQuantiteChantier() - $mouvement->getQuantite());
+                if ($mouvement->getArticle()) {
+                    $stock->setBonEtat($stock->getBonEtat() - ($mouvement->getBonEtat() ?? 0));
+                    $stock->setMauvaisEtat($stock->getMauvaisEtat() - ($mouvement->getMauvaisEtat() ?? 0));
+                    $stock->setFerailleEtat($stock->getFerailleEtat() - ($mouvement->getFerailleEtat() ?? 0));
+                }
+            }
+            if ($mouvement->getType() === 'Transfert') {
+                $stockExp = $stockRepository->findStockForArticleAndChantier(
+                    $mouvement->getArticle() ? $mouvement->getArticle()->getId() : null,
+                    $mouvement->getChantierExp()->getId()
+                ) ?: $stockRepository->findStockForMachineAndChantier(
+                    $mouvement->getMachine() ? $mouvement->getMachine()->getId() : null,
+                    $mouvement->getChantierExp()->getId()
+                );
+                if ($stockExp) {
+                    $stockExp->setQuantiteChantier($stockExp->getQuantiteChantier() + $mouvement->getQuantite());
+                    if ($mouvement->getArticle()) {
+                        $stockExp->setBonEtat($stockExp->getBonEtat() + ($mouvement->getBonEtat() ?? 0));
+                        $stockExp->setMauvaisEtat($stockExp->getMauvaisEtat() + ($mouvement->getMauvaisEtat() ?? 0));
+                        $stockExp->setFerailleEtat($stockExp->getFerailleEtat() + ($mouvement->getFerailleEtat() ?? 0));
+                    }
+                }
+            }
+        }
+
+        $em->remove($mouvement);
+        $em->flush();
+        return new JsonResponse(['success' => true, 'message' => 'Mouvement supprimé.']);
+    }
+
+    #[Route('/stock_movement/change_status/{id}/{status}', name: 'app_stock_movement_change_status', methods: ['POST'])]
+    public function changeStatus(
+        int $id,
+        string $status,
+        MouvementStockRepository $mouvementStockRepository,
+        StockRepository $stockRepository,
+        ChantierRepository $chantierRepository,
+        EntityManagerInterface $em
+    ): JsonResponse {
+        $mouvement = $mouvementStockRepository->find($id);
+        if (!$mouvement) {
+            return new JsonResponse(['success' => false, 'message' => 'Mouvement non trouvé.'], 404);
+        }
+
+        if (!in_array($status, ['valid', 'rejected'])) {
+            return new JsonResponse(['success' => false, 'message' => 'Statut invalide.'], 400);
+        }
+
+        if ($mouvement->getStatus() === 'valid' && $mouvement->getType() === 'Transfert') {
+            $stockExp = $stockRepository->findStockForArticleAndChantier(
+                $mouvement->getArticle() ? $mouvement->getArticle()->getId() : null,
+                $mouvement->getChantierExp()->getId()
+            ) ?: $stockRepository->findStockForMachineAndChantier(
+                $mouvement->getMachine() ? $mouvement->getMachine()->getId() : null,
+                $mouvement->getChantierExp()->getId()
+            );
+            $stockRec = $stockRepository->findStockForArticleAndChantier(
+                $mouvement->getArticle() ? $mouvement->getArticle()->getId() : null,
+                $mouvement->getChantierRec()->getId()
+            ) ?: $stockRepository->findStockForMachineAndChantier(
+                $mouvement->getMachine() ? $mouvement->getMachine()->getId() : null,
+                $mouvement->getChantierRec()->getId()
+            );
+            if ($stockExp) {
+                $stockExp->setQuantiteChantier($stockExp->getQuantiteChantier() + $mouvement->getQuantite());
+                if ($mouvement->getArticle()) {
+                    $stockExp->setBonEtat($stockExp->getBonEtat() + ($mouvement->getBonEtat() ?? 0));
+                    $stockExp->setMauvaisEtat($stockExp->getMauvaisEtat() + ($mouvement->getMauvaisEtat() ?? 0));
+                    $stockExp->setFerailleEtat($stockExp->getFerailleEtat() + ($mouvement->getFerailleEtat() ?? 0));
+                }
+            }
+            if ($stockRec) {
+                $stockRec->setQuantiteChantier($stockRec->getQuantiteChantier() - $mouvement->getQuantite());
+                if ($mouvement->getArticle()) {
+                    $stockRec->setBonEtat($stockRec->getBonEtat() - ($mouvement->getBonEtat() ?? 0));
+                    $stockRec->setMauvaisEtat($stockRec->getMauvaisEtat() - ($mouvement->getMauvaisEtat() ?? 0));
+                    $stockRec->setFerailleEtat($stockRec->getFerailleEtat() - ($mouvement->getFerailleEtat() ?? 0));
+                }
+            }
+        }
+
+        if ($status === 'valid' && $mouvement->getType() === 'Transfert') {
+            $chantierExpId = $mouvement->getChantierExp()->getId();
+            $chantierRecId = $mouvement->getChantierRec()->getId();
+            $itemId = $mouvement->getArticle() ? $mouvement->getArticle()->getId() : ($mouvement->getMachine() ? $mouvement->getMachine()->getId() : null);
+            $isArticle = $mouvement->getArticle() !== null;
+
+            $stockExp = $isArticle
+                ? $stockRepository->findStockForArticleAndChantier($itemId, $chantierExpId)
+                : $stockRepository->findStockForMachineAndChantier($itemId, $chantierExpId);
+            if (!$stockExp || $stockExp->getQuantiteChantier() < $mouvement->getQuantite()) {
+                return new JsonResponse(['success' => false, 'message' => 'Stock insuffisant pour le transfert.'], 400);
+            }
+
+            $stockExp->setQuantiteChantier($stockExp->getQuantiteChantier() - $mouvement->getQuantite());
+            if ($isArticle) {
+                $stockExp->setBonEtat($stockExp->getBonEtat() - ($mouvement->getBonEtat() ?? 0));
+                $stockExp->setMauvaisEtat($stockExp->getMauvaisEtat() - ($mouvement->getMauvaisEtat() ?? 0));
+                $stockExp->setFerailleEtat($stockExp->getFerailleEtat() - ($mouvement->getFerailleEtat() ?? 0));
+            }
+
+            $stockRec = $isArticle
+                ? $stockRepository->findStockForArticleAndChantier($itemId, $chantierRecId)
+                : $stockRepository->findStockForMachineAndChantier($itemId, $chantierRecId);
+            if (!$stockRec) {
+                $stockRec = new \App\Entity\Stock();
+                if ($isArticle) {
+                    $stockRec->setArticle($mouvement->getArticle());
+                } else {
+                    $stockRec->setMachine($mouvement->getMachine());
+                }
+                $stockRec->setChantier($mouvement->getChantierRec());
+                $stockRec->setQuantiteChantier(0);
+                $stockRec->setBonEtat(0);
+                $stockRec->setMauvaisEtat(0);
+                $stockRec->setFerailleEtat(0);
+                $em->persist($stockRec);
+            }
+            $stockRec->setQuantiteChantier($stockRec->getQuantiteChantier() + $mouvement->getQuantite());
+            if ($isArticle) {
+                $stockRec->setBonEtat($stockRec->getBonEtat() + ($mouvement->getBonEtat() ?? 0));
+                $stockRec->setMauvaisEtat($stockRec->getMauvaisEtat() + ($mouvement->getMauvaisEtat() ?? 0));
+                $stockRec->setFerailleEtat($stockRec->getFerailleEtat() + ($mouvement->getFerailleEtat() ?? 0));
+            }
+        }
+
+        $mouvement->setStatus($status);
+        $em->persist($mouvement);
+        $em->flush();
+        return new JsonResponse(['success' => true, 'message' => 'Statut modifié avec succès.']);
     }
 }
