@@ -36,29 +36,28 @@
                     </tr>
                 {% else %}
                     {% for mouvement in mouvements %}
-                    if(mouvement.getChantierExp() is not null and mouvement.getChantierRec() is not null)
                         {% set sessionChantier = app.session.get('chantier') %}
-                        {% set canEdit = sessionChantier.id == mouvement.getChantierExp().id or sessionChantier.id == mouvement.getChantierRec().id %}
+                        {% set canEdit = (mouvement.chantierExp and sessionChantier.id == mouvement.chantierExp.id) or (mouvement.chantierRec and sessionChantier.id == mouvement.chantierRec.id) %}
                         <tr>
-                            <td>{{ mouvement.getType() }}</td>
-                            <td>{{ mouvement.getDate() ? mouvement.getDate().format('Y-m-d') : '' }}</td>
+                            <td>{{ mouvement.displayType }}</td>
+                            <td>{{ mouvement.date ? mouvement.date|date('Y-m-d') : '' }}</td>
                             <td>
-                                {% if mouvement.getArticle() %}
-                                    {{ mouvement.getArticle().getNom() }}
-                                {% elseif mouvement.getMachine() %}
-                                    {{ mouvement.getMachine().getNom() }}
+                                {% if mouvement.article %}
+                                    {{ mouvement.article.nom }}
+                                {% elseif mouvement.machine %}
+                                    {{ mouvement.machine.nom }}
                                 {% else %}-{% endif %}
                             </td>
-                            <td>{{ mouvement.getQuantite() }}</td>
+                            <td>{{ mouvement.quantite }}</td>
                             <td>
-                                {% if mouvement.getChantierRec() %}
-                                    {{ mouvement.getChantierRec().getNom() }}
+                                {% if mouvement.chantierRec %}
+                                    {{ mouvement.chantierRec.nom }}
                                 {% else %}-{% endif %}
                             </td>
                             <td>
-                                {% if mouvement.getStatus() == 'valid' %}
+                                {% if mouvement.status == 'valid' %}
                                     <i class="bi bi-check-circle text-success"></i> Validé
-                                {% elseif mouvement.getStatus() == 'rejected' %}
+                                {% elseif mouvement.status == 'rejected' %}
                                     <i class="bi bi-x-circle text-danger"></i> Rejeté
                                 {% else %}
                                     <i class="bi bi-hourglass-split text-warning"></i> En attente
@@ -66,12 +65,12 @@
                             </td>
                             <td>
                                 {% if canEdit %}
-                                    {% if mouvement.getStatus() == 'waiting' %}
-                                        <button class="btn btn-sm btn-outline-success" onclick="changeStatus({{ mouvement.getId() }}, 'valid')"><i class="bi bi-check-circle"></i></button>
-                                        <button class="btn btn-sm btn-outline-danger" onclick="changeStatus({{ mouvement.getId() }}, 'rejected')"><i class="bi bi-x-circle"></i></button>
+                                    {% if mouvement.status == 'waiting' %}
+                                        <button class="btn btn-sm btn-outline-success" onclick="changeStatus({{ mouvement.id }}, 'valid')"><i class="bi bi-check-circle"></i></button>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="changeStatus({{ mouvement.id }}, 'rejected')"><i class="bi bi-x-circle"></i></button>
                                     {% endif %}
-                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editMovementModal" data-id="{{ mouvement.getId() }}"><i class="bi bi-pencil"></i></button>
-                                    <button class="btn btn-sm btn-outline-danger" onclick="showDeleteAlert('Êtes-vous sûr de vouloir supprimer ce mouvement ?', {{ mouvement.getId() }})"><i class="bi bi-trash"></i></button>
+                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editMovementModal" data-id="{{ mouvement.id }}"><i class="bi bi-pencil"></i></button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="showDeleteAlert('Êtes-vous sûr de vouloir supprimer ce mouvement ?', {{ mouvement.id }})"><i class="bi bi-trash"></i></button>
                                 {% else %}
                                     <span class="text-muted">En attente (hors chantier)</span>
                                 {% endif %}
