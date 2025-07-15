@@ -14,6 +14,7 @@ use App\Repository\MachineRepository;
 use App\Repository\ChantierRepository;
 use App\Repository\MecanicienRepository;
 use App\Repository\ChauffeurRepository;
+use App\Repository\StockRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -82,8 +83,8 @@ final class EntretienController extends AbstractController
                 
                 // Validation supplémentaire pour la vidange si sélectionnée
                 if (!empty($data['has_vidange'])) {
-                    if (empty($data['vidange']['type_huile'])) $errors[] = 'Le type d\'huile est requis pour la vidange';
-                    if (empty($data['vidange']['quantite'])) $errors[] = 'La quantité d\'huile est requise pour la vidange';
+                    if (empty($data['vidange']['km_prochaine_vidange'])) $errors[] = 'Le kilométrage de la prochaine vidange est requis';
+                    // Les champs type_huile et quantité ont été supprimés de l'interface
                 }
                 
                 // Validation supplémentaire pour la réparation si sélectionnée
@@ -143,8 +144,8 @@ final class EntretienController extends AbstractController
                 if (!empty($data['has_vidange'])) {
                     $vidange = new Vidange();
                     $vidange->setDate($dateEntretien); // Utiliser la même date que l'entretien
-                    $vidange->setTypeChangment($data['vidange']['type_huile']);
-                    $vidange->setConsomation((string)$data['vidange']['quantite']);
+                    $vidange->setTypeChangment('huile'); // Valeur par défaut puisque le champ a été supprimé
+                    $vidange->setConsomation("0"); // Valeur par défaut puisque le champ a été supprimé
                     
                     // Nouveaux champs pour la vidange
                     if (!empty($data['vidange']['km_prochaine_vidange'])) {
@@ -183,11 +184,11 @@ final class EntretienController extends AbstractController
                     }
                     
                     if (!empty($data['vidange']['vidange_type_huile'])) {
-                        $vidange->setTypeHuile($data['vidange']['vidange_type_huile']);
+                        // La méthode setTypeHuile a été supprimée
                     }
                     
                     if (!empty($data['vidange']['vidange_quantite'])) {
-                        $vidange->setQuantite((float)$data['vidange']['vidange_quantite']);
+                        // La méthode setQuantite a été supprimée
                     }
                     
                     if (!empty($data['vidange']['vidange_notes'])) {
@@ -214,7 +215,13 @@ final class EntretienController extends AbstractController
                     $reparation->setDate($dateEntretien); // Utiliser la même date que l'entretien
                     $reparation->setDesignations($data['reparation']['description']); // Nous utilisons 'description' du formulaire pour 'designations' de l'entité
                     $reparation->setObservation($data['reparation']['description']); // Par défaut, utiliser la description comme observation
-                    $reparation->setConsomation(0.0); // Valeur par défaut
+                    
+                    // Récupérer la valeur de consommation du formulaire
+                    if (!empty($data['reparation']['consomation'])) {
+                        $reparation->setConsomation((float)$data['reparation']['consomation']);
+                    } else {
+                        $reparation->setConsomation(0.0); // Valeur par défaut
+                    }
                     
                     if (!empty($data['reparation']['cout'])) {
                         $reparation->setMontantTtc((float)$data['reparation']['cout']); // Nous utilisons 'cout' du formulaire pour 'montantTtc' de l'entité
@@ -261,8 +268,8 @@ final class EntretienController extends AbstractController
                 
                 // Validation supplémentaire pour la vidange si sélectionnée
                 if (!empty($data['has_vidange'])) {
-                    if (empty($data['vidange']['type_huile'])) $errors[] = 'Le type d\'huile est requis pour la vidange';
-                    if (empty($data['vidange']['quantite'])) $errors[] = 'La quantité d\'huile est requise pour la vidange';
+                    if (empty($data['vidange']['km_prochaine_vidange'])) $errors[] = 'Le kilométrage de la prochaine vidange est requis';
+                    // Les champs type_huile et quantité ont été supprimés de l'interface
                 }
                 
                 // Validation supplémentaire pour la réparation si sélectionnée
@@ -324,8 +331,8 @@ final class EntretienController extends AbstractController
                     }
                     
                     $vidange->setDate($dateEntretien);
-                    $vidange->setTypeChangment($data['vidange']['type_huile']);
-                    $vidange->setConsomation((string)$data['vidange']['quantite']);
+                    $vidange->setTypeChangment('huile'); // Valeur par défaut puisque le champ a été supprimé
+                    $vidange->setConsomation("0"); // Valeur par défaut puisque le champ a été supprimé
                     
                     // Nouveaux champs pour la vidange
                     if (!empty($data['vidange']['km_prochaine_vidange'])) {
@@ -364,11 +371,11 @@ final class EntretienController extends AbstractController
                     }
                     
                     if (!empty($data['vidange']['vidange_type_huile'])) {
-                        $vidange->setTypeHuile($data['vidange']['vidange_type_huile']);
+                        // La méthode setTypeHuile a été supprimée
                     }
                     
                     if (!empty($data['vidange']['vidange_quantite'])) {
-                        $vidange->setQuantite((float)$data['vidange']['vidange_quantite']);
+                        // La méthode setQuantite a été supprimée
                     }
                     
                     if (!empty($data['vidange']['vidange_notes'])) {
@@ -413,7 +420,10 @@ final class EntretienController extends AbstractController
                         $reparation->setMontantTtc(0.0);
                     }
                     
-                    if (!$reparation->getConsomation()) {
+                    // Récupérer la valeur de consommation du formulaire pour l'édition
+                    if (!empty($data['reparation']['consomation'])) {
+                        $reparation->setConsomation((float)$data['reparation']['consomation']);
+                    } else if (!$reparation->getConsomation()) {
                         $reparation->setConsomation(0.0);
                     }
                 } else if ($reparation) {
@@ -455,7 +465,16 @@ final class EntretienController extends AbstractController
         ]);
     }
     
-    // API pour récupérer les machines
+    // API pour récupérer les machines d'un chantier spécifique
+    #[Route('/api/chantier/{chantierId}/machines', name: 'api_machines_by_chantier', methods: ['GET'])]
+    public function getMachinesByChantier(int $chantierId, StockRepository $stockRepository): JsonResponse
+    {
+        $machines = $stockRepository->findMachinesByChantier($chantierId);
+        
+        return $this->json($machines);
+    }
+    
+    // API pour récupérer toutes les machines
     #[Route('/api/machines', name: 'api_machines')]
     public function getAllMachines(MachineRepository $machineRepository): JsonResponse
     {
@@ -465,7 +484,8 @@ final class EntretienController extends AbstractController
         foreach ($machines as $machine) {
             $data[] = [
                 'id' => $machine->getId(),
-                'nom' => $machine->getNom()
+                'nom' => $machine->getNom(),
+                'code' => $machine->getCode()
             ];
         }
         
@@ -521,5 +541,85 @@ final class EntretienController extends AbstractController
         }
         
         return $this->json($data);
+    }
+    
+    #[Route('/entretien/{id}/pdf', name: 'app_entretien_pdf', methods: ['GET'])]
+    public function generatePdf(Entretien $entretien): Response
+    {
+        // Créer une instance de HTML2PDF
+        $html2pdf = new \Spipu\Html2Pdf\Html2Pdf('P', 'A4', 'fr');
+        
+        // Préparer les données pour le template
+        $dateFormattee = $entretien->getDate() ? $entretien->getDate()->format('d/m/Y') : date('d/m/Y');
+        $machine = $entretien->getMachine() ? $entretien->getMachine()->getNom() : 'N/A';
+        $chauffeur = $entretien->getChauffeur() ? $entretien->getChauffeur()->getNom() : 'N/A';
+        $mecanicien = $entretien->getMecanicien() ? $entretien->getMecanicien()->getNom() : 'N/A';
+        $chantier = $entretien->getChantier() ? $entretien->getChantier()->getNom() : 'N/A';
+        
+        // Récupérer toutes les vidanges et réparations
+        $vidanges = [];
+        foreach ($entretien->getVidanges() as $vidange) {
+            $vidanges[] = [
+                'date' => $vidange->getDate() ? $vidange->getDate()->format('d/m/Y') : 'N/A',
+                'kilometre' => $vidange->getKilometre() ?? 'N/A',
+                'montantTtc' => $vidange->getMontantTtc() ?? 0,
+                'typeChangment' => $vidange->getTypeChangment() ?? '',
+                'consomation' => $vidange->getConsomation() ?? 0,
+                'prochaineVidange' => $vidange->getProchaineVidange() ?? $vidange->getConsoProchaineVidange() ?? 'N/A',
+                'kmFiltreHuile' => $vidange->getKmFiltreHuile() ?? $vidange->getProchaineFilterChange() ?? 'N/A',
+                'kmFiltreGasoil' => $vidange->getKmFiltreGasoil() ?? 'N/A',
+                'kmFiltreAir' => $vidange->getKmFiltreAir() ?? 'N/A',
+                'notes' => $vidange->getNotes() ?? '',
+            ];
+        }
+        
+        $reparations = [];
+        foreach ($entretien->getReparations() as $reparation) {
+            $reparations[] = [
+                'date' => $reparation->getDate() ? $reparation->getDate()->format('d/m/Y') : 'N/A',
+                'designations' => $reparation->getDesignations() ?? '',
+                'montantTtc' => $reparation->getMontantTtc() ?? 0,
+                'observation' => $reparation->getObservation() ?? '',
+            ];
+        }
+        
+        // Créer le HTML pour le PDF
+        $html = $this->renderView('entretien/pdf_template.html.twig', [
+            'entretien' => $entretien,
+            'dateFormattee' => $dateFormattee,
+            'machine' => $machine,
+            'chauffeur' => $chauffeur,
+            'mecanicien' => $mecanicien,
+            'chantier' => $chantier,
+            'vidanges' => $vidanges,
+            'reparations' => $reparations,
+            'dateGeneration' => date('d/m/Y')
+        ]);
+        
+        try {
+            // Générer le PDF
+            $html2pdf->writeHTML($html);
+            
+            // Nommer le fichier
+            $filename = 'entretien_' . $entretien->getNumero() . '_' . date('Ymd') . '.pdf';
+            
+            // Retourner le PDF en tant que réponse
+            return new Response(
+                $html2pdf->output($filename, 'S'),
+                200,
+                [
+                    'Content-Type' => 'application/pdf',
+                    'Content-Disposition' => 'attachment; filename="' . $filename . '"'
+                ]
+            );
+            
+        } catch (\Exception $e) {
+            // En cas d'erreur, retourner une réponse JSON avec le message d'erreur
+            return $this->json([
+                'success' => false,
+                'message' => 'Erreur lors de la génération du PDF: ' . $e->getMessage(),
+                'entretien_id' => $entretien->getId()
+            ], 500);
+        }
     }
 }

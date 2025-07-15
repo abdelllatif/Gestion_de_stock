@@ -82,6 +82,7 @@
                     {% if machine.categorie and machine.categorie.description %}
                         <h6 class="mb-3">Description de la catégorie</h6>
                         <div class="p-3 bg-light rounded">
+                        {# cate #}
                             {{ machine.categorie.description|nl2br }}
                         </div>
                     {% endif %}
@@ -95,16 +96,22 @@
                         <thead class="table-light">
                             <tr>
                                 <th>Article</th>
-                                <th>Quantité</th>
-                                <th>Date d'entrée</th>
+                                <th>Chantier</th>
+                                <th>Quantité totale</th>
+                                <th>Bon état</th>
+                                <th>Mauvais état</th>
+                                <th>Ferraille</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for stock in machine.stocks %}
                                 <tr>
                                     <td>{{ stock.article ? stock.article.nom : 'N/A' }}</td>
-                                    <td>{{ stock.quantite }}</td>
-                                    <td>{{ stock.dateEntree ? stock.dateEntree|date('d/m/Y') : 'N/A' }}</td>
+                                    <td>{{ stock.chantier ? stock.chantier.nom : 'N/A' }}</td>
+                                    <td>{{ stock.quantiteChantier }}</td>
+                                    <td>{{ stock.bonEtat }}</td>
+                                    <td>{{ stock.mauvaisEtat }}</td>
+                                    <td>{{ stock.ferailleEtat }}</td>
                                 </tr>
                             {% endfor %}
                         </tbody>
