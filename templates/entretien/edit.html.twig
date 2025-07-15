@@ -129,9 +129,10 @@
                             <div class="row">
                                 <div class="col-md-5">
                                     <div class="form-check mb-3">
-                                        <input class="form-check-input" type="checkbox" id="vidange_huile" name="vidange_huile" {{ vidange is defined and vidange.typeChangment is defined and 'huile' in vidange.typeChangment ? 'checked' : '' }}>
-                                        <label class="form-check-label" for="vidange_huile">
-                                            Huile
+                                        <input class="form-check-input" type="checkbox" id="vidange_huile" name="vidange_huile" checked disabled>
+                                        <input type="hidden" name="vidange_huile" value="1">
+                                        <label class="form-check-label fw-bold text-success" for="vidange_huile">
+                                            Huile <small>(toujours inclus dans une vidange)</small>
                                         </label>
                                     </div>
                                     <div class="form-check mb-3">
@@ -173,20 +174,7 @@
                                 </div>
                             </div>
                             
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="vidange_type_huile" class="form-label">Type d'huile*</label>
-                                        <input type="text" class="form-control" id="vidange_type_huile" name="vidange_type_huile" value="{{ vidange is defined and vidange.typeHuile is defined ? vidange.typeHuile : '' }}">
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="vidange_quantite" class="form-label">Quantité (litres)*</label>
-                                        <input type="number" step="0.1" class="form-control" id="vidange_quantite" name="vidange_quantite" value="{{ vidange is defined and vidange.quantite is defined ? vidange.quantite : '' }}">
-                                    </div>
-                                </div>
-                            </div>
+                            <!-- Champs supprimés: Type d'huile et Quantité (litres) -->
                             
                             <div class="col-md-12">
                                 <div class="mb-3">
@@ -292,13 +280,7 @@ $(document).ready(function() {
         const hasVidange = $('#entretien_has_vidange').is(':checked');
         const hasReparation = $('#entretien_has_reparation').is(':checked');
         
-        if (hasVidange) {
-            $('#vidange_type_huile').prop('required', true);
-            $('#vidange_quantite').prop('required', true);
-        } else {
-            $('#vidange_type_huile').prop('required', false);
-            $('#vidange_quantite').prop('required', false);
-        }
+        // Les champs type_huile et quantité ont été supprimés
         
         if (hasReparation) {
             $('#reparation_description').prop('required', true);
@@ -455,12 +437,10 @@ $(document).ready(function() {
             formData.vidange = {
                 vidange_km: $('#vidange_km').val() || 0,
                 vidange_montant: $('#vidange_montant').val() || 0,
-                vidange_huile: $('#vidange_huile').is(':checked'),
+                vidange_huile: true, // L'huile est toujours inclus dans une vidange
                 vidange_filtre_huile: $('#vidange_filtre_huile').is(':checked'),
                 vidange_filtre_gasoil: $('#vidange_filtre_gasoil').is(':checked'),
                 vidange_filtre_air: $('#vidange_filtre_air').is(':checked'),
-                vidange_type_huile: $('#vidange_type_huile').val(),
-                vidange_quantite: $('#vidange_quantite').val(),
                 vidange_km_prochaine: $('#vidange_km_prochaine').val() || 0,
                 vidange_km_filtre_huile: $('#vidange_filtre_huile').is(':checked') ? $('#vidange_km_filtre_huile').val() || 0 : 0,
                 vidange_km_filtre_gasoil: $('#vidange_filtre_gasoil').is(':checked') ? $('#vidange_km_filtre_gasoil').val() || 0 : 0,

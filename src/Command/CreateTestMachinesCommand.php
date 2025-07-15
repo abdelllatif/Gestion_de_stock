@@ -109,7 +109,18 @@ class CreateTestMachinesCommand extends Command
 
         $count = 0;
         foreach ($machinesData as $data) {
-            $machine = new Machine();
+            // Vérifier si la machine existe déjà par son code
+            $existingMachine = $this->entityManager->getRepository(Machine::class)
+                ->findOneBy(['code' => $data['code']]);
+            
+            if ($existingMachine) {
+                $io->note("La machine '{$data['nom']}' (Code: {$data['code']}) existe déjà. Mise à jour des informations.");
+                $machine = $existingMachine;
+            } else {
+                $machine = new Machine();
+                $count++;
+            }
+
             $machine->setNom($data['nom'])
                    ->setCode($data['code'])
                    ->setNbr($data['nbr'])
@@ -119,7 +130,6 @@ class CreateTestMachinesCommand extends Command
                    ->setCategorie($data['categorie']);
 
             $this->entityManager->persist($machine);
-            $count++;
         }
 
         $this->entityManager->flush();
