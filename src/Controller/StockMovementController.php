@@ -25,7 +25,16 @@ final class StockMovementController extends AbstractController
         StockRepository $stockRepository,
         Request $request
     ): Response {
-        $mouvements = $mouvementStockRepository->findAll();
+         $session = $request->getSession();
+        $selectedChantier = $session->get('selected_chantier');
+        $chantierId = $selectedChantier['id'] ?? null;
+
+        $mouvements = $mouvementStockRepository->createQueryBuilder('m')
+            ->where('m.chantierExp = :chantierId')
+            ->orWhere('m.chantierRec = :chantierId')
+            ->setParameter('chantierId', $chantierId)
+            ->getQuery()
+            ->getResult();
         $articles = $articleRepository->findAll();
         $machines = $machineRepository->findAll();
         $chantiers = $chantierRepository->findAll();

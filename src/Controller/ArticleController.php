@@ -4,8 +4,10 @@ namespace App\Controller;
 
 use App\Entity\Article;
 use App\Entity\ArticleCategorie;
+use App\Entity\Stock;
 use App\Repository\ArticleCategorieRepository;
 use App\Repository\ArticleRepository;
+use App\Repository\StockRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -33,7 +35,6 @@ final class ArticleController extends AbstractController
             try {
                 $data = json_decode($request->getContent(), true);
                 
-                
                 $errors = [];
                 if (empty($data['nom'])) $errors[] = 'Le nom est requis';
                 if (empty($data['reference'])) $errors[] = 'La référence est requise';
@@ -41,7 +42,6 @@ final class ArticleController extends AbstractController
                 if (empty($data['unite'])) $errors[] = 'L\'unité est requise';
                 if (!isset($data['prix']) || !is_numeric($data['prix'])) $errors[] = 'Le prix doit être un nombre';
                 if (empty($data['type'])) $errors[] = 'Le type est requis';
-                // Le numéro n'est plus obligatoire mais doit être numérique s'il est fourni
                 if (isset($data['numero']) && $data['numero'] !== '' && !is_numeric($data['numero'])) $errors[] = 'Le numéro doit être un nombre';
 
                 if (!empty($errors)) {
@@ -62,7 +62,6 @@ final class ArticleController extends AbstractController
                        ->setDescription($data['description'] ?? '')
                        ->setType($data['type']);
                 
-                // Le numéro est maintenant optionnel
                 if (isset($data['numero']) && $data['numero'] !== '') {
                     $article->setNumero((int)$data['numero']);
                 } else {
@@ -97,8 +96,6 @@ final class ArticleController extends AbstractController
         ]);
     }
 
-    
-    
     #[Route('/article/create', name: 'app_article_create', methods: ['POST'])]
     public function create(Request $request, ArticleRepository $articleRepository, ArticleCategorieRepository $categoryRepository): Response
     {
@@ -112,7 +109,6 @@ final class ArticleController extends AbstractController
             if (empty($data['unite'])) $errors[] = 'L\'unité est requise';
             if (!isset($data['prix']) || !is_numeric($data['prix'])) $errors[] = 'Le prix doit être un nombre';
             if (empty($data['type'])) $errors[] = 'Le type est requis';
-            // Le numéro n'est plus obligatoire mais doit être numérique s'il est fourni
             if (isset($data['numero']) && $data['numero'] !== '' && !is_numeric($data['numero'])) $errors[] = 'Le numéro doit être un nombre';
             if (empty($data['category'])) $errors[] = 'La catégorie est requise';
 
@@ -143,7 +139,6 @@ final class ArticleController extends AbstractController
                    ->setType($data['type'])
                    ->setCategory($category);
             
-            // Le numéro est maintenant optionnel
             if (isset($data['numero']) && $data['numero'] !== '') {
                 $article->setNumero((int)$data['numero']);
             } else {
@@ -207,7 +202,6 @@ final class ArticleController extends AbstractController
             if (empty($data['unite'])) $errors[] = 'L\'unité est requise';
             if (!isset($data['prix']) || !is_numeric($data['prix'])) $errors[] = 'Le prix doit être un nombre';
             if (empty($data['type'])) $errors[] = 'Le type est requis';
-            // Le numéro n'est plus obligatoire mais doit être numérique s'il est fourni
             if (isset($data['numero']) && $data['numero'] !== '' && !is_numeric($data['numero'])) $errors[] = 'Le numéro doit être un nombre';
             if (empty($data['category'])) $errors[] = 'La catégorie est requise';
 
@@ -215,13 +209,11 @@ final class ArticleController extends AbstractController
                 return $this->json(['success' => false, 'errors' => $errors], 400);
             }
 
-            // Vérifier si la référence existe déjà et si ce n'est pas la même que l'article actuel
             $existingArticle = $articleRepository->findOneBy(['reference' => $data['reference']]);
             if ($existingArticle && $existingArticle->getId() !== $article->getId()) {
                 return $this->json(['success' => false, 'errors' => ['Cette référence existe déjà']], 400);
             }
             
-            // Récupérer la catégorie
             $category = null;
             if (!empty($data['category'])) {
                 $category = $categoryRepository->find($data['category']);
@@ -230,7 +222,6 @@ final class ArticleController extends AbstractController
                 }
             }
 
-            // Mettre à jour l'article
             $article->setNom($data['nom'])
                    ->setReference($data['reference'])
                    ->setMarque($data['marque'])
@@ -240,7 +231,6 @@ final class ArticleController extends AbstractController
                    ->setType($data['type'])
                    ->setCategory($category);
                    
-            // Le numéro est maintenant optionnel
             if (isset($data['numero']) && $data['numero'] !== '') {
                 $article->setNumero((int)$data['numero']);
             } else {
@@ -289,5 +279,31 @@ final class ArticleController extends AbstractController
             'article' => $article,
             'categories' => $categoryRepository->findAll()
         ]);
+    }
+
+    #[Route('/article/{articleId}/stock/{chantierId}', name: 'app_article_stock_details', methods: ['GET'])]
+    public function getStockDetails(int $articleId, int $chantierId, StockRepository $stockRepository): Response
+    {
+        try {
+            $stock = $stockRepository->findOneBy(['article' => $articleId, 'chantier' => $chantierId]);
+
+            if (!$stock) {
+                return $this->json(['success' => false, 'errors' => ['Stock non trouvé pour cet article et ce chantier']], 404);
+            }
+
+            return $this->json([
+                'success' => true,
+                'stock' => [
+                    'lieu' => $stock->getChantier() ? $stock->getChantier()->getNom() : 'N/A',
+                    'quantite_chantier' => $stock->getQuantiteChantier() ?? 0,
+                    'bon_etat' => $stock->getBonEtat() ?? 0,
+                    'mauvais_etat' => $stock->getMauvaisEtat() ?? 0,
+                    'feraille_etat' => $stock->getFerailleEtat() ?? 0,
+                    'unite' => $stock->getArticle() ? $stock->getArticle()->getUnite() : 'N/A'
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return $this->json(['success' => false, 'errors' => ['Erreur lors de la récupération des détails du stock: ' . $e->getMessage()]], 500);
+        }
     }
 }
