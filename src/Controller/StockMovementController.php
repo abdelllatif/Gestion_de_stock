@@ -17,8 +17,14 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 final class StockMovementController extends AbstractController
 {
     #[Route('/stock/movement', name: 'article_movement', methods: ['GET'])]
-    public function list(MouvementStockRepository $mouvementStockRepository, ArticleRepository $articleRepository, MachineRepository $machineRepository, ChantierRepository $chantierRepository, StockRepository $stockRepository, Request $request): Response
-    {
+    public function list(
+        MouvementStockRepository $mouvementStockRepository,
+        ArticleRepository $articleRepository,
+        MachineRepository $machineRepository,
+        ChantierRepository $chantierRepository,
+        StockRepository $stockRepository,
+        Request $request
+    ): Response {
         $mouvements = $mouvementStockRepository->findAll();
         $articles = $articleRepository->findAll();
         $machines = $machineRepository->findAll();
@@ -42,13 +48,71 @@ final class StockMovementController extends AbstractController
                 $stockMachineIds[] = $stock->getMachine()->getId();
             }
         }
+
+        $mouvementsWithDisplayType = [];
+        foreach ($mouvements as $mouvement) {
+            $displayType = $mouvement->getType();
+            $canEdit = false;
+            if ($mouvement->getType() === 'Transfert') {
+                if ($sessionChantier['id'] && $mouvement->getChantierRec() && $mouvement->getChantierRec()->getId() == $sessionChantier['id']) {
+                    $displayType = 'Entrée';
+                    $canEdit = true;
+                } elseif ($sessionChantier['id'] && $mouvement->getChantierExp() && $mouvement->getChantierExp()->getId() == $sessionChantier['id']) {
+                    $displayType = 'Sortie';
+                    $canEdit = true;
+                }
+            } elseif ($mouvement->getType() === 'Augmenter stock' && $mouvement->getChantierRec()) {
+                $displayType = 'Augmenter stock';
+                if ($sessionChantier['id'] && $mouvement->getChantierRec()->getId() == $sessionChantier['id']) {
+                    $canEdit = true;
+                }
+            }
+            $mouvementArray = [
+                'id' => $mouvement->getId(),
+                'type' => $mouvement->getType(),
+                'displayType' => $displayType,
+                'canEdit' => $canEdit,
+                'date' => $mouvement->getDate(),
+                'article' => $mouvement->getArticle() ? [
+                    'id' => $mouvement->getArticle()->getId(),
+                    'nom' => $mouvement->getArticle()->getNom(),
+                ] : null,
+                'machine' => $mouvement->getMachine() ? [
+                    'id' => $mouvement->getMachine()->getId(),
+                    'nom' => $mouvement->getMachine()->getNom(),
+                ] : null,
+                'quantite' => $mouvement->getQuantite(),
+                'chantierExp' => $mouvement->getChantierExp() ? [
+                    'id' => $mouvement->getChantierExp()->getId(),
+                    'nom' => $mouvement->getChantierExp()->getNom(),
+                ] : null,
+                'chantierRec' => $mouvement->getChantierRec() ? [
+                    'id' => $mouvement->getChantierRec()->getId(),
+                    'nom' => $mouvement->getChantierRec()->getNom(),
+                ] : null,
+                'status' => $mouvement->getStatus(),
+                'bonEtat' => $mouvement->getBonEtat(),
+                'mauvaisEtat' => $mouvement->getMauvaisEtat(),
+                'ferailleEtat' => $mouvement->getFerailleEtat(),
+                'fournisseur' => $mouvement->getFournisseur(),
+                'observation' => $mouvement->getObservation(),
+            ];
+            $mouvementsWithDisplayType[] = $mouvementArray;
+        }
+
         return $this->render('stock_movement/index.html.twig', [
             'activeLink' => 'stock_movement',
-            'mouvements' => $mouvements,
+            'mouvements' => $mouvementsWithDisplayType,
             'sessionChantier' => $sessionChantier,
-            'articles' => $articles,
-            'machines' => $machines,
-            'chantiers' => $chantiers,
+            'articles' => array_map(function ($article) {
+                return ['id' => $article->getId(), 'nom' => $article->getNom()];
+            }, $articles),
+            'machines' => array_map(function ($machine) {
+                return ['id' => $machine->getId(), 'nom' => $machine->getNom()];
+            }, $machines),
+            'chantiers' => array_map(function ($chantier) {
+                return ['id' => $chantier->getId(), 'nom' => $chantier->getNom()];
+            }, $chantiers),
             'currentChantierStocks' => $currentChantierStocks,
             'stockArticleIds' => $stockArticleIds,
             'stockMachineIds' => $stockMachineIds,
@@ -100,6 +164,9 @@ final class StockMovementController extends AbstractController
         if ($isArticle) {
             $itemId = (int)str_replace('article_', '', $itemIdRaw);
             $article = $articleRepository->find($itemId);
+            if (!$article) {
+                return new JsonResponse(['success' => false, 'message' => 'Article non trouvé.'], 404);
+            }
             $mouvement->setArticle($article);
             $mouvement->setBonEtat($bonEtat);
             $mouvement->setMauvaisEtat($mauvaisEtat);
@@ -107,6 +174,9 @@ final class StockMovementController extends AbstractController
         } elseif ($isMachine) {
             $itemId = (int)str_replace('machine_', '', $itemIdRaw);
             $machine = $machineRepository->find($itemId);
+            if (!$machine) {
+                return new JsonResponse(['success' => false, 'message' => 'Machine non trouvée.'], 404);
+            }
             $mouvement->setMachine($machine);
         } else {
             return new JsonResponse(['success' => false, 'message' => 'Type d\'élément invalide.'], 400);
@@ -114,8 +184,11 @@ final class StockMovementController extends AbstractController
 
         if ($typeMouvement === 'Augmenter stock') {
             $chantier = $chantierRepository->find($chantierActuelId);
+            if (!$chantier) {
+                return new JsonResponse(['success' => false, 'message' => 'Chantier actuel non trouvé.'], 404);
+            }
             $mouvement->setChantierRec($chantier);
-            $mouvement->setStatus('valid'); // Augmenter stock is valid by default
+            $mouvement->setStatus('valid');
             if ($isArticle) {
                 $stock = $stockRepository->findStockForArticleAndChantier($itemId, $chantierActuelId);
                 if (!$stock) {
@@ -152,14 +225,20 @@ final class StockMovementController extends AbstractController
             }
             $chantierExp = $chantierRepository->find($chantierActuelId);
             $chantierRec = $chantierRepository->find($chantierRecId);
+            if (!$chantierExp || !$chantierRec) {
+                return new JsonResponse(['success' => false, 'message' => 'Chantier(s) non trouvé(s).'], 404);
+            }
             $mouvement->setChantierExp($chantierExp);
             $mouvement->setChantierRec($chantierRec);
-            // No stock update until validated
         }
 
-        $em->persist($mouvement);
-        $em->flush();
-        return new JsonResponse(['success' => true, 'message' => 'Mouvement créé en attente de validation.']);
+        try {
+            $em->persist($mouvement);
+            $em->flush();
+            return new JsonResponse(['success' => true, 'message' => 'Mouvement créé en attente de validation.']);
+        } catch (\Exception $e) {
+            return new JsonResponse(['success' => false, 'message' => 'Erreur lors de la création du mouvement: ' . $e->getMessage()], 500);
+        }
     }
 
     #[Route('/stock_movement/check_quantity', name: 'app_stock_movement_check_quantity', methods: ['POST'])]
@@ -168,7 +247,7 @@ final class StockMovementController extends AbstractController
         $itemIdRaw = $request->request->get('itemId');
         $chantierId = $request->request->get('chantierId');
         if (!$itemIdRaw || !$chantierId) {
-            return new JsonResponse(['success' => false, 'message' => 'Paramètres manquants.']);
+            return new JsonResponse(['success' => false, 'message' => 'Paramètres manquants.'], 400);
         }
         $isArticle = str_starts_with($itemIdRaw, 'article_');
         $isMachine = str_starts_with($itemIdRaw, 'machine_');
@@ -179,7 +258,7 @@ final class StockMovementController extends AbstractController
             $itemId = (int)str_replace('machine_', '', $itemIdRaw);
             $stock = $stockRepository->findStockForMachineAndChantier($itemId, $chantierId);
         } else {
-            return new JsonResponse(['success' => false, 'message' => 'Type d\'élément invalide.']);
+            return new JsonResponse(['success' => false, 'message' => 'Type d\'élément invalide.'], 400);
         }
         $available = $stock ? $stock->getQuantiteChantier() : 0;
         return new JsonResponse(['success' => true, 'available' => $available]);
@@ -273,12 +352,12 @@ final class StockMovementController extends AbstractController
             'bonEtat' => $mouvement->getBonEtat() ?? 0,
             'mauvaisEtat' => $mouvement->getMauvaisEtat() ?? 0,
             'ferailleEtat' => $mouvement->getFerailleEtat() ?? 0,
-            'chantierRec' => $mouvement->getChantierRec() ? $mouvement->getChantierRec()->getId() : '',
+            'chantierRec' => $mouvement->getChantierRec() ? $mouvement->getChantierRec()->getId() : null,
             'fournisseur' => $mouvement->getFournisseur(),
             'observation' => $mouvement->getObservation(),
             'status' => $mouvement->getStatus(),
         ];
-        return new JsonResponse($data);
+        return new JsonResponse(['success' => true, 'data' => $data]);
     }
 
     #[Route('/stock_movement/edit', name: 'app_stock_movement_update', methods: ['POST'])]
@@ -320,14 +399,14 @@ final class StockMovementController extends AbstractController
             return new JsonResponse(['success' => false, 'message' => 'Mouvement non trouvé.'], 404);
         }
 
-        // Revert previous stock changes only if previously valid and type is Augmenter stock
-        if ($mouvement->getStatus() === 'valid' && $mouvement->getType() === 'Augmenter stock') {
+        // Revert previous stock changes if the movement was valid
+        if ($mouvement->getStatus() === 'valid') {
             $stock = $stockRepository->findStockForArticleAndChantier(
                 $mouvement->getArticle() ? $mouvement->getArticle()->getId() : null,
-                $chantierActuelId
+                $mouvement->getChantierRec() ? $mouvement->getChantierRec()->getId() : $chantierActuelId
             ) ?: $stockRepository->findStockForMachineAndChantier(
                 $mouvement->getMachine() ? $mouvement->getMachine()->getId() : null,
-                $chantierActuelId
+                $mouvement->getChantierRec() ? $mouvement->getChantierRec()->getId() : $chantierActuelId
             );
             if ($stock) {
                 $stock->setQuantiteChantier($stock->getQuantiteChantier() - $mouvement->getQuantite());
@@ -337,18 +416,40 @@ final class StockMovementController extends AbstractController
                     $stock->setFerailleEtat($stock->getFerailleEtat() - ($mouvement->getFerailleEtat() ?? 0));
                 }
             }
+            if ($mouvement->getType() === 'Transfert' && $mouvement->getChantierExp()) {
+                $stockExp = $stockRepository->findStockForArticleAndChantier(
+                    $mouvement->getArticle() ? $mouvement->getArticle()->getId() : null,
+                    $mouvement->getChantierExp()->getId()
+                ) ?: $stockRepository->findStockForMachineAndChantier(
+                    $mouvement->getMachine() ? $mouvement->getMachine()->getId() : null,
+                    $mouvement->getChantierExp()->getId()
+                );
+                if ($stockExp) {
+                    $stockExp->setQuantiteChantier($stockExp->getQuantiteChantier() + $mouvement->getQuantite());
+                    if ($mouvement->getArticle()) {
+                        $stockExp->setBonEtat($stockExp->getBonEtat() + ($mouvement->getBonEtat() ?? 0));
+                        $stockExp->setMauvaisEtat($stockExp->getMauvaisEtat() + ($mouvement->getMauvaisEtat() ?? 0));
+                        $stockExp->setFerailleEtat($stockExp->getFerailleEtat() + ($mouvement->getFerailleEtat() ?? 0));
+                    }
+                }
+            }
         }
 
         $mouvement->setType($typeMouvement);
         $mouvement->setQuantite($quantite);
         $mouvement->setFournisseur($fournisseur);
         $mouvement->setObservation($observation);
+        $mouvement->setDate(new \DateTime());
+        $mouvement->setStatus('waiting');
 
         $isArticle = str_starts_with($itemIdRaw, 'article_');
         $isMachine = str_starts_with($itemIdRaw, 'machine_');
         if ($isArticle) {
             $itemId = (int)str_replace('article_', '', $itemIdRaw);
             $article = $articleRepository->find($itemId);
+            if (!$article) {
+                return new JsonResponse(['success' => false, 'message' => 'Article non trouvé.'], 404);
+            }
             $mouvement->setArticle($article);
             $mouvement->setMachine(null);
             $mouvement->setBonEtat($bonEtat);
@@ -357,14 +458,23 @@ final class StockMovementController extends AbstractController
         } elseif ($isMachine) {
             $itemId = (int)str_replace('machine_', '', $itemIdRaw);
             $machine = $machineRepository->find($itemId);
+            if (!$machine) {
+                return new JsonResponse(['success' => false, 'message' => 'Machine non trouvée.'], 404);
+            }
             $mouvement->setMachine($machine);
             $mouvement->setArticle(null);
+            $mouvement->setBonEtat(null);
+            $mouvement->setMauvaisEtat(null);
+            $mouvement->setFerailleEtat(null);
         } else {
             return new JsonResponse(['success' => false, 'message' => 'Type d\'élément invalide.'], 400);
         }
 
         if ($typeMouvement === 'Augmenter stock') {
             $chantier = $chantierRepository->find($chantierActuelId);
+            if (!$chantier) {
+                return new JsonResponse(['success' => false, 'message' => 'Chantier actuel non trouvé.'], 404);
+            }
             $mouvement->setChantierRec($chantier);
             $mouvement->setChantierExp(null);
             $mouvement->setStatus('valid');
@@ -404,14 +514,20 @@ final class StockMovementController extends AbstractController
             }
             $chantierExp = $chantierRepository->find($chantierActuelId);
             $chantierRec = $chantierRepository->find($chantierRecId);
+            if (!$chantierExp || !$chantierRec) {
+                return new JsonResponse(['success' => false, 'message' => 'Chantier(s) non trouvé(s).'], 404);
+            }
             $mouvement->setChantierExp($chantierExp);
             $mouvement->setChantierRec($chantierRec);
-            $mouvement->setStatus('waiting');
         }
 
-        $em->persist($mouvement);
-        $em->flush();
-        return new JsonResponse(['success' => true, 'message' => 'Mouvement modifié.']);
+        try {
+            $em->persist($mouvement);
+            $em->flush();
+            return new JsonResponse(['success' => true, 'message' => 'Mouvement modifié.']);
+        } catch (\Exception $e) {
+            return new JsonResponse(['success' => false, 'message' => 'Erreur lors de la modification du mouvement: ' . $e->getMessage()], 500);
+        }
     }
 
     #[Route('/stock_movement/delete/{id}', name: 'app_stock_movement_delete', methods: ['POST'])]
@@ -457,9 +573,13 @@ final class StockMovementController extends AbstractController
             }
         }
 
-        $em->remove($mouvement);
-        $em->flush();
-        return new JsonResponse(['success' => true, 'message' => 'Mouvement supprimé.']);
+        try {
+            $em->remove($mouvement);
+            $em->flush();
+            return new JsonResponse(['success' => true, 'message' => 'Mouvement supprimé.']);
+        } catch (\Exception $e) {
+            return new JsonResponse(['success' => false, 'message' => 'Erreur lors de la suppression du mouvement: ' . $e->getMessage()], 500);
+        }
     }
 
     #[Route('/stock_movement/change_status/{id}/{status}', name: 'app_stock_movement_change_status', methods: ['POST'])]
@@ -559,8 +679,12 @@ final class StockMovementController extends AbstractController
         }
 
         $mouvement->setStatus($status);
-        $em->persist($mouvement);
-        $em->flush();
-        return new JsonResponse(['success' => true, 'message' => 'Statut modifié avec succès.']);
+        try {
+            $em->persist($mouvement);
+            $em->flush();
+            return new JsonResponse(['success' => true, 'message' => 'Statut modifié avec succès.']);
+        } catch (\Exception $e) {
+            return new JsonResponse(['success' => false, 'message' => 'Erreur lors de la modification du statut: ' . $e->getMessage()], 500);
+        }
     }
 }

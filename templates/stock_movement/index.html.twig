@@ -36,42 +36,43 @@
                     </tr>
                 {% else %}
                     {% for mouvement in mouvements %}
-                    if(mouvement.getChantierExp() is not null and mouvement.getChantierRec() is not null)
-                        {% set sessionChantier = app.session.get('chantier') %}
-                        {% set canEdit = sessionChantier.id == mouvement.getChantierExp().id or sessionChantier.id == mouvement.getChantierRec().id %}
                         <tr>
-                            <td>{{ mouvement.getType() }}</td>
-                            <td>{{ mouvement.getDate() ? mouvement.getDate().format('Y-m-d') : '' }}</td>
+                            <td>{{ mouvement.displayType }}</td>
+                            <td>{{ mouvement.date ? mouvement.date|date('Y-m-d') : '' }}</td>
                             <td>
-                                {% if mouvement.getArticle() %}
-                                    {{ mouvement.getArticle().getNom() }}
-                                {% elseif mouvement.getMachine() %}
-                                    {{ mouvement.getMachine().getNom() }}
-                                {% else %}-{% endif %}
+                                {% if mouvement.article %}
+                                    {{ mouvement.article.nom }}
+                                {% elseif mouvement.machine %}
+                                    {{ mouvement.machine.nom }}
+                                {% else %}
+                                    -
+                                {% endif %}
                             </td>
-                            <td>{{ mouvement.getQuantite() }}</td>
+                            <td>{{ mouvement.quantite }}</td>
                             <td>
-                                {% if mouvement.getChantierRec() %}
-                                    {{ mouvement.getChantierRec().getNom() }}
-                                {% else %}-{% endif %}
+                                {% if mouvement.chantierRec %}
+                                    {{ mouvement.chantierRec.nom }}
+                                {% else %}
+                                    -
+                                {% endif %}
                             </td>
                             <td>
-                                {% if mouvement.getStatus() == 'valid' %}
+                                {% if mouvement.status == 'valid' %}
                                     <i class="bi bi-check-circle text-success"></i> Validé
-                                {% elseif mouvement.getStatus() == 'rejected' %}
+                                {% elseif mouvement.status == 'rejected' %}
                                     <i class="bi bi-x-circle text-danger"></i> Rejeté
                                 {% else %}
                                     <i class="bi bi-hourglass-split text-warning"></i> En attente
                                 {% endif %}
                             </td>
                             <td>
-                                {% if canEdit %}
-                                    {% if mouvement.getStatus() == 'waiting' %}
-                                        <button class="btn btn-sm btn-outline-success" onclick="changeStatus({{ mouvement.getId() }}, 'valid')"><i class="bi bi-check-circle"></i></button>
-                                        <button class="btn btn-sm btn-outline-danger" onclick="changeStatus({{ mouvement.getId() }}, 'rejected')"><i class="bi bi-x-circle"></i></button>
+                                {% if mouvement.canEdit %}
+                                    {% if mouvement.status == 'waiting' %}
+                                        <button class="btn btn-sm btn-outline-success" onclick="changeStatus({{ mouvement.id }}, 'valid')"><i class="bi bi-check-circle"></i></button>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="changeStatus({{ mouvement.id }}, 'rejected')"><i class="bi bi-x-circle"></i></button>
                                     {% endif %}
-                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editMovementModal" data-id="{{ mouvement.getId() }}"><i class="bi bi-pencil"></i></button>
-                                    <button class="btn btn-sm btn-outline-danger" onclick="showDeleteAlert('Êtes-vous sûr de vouloir supprimer ce mouvement ?', {{ mouvement.getId() }})"><i class="bi bi-trash"></i></button>
+                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editMovementModal" data-id="{{ mouvement.id }}" data-item-id="{{ mouvement.article ? mouvement.article.id : (mouvement.machine ? mouvement.machine.id : '') }}" data-item-name="{{ mouvement.article ? mouvement.article.nom : (mouvement.machine ? mouvement.machine.nom : '') }}" data-item-type="{{ mouvement.article ? 'article' : (mouvement.machine ? 'machine' : '') }}"><i class="bi bi-pencil"></i></button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="showDeleteAlert('Êtes-vous sûr de vouloir supprimer ce mouvement ?', {{ mouvement.id }})"><i class="bi bi-trash"></i></button>
                                 {% else %}
                                     <span class="text-muted">En attente (hors chantier)</span>
                                 {% endif %}
@@ -308,34 +309,42 @@ $(document).ready(function() {
         var chantierRecField = $(`#${formPrefix}chantierRec`);
         var fournisseurField = $(`#${formPrefix}fournisseur`);
 
+        let selectedItemId = null;
+
         typeField.on('change', function() {
             var type = $(this).val();
+            selectedItemId = itemIdField.val();
             fournisseurInput.hide();
             chantierRecInput.hide();
             statusInputs.hide();
             chantierRecField.prop('required', false);
             fournisseurField.prop('required', false);
-            itemIdField.empty().append('<option value="">Chargement...</option>');
-            $.ajax({
-                url: '/stock_movement/fetch_items',
-                method: 'POST',
-                data: { type: type },
-                success: function(response) {
-                    if (response.success && response.items.length > 0) {
-                        var options = '<option value="">Sélectionner...</option>';
-                        response.items.forEach(function(item) {
-                            options += `<option value="${item.id}" data-type="${item.type}">${item.name}</option>`;
-                        });
-                        itemIdField.html(options);
-                    } else {
-                        itemIdField.html('<option value="">Aucun élément disponible</option>');
+            itemIdField.empty().append('<option value="">Sélectionner...</option>');
+            itemTypeField.val('').trigger('change');
+            if (type) {
+                $.ajax({
+                    url: '/stock_movement/fetch_items',
+                    method: 'POST',
+                    data: { type: type },
+                    success: function(response) {
+                        if (response.success && response.items.length > 0) {
+                            var options = '<option value="">Sélectionner...</option>';
+                            response.items.forEach(function(item) {
+                                options += `<option value="${item.id}" data-type="${item.type}">${item.name}</option>`;
+                            });
+                            itemIdField.html(options);
+                            if (selectedItemId) {
+                                itemIdField.val(selectedItemId).trigger('change');
+                            }
+                        } else {
+                            itemIdField.html('<option value="">Aucun élément disponible</option>');
+                        }
+                    },
+                    error: function() {
+                        itemIdField.html('<option value="">Erreur de chargement</option>');
                     }
-                },
-                error: function() {
-                    itemIdField.html('<option value="">Erreur de chargement</option>');
-                }
-            });
-
+                });
+            }
             if (type === 'Transfert') {
                 chantierRecInput.show();
                 chantierRecField.prop('required', true);
@@ -347,6 +356,7 @@ $(document).ready(function() {
 
         itemTypeField.on('change', function() {
             var itemType = $(this).val();
+            selectedItemId = itemIdField.val();
             statusInputs.hide();
             itemIdField.empty().append('<option value="">Sélectionner...</option>');
             if (itemType) {
@@ -361,6 +371,9 @@ $(document).ready(function() {
                                 options += `<option value="${item.id}" data-type="${item.type}">${item.name}</option>`;
                             });
                             itemIdField.html(options);
+                            if (selectedItemId) {
+                                itemIdField.val(selectedItemId).trigger('change');
+                            }
                         } else {
                             itemIdField.html(`<option value="">Aucun ${itemType} disponible</option>`);
                         }
@@ -378,7 +391,8 @@ $(document).ready(function() {
         itemIdField.on('change', function() {
             var selectedOption = $(this).find('option:selected');
             var type = selectedOption.data('type');
-            if (type) {
+            selectedItemId = $(this).val();
+            if (type && itemTypeField.val() !== type) {
                 itemTypeField.val(type).trigger('change');
             }
             if (typeField.val() === 'Transfert' && $(this).val() !== '') {
@@ -403,25 +417,71 @@ $(document).ready(function() {
                 quantiteField.attr('placeholder', '');
             }
         });
-
-        $(`#${formPrefix}quantite, #${formPrefix}bonEtat, #${formPrefix}mauvaisEtat, #${formPrefix}ferailleEtat`).on('input', function() {
-            var quantite = parseInt($(`#${formPrefix}quantite`).val() || 0);
-            var bonEtat = parseInt($(`#${formPrefix}bonEtat`).val() || 0);
-            var mauvaisEtat = parseInt($(`#${formPrefix}mauvaisEtat`).val() || 0);
-            var ferailleEtat = parseInt($(`#${formPrefix}ferailleEtat`).val() || 0);
-            var total = bonEtat + mauvaisEtat + ferailleEtat;
-            if (itemTypeField.val() === 'article' && total !== quantite) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Erreur',
-                    text: 'La somme des états (Bon, Mauvais, Ferraille) doit être égale à la quantité.'
-                });
-            }
-        });
     }
 
     manageDynamicFields();
     manageDynamicFields('edit');
+
+    function fillEditForm(data) {
+        $('#editMovementId').val(data.id);
+        $('#editType').val(data.type);
+
+        // Wait for type change to finish loading item types
+        $('#editType').off('change._edit').on('change._edit', function() {
+            $('#editItemType').val(data.itemType);
+
+            // Wait for itemType change to finish loading items
+            $('#editItemType').off('change._edit').on('change._edit', function() {
+                // Populate itemId dropdown and select the existing item
+                $.ajax({
+                    url: '/stock_movement/fetch_items',
+                    method: 'POST',
+                    data: { type: data.type, itemType: data.itemType },
+                    success: function(response) {
+                        if (response.success && response.items.length > 0) {
+                            var options = '<option value="">Sélectionner...</option>';
+                            response.items.forEach(function(item) {
+                                var selected = (item.id == data.itemId) ? ' selected' : '';
+                                options += `<option value="${item.id}" data-type="${item.type}"${selected}>${item.name}</option>`;
+                            });
+                            $('#editItemId').html(options);
+                        } else {
+                            $('#editItemId').html('<option value="">Aucun élément disponible</option>');
+                        }
+                    },
+                    error: function() {
+                        $('#editItemId').html('<option value="">Erreur de chargement</option>');
+                    }
+                });
+            }).trigger('change');
+        }).trigger('change');
+
+        $('#editQuantite').val(data.quantite);
+        $('#editBonEtat').val(data.bonEtat || 0);
+        $('#editMauvaisEtat').val(data.mauvaisEtat || 0);
+        $('#editFerailleEtat').val(data.ferailleEtat || 0);
+        $('#editChantierRec').val(data.chantierRec || '');
+        $('#editFournisseur').val(data.fournisseur || '');
+        $('#editObservation').val(data.observation || '');
+
+        // Show/hide fields based on type and itemType
+        if (data.type === 'Transfert') {
+            $('#editChantierRecInput').show();
+            $('#editChantierRec').prop('required', true);
+            $('#editFournisseurInput').hide();
+            $('#editFournisseur').prop('required', false);
+        } else if (data.type === 'Augmenter stock') {
+            $('#editFournisseurInput').show();
+            $('#editFournisseur').prop('required', true);
+            $('#editChantierRecInput').hide();
+            $('#editChantierRec').prop('required', false);
+        }
+        if (data.itemType === 'article') {
+            $('#editStatusInputs').show();
+        } else {
+            $('#editStatusInputs').hide();
+        }
+    }
 
     $('#addMovementForm').on('submit', function(e) {
         e.preventDefault();
@@ -430,6 +490,7 @@ $(document).ready(function() {
         var mauvaisEtat = parseInt($('#mauvaisEtat').val() || 0);
         var ferailleEtat = parseInt($('#ferailleEtat').val() || 0);
         var total = bonEtat + mauvaisEtat + ferailleEtat;
+
         if ($('#itemType').val() === 'article' && total !== quantite) {
             Swal.fire({
                 icon: 'error',
@@ -438,48 +499,77 @@ $(document).ready(function() {
             });
             return;
         }
+
         var formData = $(this).serialize();
         $.ajax({
             url: '/stock_movement/new',
             method: 'POST',
             data: formData,
             success: function(response) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Succès',
-                    text: 'Mouvement ajouté avec succès!'
-                });
-                $('#addMovementModal').modal('hide');
-                location.reload();
+                if (response.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Succès',
+                        text: response.message || 'Mouvement ajouté avec succès!'
+                    }).then(() => {
+                        $('#addMovementModal').modal('hide');
+                        $('#addMovementForm')[0].reset();
+                        $('#itemId').empty().append('<option value="">Sélectionner...</option>');
+                        $('#itemType').val('');
+                        $('#type').val('');
+                        $('#statusInputs').hide();
+                        $('#chantierRecInput').hide();
+                        $('#fournisseurInput').hide();
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erreur',
+                        text: response.message || 'Erreur lors de l\'ajout du mouvement.'
+                    });
+                }
             },
-            error: function() {
+            error: function(xhr, status, error) {
                 Swal.fire({
                     icon: 'error',
                     title: 'Erreur',
-                    text: 'Erreur lors de l\'ajout du mouvement.'
+                    text: 'Une erreur s\'est produite. Veuillez réessayer.'
                 });
             }
         });
     });
 
+    var editItemIdToSelect = null;
     $('#editMovementModal').on('show.bs.modal', function(e) {
         var button = $(e.relatedTarget);
         var id = button.data('id');
+        var itemId = button.data('item-id');
+        var itemName = button.data('item-name');
+        var itemType = button.data('item-type');
         $.ajax({
             url: '/stock_movement/' + id + '/edit',
             method: 'GET',
             success: function(response) {
-                $('#editMovementId').val(response.id);
-                $('#editType').val(response.type).trigger('change');
-                $('#editItemType').val(response.itemType).trigger('change');
-                $('#editItemId').val(response.itemId);
-                $('#editQuantite').val(response.quantite);
-                $('#editBonEtat').val(response.bonEtat || 0);
-                $('#editMauvaisEtat').val(response.mauvaisEtat || 0);
-                $('#editFerailleEtat').val(response.ferailleEtat || 0);
-                $('#editChantierRec').val(response.chantierRec);
-                $('#editFournisseur').val(response.fournisseur);
-                $('#editObservation').val(response.observation);
+                if (response.success === false) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erreur',
+                        text: response.message || 'Erreur lors du chargement des données.'
+                    });
+                    return;
+                }
+                response.data.itemId = itemId;
+                response.data.itemType = itemType;
+                response.data.itemName = itemName;
+                fillEditForm(response.data);
+            },
+            error: function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erreur',
+                    text: 'Erreur lors du chargement des données.'
+                });
             }
         });
     });
@@ -491,6 +581,7 @@ $(document).ready(function() {
         var mauvaisEtat = parseInt($('#editMauvaisEtat').val() || 0);
         var ferailleEtat = parseInt($('#editFerailleEtat').val() || 0);
         var total = bonEtat + mauvaisEtat + ferailleEtat;
+
         if ($('#editItemType').val() === 'article' && total !== quantite) {
             Swal.fire({
                 icon: 'error',
@@ -499,25 +590,35 @@ $(document).ready(function() {
             });
             return;
         }
+
         var formData = $(this).serialize();
         $.ajax({
             url: '/stock_movement/edit',
             method: 'POST',
             data: formData,
             success: function(response) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Succès',
-                    text: 'Mouvement modifié avec succès!'
-                });
-                $('#editMovementModal').modal('hide');
-                location.reload();
+                if (response.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Succès',
+                        text: response.message || 'Mouvement modifié avec succès!'
+                    }).then(() => {
+                        $('#editMovementModal').modal('hide');
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erreur',
+                        text: response.message || 'Erreur lors de la modification du mouvement.'
+                    });
+                }
             },
-            error: function() {
+            error: function(xhr, status, error) {
                 Swal.fire({
                     icon: 'error',
                     title: 'Erreur',
-                    text: 'Erreur lors de la modification du mouvement.'
+                    text: 'Une erreur s\'est produite. Veuillez réessayer.'
                 });
             }
         });
@@ -542,7 +643,7 @@ function changeStatus(id, status) {
                     Swal.fire({
                         icon: 'success',
                         title: 'Succès',
-                        text: 'Statut modifié avec succès!'
+                        text: response.message || 'Statut modifié avec succès!'
                     });
                     location.reload();
                 },
@@ -572,11 +673,11 @@ function showDeleteAlert(message, id) {
             $.ajax({
                 url: '/stock_movement/delete/' + id,
                 method: 'POST',
-                success: function() {
+                success: function(response) {
                     Swal.fire({
                         icon: 'success',
                         title: 'Succès',
-                        text: 'Mouvement supprimé avec succès!'
+                        text: response.message || 'Mouvement supprimé avec succès!'
                     });
                     location.reload();
                 },
