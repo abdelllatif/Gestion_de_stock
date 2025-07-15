@@ -126,7 +126,18 @@ class CreateTestArticlesCommand extends Command
 
         $count = 0;
         foreach ($articlesData as $data) {
-            $article = new Article();
+            // Vérifier si l'article existe déjà par sa référence
+            $existingArticle = $this->entityManager->getRepository(Article::class)
+                ->findOneBy(['reference' => $data['reference']]);
+            
+            if ($existingArticle) {
+                $io->note("L'article '{$data['nom']}' (Réf: {$data['reference']}) existe déjà. Mise à jour des informations.");
+                $article = $existingArticle;
+            } else {
+                $article = new Article();
+                $count++;
+            }
+            
             $article->setNom($data['nom'])
                    ->setReference($data['reference'])
                    ->setMarque($data['marque'])
@@ -136,13 +147,15 @@ class CreateTestArticlesCommand extends Command
                    ->setNumero($data['numero'])
                    ->setType($data['type']);
             
-            // Attribuer la catégorie si elle existe
+            // Attribuer la catégorie
             if (isset($categories[$data['categorie']])) {
                 $article->setCategory($categories[$data['categorie']]);
+            } else if (!empty($categories) && !$article->getCategory()) {
+                // Par défaut, affecter la première catégorie si aucune n'est spécifiée
+                $article->setCategory($categories[0]);
             }
 
             $this->entityManager->persist($article);
-            $count++;
         }
 
         $this->entityManager->flush();
