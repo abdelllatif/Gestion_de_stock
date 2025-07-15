@@ -38,11 +38,7 @@ class Vidange
     #[ORM\Column(nullable: true)]
     private ?int $kilometre = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $type_huile = null;
-
-    #[ORM\Column(nullable: true)]
-    private ?float $quantite = null;
+    // Champs supprimés: type_huile et quantite
 
     #[ORM\Column(nullable: true)]
     private ?int $prochaineVidange = null;
@@ -161,29 +157,7 @@ class Vidange
         return $this;
     }
 
-    public function getTypeHuile(): ?string
-    {
-        return $this->type_huile;
-    }
-
-    public function setTypeHuile(?string $type_huile): static
-    {
-        $this->type_huile = $type_huile;
-
-        return $this;
-    }
-
-    public function getQuantite(): ?float
-    {
-        return $this->quantite;
-    }
-
-    public function setQuantite(?float $quantite): static
-    {
-        $this->quantite = $quantite;
-
-        return $this;
-    }
+    // Méthodes getTypeHuile, setTypeHuile, getQuantite, setQuantite supprimées
 
     public function getProchaineVidange(): ?int
     {
