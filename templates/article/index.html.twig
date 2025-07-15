@@ -13,12 +13,12 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
 <!-- Modal d'ajout d'article -->
-<div class="modal fade" id="addArticleModal" tabindex="-1" aria-labelledby="addArticleModalLabel" aria-hidden="true">
+<div class="modal fade" id="addArticleModal" tabindex="-1" aria-labelledby="addArticleModalLabel" aria-modal="true" role="dialog">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); color: white;">
         <h5 class="modal-title" id="addArticleModalLabel"><i class="bi bi-plus-circle me-2"></i>Ajouter un nouvel article</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
       </div>
       <div class="modal-body">
         <form id="addArticleForm">
@@ -111,12 +111,12 @@
 </div>
 
 <!-- Modal de modification d'article -->
-<div class="modal fade" id="editArticleModal" tabindex="-1" aria-labelledby="editArticleModalLabel" aria-hidden="true">
+<div class="modal fade" id="editArticleModal" tabindex="-1" aria-labelledby="editArticleModalLabel" aria-modal="true" role="dialog">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); color: white;">
         <h5 class="modal-title" id="editArticleModalLabel"><i class="bi bi-pencil-square me-2"></i>Modifier l'article</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
       </div>
       <div class="modal-body">
         <form id="editArticleForm">
@@ -273,6 +273,20 @@
 </div>
 <script>
     $(document).ready(function() {
+        // Fix for accessibility issues with modals
+        $('.modal').on('show.bs.modal', function() {
+            // Remove aria-hidden when modal is shown
+            $(this).removeAttr('aria-hidden');
+        });
+        
+        // Return focus to the trigger button when modal is closed
+        $('.modal').on('hide.bs.modal', function(e) {
+            setTimeout(function() {
+                // Focus the button that opened the modal
+                $('[data-bs-target="#' + $(e.target).attr('id') + '"]').focus();
+            }, 50);
+        });
+        
         var table = $('#articlesTable').DataTable({
             language: {
                 url: 'https://cdn.datatables.net/plug-ins/2.0.7/i18n/fr-FR.json'
@@ -339,8 +353,10 @@
                 contentType: 'application/json',
                 data: JSON.stringify(formData),
                 success: function(response) {
+                    // Hide modal first
                     $('#addArticleModal').modal('hide');
                     
+                    // Then show success message
                     Swal.fire({
                         icon: 'success',
                         title: 'Article ajouté',
@@ -350,30 +366,53 @@
                         timerProgressBar: true
                     });
                     
-                    const newRow = table.row.add([
-                        response.article.type,
-                        response.article.nom,
-                        response.article.reference,
-                        response.article.marque,
-                        response.article.unite,
-                        response.article.prix.toFixed(2) + ' €',
-                        response.article.category ? response.article.category.nom : 'N/A',
-                        response.article.description.length > 50 ? 
-                            response.article.description.substring(0, 50) + '...' : 
-                            response.article.description,
-                        response.article.numero,
-                        `<button class="btn btn-sm btn-outline-primary" 
-                            onclick="openEditModal(${response.article.id})"
-                            title="Modifier">
-                            <i class="bi bi-pencil"></i> Modifier
-                        </button>`
-                    ]).draw(false).node();
+                    // Check if response contains article data
+                    if (!response || !response.article) {
+                        console.error('Invalid response format:', response);
+                        setTimeout(function() {
+                            location.reload();
+                        }, 3000);
+                        return;
+                    }
                     
-                    $(newRow).addClass('table-success');
-                    setTimeout(function() {
-                        $(newRow).removeClass('table-success');
-                    }, 3000);
+                    try {
+                        const newRow = table.row.add([
+                            response.article.type || 'N/A',
+                            response.article.nom,
+                            response.article.reference,
+                            response.article.marque,
+                            response.article.unite,
+                            `<span class="fw-bold text-danger">${parseFloat(response.article.prix).toFixed(2).replace('.', ',')} DH</span>`,
+                            response.article.category ? response.article.category.nom : 'N/A',
+                            response.article.description && response.article.description.length > 50 ? 
+                                response.article.description.substring(0, 50) + '...' : 
+                                (response.article.description || ''),
+                            response.article.numero || '',
+                            `<div class="btn-group" role="group">
+                                <a href="${ path('app_article_show', {'id': '__ID__'}) }".replace('__ID__', response.article.id) 
+                                   class="btn btn-sm btn-outline-dark me-1" title="Afficher">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <button class="btn btn-sm btn-outline-primary me-1" 
+                                    onclick="openEditModal(${response.article.id})"
+                                    title="Modifier">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                            </div>`
+                        ]).draw(false).node();
+                        
+                        $(newRow).addClass('table-success');
+                        setTimeout(function() {
+                            $(newRow).removeClass('table-success');
+                        }, 3000);
+                    } catch (e) {
+                        console.error('Error adding row to DataTable:', e);
+                        setTimeout(function() {
+                            location.reload();
+                        }, 3000);
+                    }
                     
+                    // Reset the form regardless of success or error
                     $('#addArticleForm').trigger('reset');
                 },
                 error: function(xhr) {
@@ -383,12 +422,19 @@
                         errorMessage = xhr.responseJSON.errors.join('<br>');
                         $('#form-errors').removeClass('d-none').html(errorMessage);
                     } else {
+                        // Close the modal first
+                        $('#addArticleModal').modal('hide');
+                        
                         Swal.fire({
                             icon: 'error',
                             title: 'Erreur',
-                            text: errorMessage
+                            text: errorMessage,
+                            confirmButtonText: 'OK'
                         });
                     }
+                    
+                    // Log error for debugging
+                    console.error('Error creating article:', xhr);
                 },
                 complete: function() {
                     $('#saveArticleBtn').prop('disabled', false).html('<i class="bi bi-save me-1"></i> Enregistrer');
@@ -460,11 +506,15 @@
         $('#addArticleModal').on('hidden.bs.modal', function() {
             $('#addArticleForm').trigger('reset');
             $('#form-errors').addClass('d-none').html('');
+            // Ensure no element in the modal has focus
+            $(this).find('button.btn-close').blur();
         });
         
         $('#editArticleModal').on('hidden.bs.modal', function() {
             $('#editArticleForm').trigger('reset');
             $('#edit-form-errors').addClass('d-none').html('');
+            // Ensure no element in the modal has focus
+            $(this).find('button.btn-close').blur();
         });
     });
     
