@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Gestion des Chauffeurs{% endblock %}
+{% block title %}Gestion des Mécaniciens{% endblock %}
 
 {% block body %}
 <link rel="stylesheet" href="https://cdn.datatables.net/2.0.7/css/dataTables.dataTables.min.css">
@@ -12,32 +12,26 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
-<!-- Modal d'ajout de chauffeur -->
-<div class="modal fade" id="addChauffeurModal" tabindex="-1" aria-labelledby="addChauffeurModalLabel" aria-hidden="true">
+<!-- Modal d'ajout de mécanicien -->
+<div class="modal fade" id="addMecanicienModal" tabindex="-1" aria-labelledby="addMecanicienModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); color: white;">
-        <h5 class="modal-title" id="addChauffeurModalLabel"><i class="bi bi-person-plus me-2"></i>Ajouter un chauffeur</h5>
+        <h5 class="modal-title" id="addMecanicienModalLabel"><i class="bi bi-tools me-2"></i>Ajouter un mécanicien</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <form id="addChauffeurForm">
+        <form id="addMecanicienForm">
           <!-- Nom -->
           <div class="mb-3">
-            <label for="chauffeur_nom" class="form-label">Nom complet*</label>
-            <input type="text" class="form-control" id="chauffeur_nom" name="nom" required>
-          </div>
-          
-          <!-- Numéro de licence -->
-          <div class="mb-3">
-            <label for="chauffeur_licence" class="form-label">Numéro de licence*</label>
-            <input type="text" class="form-control" id="chauffeur_licence" name="licence" required>
+            <label for="mecanicien_nom" class="form-label">Nom complet*</label>
+            <input type="text" class="form-control" id="mecanicien_nom" name="nom" required>
           </div>
           
           <!-- Téléphone -->
           <div class="mb-3">
-            <label for="chauffeur_tele" class="form-label">Numéro de téléphone*</label>
-            <input type="tel" class="form-control" id="chauffeur_tele" name="tele" required>
+            <label for="mecanicien_tele" class="form-label">Numéro de téléphone*</label>
+            <input type="tel" class="form-control" id="mecanicien_tele" name="tele" required>
           </div>
           
           <div class="alert alert-danger d-none" id="form-errors"></div>
@@ -45,7 +39,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-        <button type="button" class="btn btn-primary" id="saveChauffeurBtn">
+        <button type="button" class="btn btn-primary" id="saveMecanicienBtn">
           <i class="bi bi-save me-1"></i> Enregistrer
         </button>
       </div>
@@ -53,34 +47,28 @@
   </div>
 </div>
 
-<!-- Modal de modification de chauffeur -->
-<div class="modal fade" id="editChauffeurModal" tabindex="-1" aria-labelledby="editChauffeurModalLabel" aria-hidden="true">
+<!-- Modal de modification de mécanicien -->
+<div class="modal fade" id="editMecanicienModal" tabindex="-1" aria-labelledby="editMecanicienModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header" style="background: linear-gradient(90deg, #0f766e, #0d9488); color: white;">
-        <h5 class="modal-title" id="editChauffeurModalLabel"><i class="bi bi-pencil-square me-2"></i>Modifier le chauffeur</h5>
+        <h5 class="modal-title" id="editMecanicienModalLabel"><i class="bi bi-pencil-square me-2"></i>Modifier le mécanicien</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <form id="editChauffeurForm">
-          <input type="hidden" id="edit_chauffeur_id" name="id">
+        <form id="editMecanicienForm">
+          <input type="hidden" id="edit_mecanicien_id" name="id">
           
           <!-- Nom -->
           <div class="mb-3">
-            <label for="edit_chauffeur_nom" class="form-label">Nom complet*</label>
-            <input type="text" class="form-control" id="edit_chauffeur_nom" name="nom" required>
-          </div>
-          
-          <!-- Numéro de licence -->
-          <div class="mb-3">
-            <label for="edit_chauffeur_licence" class="form-label">Numéro de licence*</label>
-            <input type="text" class="form-control" id="edit_chauffeur_licence" name="licence" required>
+            <label for="edit_mecanicien_nom" class="form-label">Nom complet*</label>
+            <input type="text" class="form-control" id="edit_mecanicien_nom" name="nom" required>
           </div>
           
           <!-- Téléphone -->
           <div class="mb-3">
-            <label for="edit_chauffeur_tele" class="form-label">Numéro de téléphone*</label>
-            <input type="tel" class="form-control" id="edit_chauffeur_tele" name="tele" required>
+            <label for="edit_mecanicien_tele" class="form-label">Numéro de téléphone*</label>
+            <input type="tel" class="form-control" id="edit_mecanicien_tele" name="tele" required>
           </div>
           
           <div class="alert alert-danger d-none" id="edit-form-errors"></div>
@@ -88,7 +76,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-        <button type="button" class="btn btn-primary" id="updateChauffeurBtn">
+        <button type="button" class="btn btn-primary" id="updateMecanicienBtn">
           <i class="bi bi-check-lg me-1"></i> Mettre à jour
         </button>
       </div>
@@ -96,54 +84,76 @@
   </div>
 </div>
 
-
+<!-- Modal de confirmation de suppression -->
+<div class="modal fade" id="deleteMecanicienModal" tabindex="-1" aria-labelledby="deleteMecanicienModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="deleteMecanicienModalLabel"><i class="bi bi-exclamation-triangle me-2"></i>Confirmation de suppression</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Êtes-vous sûr de vouloir supprimer le mécanicien <strong id="mecanicien-to-delete-name"></strong> ?</p>
+        <p class="text-danger mb-0"><i class="bi bi-exclamation-circle me-2"></i>Cette action est irréversible.</p>
+        <input type="hidden" id="mecanicien-to-delete-id">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+          <i class="bi bi-trash me-1"></i> Supprimer
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Contenu principal -->
 <div class="container py-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 style="color: #232946; font-family: 'Segoe UI', sans-serif; font-weight: bold; letter-spacing: 1px;">
-            <i class="bi bi-person-badge me-2"></i>Gestion des Chauffeurs
+            <i class="bi bi-tools me-2"></i>Gestion des Mécaniciens
         </h1>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addChauffeurModal">
-            <i class="bi bi-plus-circle me-2"></i>Nouveau Chauffeur
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addMecanicienModal">
+            <i class="bi bi-plus-circle me-2"></i>Nouveau Mécanicien
         </button>
     </div>
 
     <div class="card shadow-sm">
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table id="chauffeursTable" class="table table-striped table-hover">
+                <table id="mecaniciensTable" class="table table-striped table-hover">
                     <thead class="table-light">
                         <tr>
                             <th>Nom</th>
-                            <th>N° de licence</th>
                             <th>Téléphone</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for chauffeur in chauffeurs %}
+                        {% for mecanicien in mecaniciens %}
                         <tr>
-                            <td>{{ chauffeur.nom }}</td>
-                            <td>{{ chauffeur.licence }}</td>
-                            <td>{{ chauffeur.tele }}</td>
+                            <td>{{ mecanicien.nom }}</td>
+                            <td>{{ mecanicien.tele }}</td>
                             <td>
                                 <div class="btn-group btn-group-sm" role="group">
-                                    <button type="button" class="btn btn-outline-primary edit-chauffeur" data-id="{{ chauffeur.id }}" data-nom="{{ chauffeur.nom }}" data-licence="{{ chauffeur.licence }}" data-tele="{{ chauffeur.tele }}">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-                                    
-                                   <a href="{{ path('app_chauffeur_show', {'id': chauffeur.id}) }}" class="btn btn-outline-info">
+                                    <a href="{{ path('app_mecanicien_show', {'id': mecanicien.id}) }}" class="btn btn-outline-info">
                                         <i class="bi bi-eye"></i>
                                     </a>
+                                    <button type="button" class="btn btn-outline-primary edit-mecanicien" 
+                                            data-id="{{ mecanicien.id }}" 
+                                            data-nom="{{ mecanicien.nom }}" 
+                                            data-tele="{{ mecanicien.tele }}">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                  
                                 </div>
                             </td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="4" class="text-center py-4">
+                            <td colspan="3" class="text-center py-4">
                                 <i class="bi bi-inbox fs-1 d-block mb-2 text-muted"></i>
-                                <p class="text-muted">Aucun chauffeur enregistré</p>
+                                <p class="text-muted">Aucun mécanicien enregistré</p>
                             </td>
                         </tr>
                         {% endfor %}
@@ -156,48 +166,55 @@
 
 <script>
 $(document).ready(function() {
-    const table = $('#chauffeursTable').DataTable({
+    // Initialisation de DataTables
+    const table = $('#mecaniciensTable').DataTable({
         language: {
             url: 'https://cdn.datatables.net/plug-ins/1.10.24/i18n/French.json'
         },
         responsive: true,
         columnDefs: [
-            { targets: -1, orderable: false } 
+            { targets: -1, orderable: false } // Désactiver le tri sur la colonne des actions
         ]
     });
     
-    $('#saveChauffeurBtn').on('click', function() {
+    // Gestion de l'ajout d'un mécanicien
+    $('#saveMecanicienBtn').on('click', function() {
         const formData = {
-            nom: $('#chauffeur_nom').val(),
-            licence: $('#chauffeur_licence').val(),
-            tele: $('#chauffeur_tele').val()
+            nom: $('#mecanicien_nom').val(),
+            tele: $('#mecanicien_tele').val()
         };
         
+        // Réinitialiser les erreurs précédentes
         $('#form-errors').addClass('d-none').html('');
         
+        // Désactiver le bouton pendant la soumission
         const saveBtn = $(this);
         saveBtn.prop('disabled', true);
         saveBtn.html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Enregistrement...');
         
         $.ajax({
-            url: '{{ path('app_chauffeur_new') }}',
+            url: '{{ path('app_mecanicien_new') }}',
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify(formData),
             success: function(response) {
                 if (response.success) {
-                    $('#addChauffeurModal').modal('hide');
+                    // Fermer le modal
+                    $('#addMecanicienModal').modal('hide');
                     
-                    $('#addChauffeurForm')[0].reset();
+                    // Réinitialiser le formulaire
+                    $('#addMecanicienForm')[0].reset();
                     
+                    // Afficher un message de succès
                     Swal.fire({
                         icon: 'success',
                         title: 'Succès',
-                        text: 'Le chauffeur a été ajouté avec succès',
+                        text: 'Le mécanicien a été ajouté avec succès',
                         timer: 2000,
                         showConfirmButton: false
                     });
                     
+                    // Recharger la page pour afficher le nouveau mécanicien
                     setTimeout(function() {
                         location.reload();
                     }, 1500);
@@ -206,6 +223,7 @@ $(document).ready(function() {
             error: function(xhr) {
                 const response = xhr.responseJSON;
                 if (response && response.errors) {
+                    // Afficher les erreurs dans l'alerte
                     const errorList = response.errors.map(error => `<li>${error}</li>`).join('');
                     $('#form-errors').removeClass('d-none').html(`<ul class="mb-0">${errorList}</ul>`);
                 } else {
@@ -213,60 +231,65 @@ $(document).ready(function() {
                 }
             },
             complete: function() {
+                // Réactiver le bouton
                 saveBtn.prop('disabled', false);
                 saveBtn.html('<i class="bi bi-save me-1"></i> Enregistrer');
             }
         });
     });
     
-    $('.edit-chauffeur').on('click', function() {
-        const chauffeurId = $(this).data('id');
-        const chauffeurNom = $(this).data('nom');
-        const chauffeurLicence = $(this).data('licence');
-        const chauffeurTele = $(this).data('tele');
+    // Remplir le modal de modification avec les données du mécanicien
+    $('.edit-mecanicien').on('click', function() {
+        const mecanicienId = $(this).data('id');
+        const mecanicienNom = $(this).data('nom');
+        const mecanicienTele = $(this).data('tele');
         
-        $('#edit_chauffeur_id').val(chauffeurId);
-        $('#edit_chauffeur_nom').val(chauffeurNom);
-        $('#edit_chauffeur_licence').val(chauffeurLicence);
-        $('#edit_chauffeur_tele').val(chauffeurTele);
+        $('#edit_mecanicien_id').val(mecanicienId);
+        $('#edit_mecanicien_nom').val(mecanicienNom);
+        $('#edit_mecanicien_tele').val(mecanicienTele);
         
         $('#edit-form-errors').addClass('d-none').html('');
         
-        $('#editChauffeurModal').modal('show');
+        $('#editMecanicienModal').modal('show');
     });
     
-    $('#updateChauffeurBtn').on('click', function() {
-        const chauffeurId = $('#edit_chauffeur_id').val();
+    // Gestion de la modification d'un mécanicien
+    $('#updateMecanicienBtn').on('click', function() {
+        const mecanicienId = $('#edit_mecanicien_id').val();
         
         const formData = {
-            nom: $('#edit_chauffeur_nom').val(),
-            licence: $('#edit_chauffeur_licence').val(),
-            tele: $('#edit_chauffeur_tele').val()
+            nom: $('#edit_mecanicien_nom').val(),
+            tele: $('#edit_mecanicien_tele').val()
         };
         
+        // Réinitialiser les erreurs précédentes
         $('#edit-form-errors').addClass('d-none').html('');
         
+        // Désactiver le bouton pendant la soumission
         const updateBtn = $(this);
         updateBtn.prop('disabled', true);
         updateBtn.html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Mise à jour...');
         
         $.ajax({
-            url: `/chauffeur/${chauffeurId}/edit`,
+            url: `/mecanicien/${mecanicienId}/edit`,
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify(formData),
             success: function(response) {
                 if (response.success) {
-                    $('#editChauffeurModal').modal('hide');
+                    // Fermer le modal
+                    $('#editMecanicienModal').modal('hide');
                     
+                    // Afficher un message de succès
                     Swal.fire({
                         icon: 'success',
                         title: 'Succès',
-                        text: 'Le chauffeur a été modifié avec succès',
+                        text: 'Le mécanicien a été modifié avec succès',
                         timer: 2000,
                         showConfirmButton: false
                     });
                     
+                    // Recharger la page pour afficher les modifications
                     setTimeout(function() {
                         location.reload();
                     }, 1500);
@@ -275,6 +298,7 @@ $(document).ready(function() {
             error: function(xhr) {
                 const response = xhr.responseJSON;
                 if (response && response.errors) {
+                    // Afficher les erreurs dans l'alerte
                     const errorList = response.errors.map(error => `<li>${error}</li>`).join('');
                     $('#edit-form-errors').removeClass('d-none').html(`<ul class="mb-0">${errorList}</ul>`);
                 } else {
@@ -282,57 +306,71 @@ $(document).ready(function() {
                 }
             },
             complete: function() {
+                // Réactiver le bouton
                 updateBtn.prop('disabled', false);
                 updateBtn.html('<i class="bi bi-check-lg me-1"></i> Mettre à jour');
             }
         });
     });
     
-    $('.delete-chauffeur').on('click', function() {
-        const chauffeurId = $(this).data('id');
-        const chauffeurNom = $(this).data('nom');
+    // Préparer le modal de suppression
+    $('.delete-mecanicien').on('click', function() {
+        const mecanicienId = $(this).data('id');
+        const mecanicienNom = $(this).data('nom');
         
-        $('#chauffeur-to-delete-id').val(chauffeurId);
-        $('#chauffeur-to-delete-name').text(chauffeurNom);
+        $('#mecanicien-to-delete-id').val(mecanicienId);
+        $('#mecanicien-to-delete-name').text(mecanicienNom);
         
-        $('#deleteChauffeurModal').modal('show');
+        $('#deleteMecanicienModal').modal('show');
     });
     
+    // Gestion de la suppression d'un mécanicien
     $('#confirmDeleteBtn').on('click', function() {
-        const chauffeurId = $('#chauffeur-to-delete-id').val();
+        const mecanicienId = $('#mecanicien-to-delete-id').val();
         
+        // Désactiver le bouton pendant la suppression
         const deleteBtn = $(this);
         deleteBtn.prop('disabled', true);
         deleteBtn.html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Suppression...');
         
         $.ajax({
-            url: `/chauffeur/${chauffeurId}/delete`,
+            url: `/mecanicien/${mecanicienId}/delete`,
             type: 'DELETE',
             success: function(response) {
                 if (response.success) {
-                    $('#deleteChauffeurModal').modal('hide');
+                    // Fermer le modal
+                    $('#deleteMecanicienModal').modal('hide');
                     
+                    // Afficher un message de succès
                     Swal.fire({
                         icon: 'success',
                         title: 'Succès',
-                        text: 'Le chauffeur a été supprimé avec succès',
+                        text: 'Le mécanicien a été supprimé avec succès',
                         timer: 2000,
                         showConfirmButton: false
                     });
                     
+                    // Recharger la page
                     setTimeout(function() {
                         location.reload();
                     }, 1500);
                 }
             },
             error: function() {
-                $('#deleteChauffeurModal').modal('hide');
+                // Fermer le modal
+                $('#deleteMecanicienModal').modal('hide');
                 
+                // Afficher un message d'erreur
                 Swal.fire({
                     icon: 'error',
                     title: 'Erreur',
-                    text: 'Une erreur est survenue lors de la suppression du chauffeur',
+                    text: 'Une erreur est survenue lors de la suppression du mécanicien',
                 });
+            },
+            complete: function() {
+                // Réactiver le bouton
+                deleteBtn.prop('disabled', false);
+                deleteBtn.html('<i class="bi bi-trash me-1"></i> Supprimer');
             }
         });
     });

@@ -70,8 +70,9 @@
                 <div id="entretienSubmenu" style="display: none;">
                     <a href="/entretien" class="nav-link submenu-link mb-1{% if app.request.getRequestUri() starts with '/entretien' and not app.request.getRequestUri() starts with '/entretien/vidange' and not app.request.getRequestUri() starts with '/entretien/reparation' %} active{% endif %}">Gestion des entretiens</a>
                     <a href="/entretien/vidange" class="nav-link submenu-link mb-1{% if app.request.getRequestUri() starts with '/entretien/vidange' %} active{% endif %}">Vidanges</a>
-                    <a href="/entretien/reparation" class="nav-link submenu-link{% if app.request.getRequestUri() starts with '/entretien/reparation' %} active{% endif %}">Réparations</a>
-                    <a href="/mecanicien" class="nav-link submenu-link{% if app.request.getRequestUri() starts with '/mecanicien' %} active{% endif %}">Mécaniciens</a>
+                    <a href="/entretien/reparation" class="nav-link submenu-link mb-1{% if app.request.getRequestUri() starts with '/entretien/reparation' %} active{% endif %}">Réparations</a>
+                    <a href="/mecanicien" class="nav-link submenu-link mb-1{% if app.request.getRequestUri() starts with '/mecanicien' %} active{% endif %}">Mécaniciens</a>
+                    <a href="/chauffeur" class="nav-link submenu-link{% if app.request.getRequestUri() starts with '/chauffeur' %} active{% endif %}">Chauffeurs</a>               
                 </div>
             </li>
             <li class="nav-item mb-2">
@@ -94,11 +95,7 @@
                     <i class="bi bi-person-badge me-2"></i> Clients
                 </a>
             </li>
-            <li class="nav-item mb-2">
-                <a href="/chauffeur" class="nav-link {% if activeLink == 'chauffeur' %}text-white{% endif %}" style="{% if activeLink == 'chauffeur' %}text-white{% endif %}" style="{% if activeLink == 'chauffeur' %}background: linear-gradient(90deg, #1e3a8a, #3b82f6); border-radius: 8px;{% else %}border-radius: 8px;{% endif %}">
-                    <i class="bi bi-truck me-2"></i> Chauffeurs
-                </a>
-            </li>
+         
             <li class="nav-item mb-2">
                 <a href="/chantier" class="nav-link {% if activeLink == 'chantier' %}text-white{% endif %}" style="{% if activeLink == 'chantier' %}background: linear-gradient(90deg, #1e3a8a, #3b82f6); border-radius: 8px;{% else %}border-radius: 8px;{% endif %}">
                     <i class="bi bi-building me-2"></i> Chantiers

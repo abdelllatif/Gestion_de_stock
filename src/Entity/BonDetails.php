@@ -24,6 +24,14 @@ class BonDetails
 
     #[ORM\ManyToOne(inversedBy: 'bonDetails')]
     private ?Bon $bon = null;
+    
+    #[ORM\ManyToOne(targetEntity: Article::class)]
+    #[ORM\JoinColumn(nullable: true)]
+    private ?Article $article = null;
+    
+    #[ORM\ManyToOne(targetEntity: Machine::class)]
+    #[ORM\JoinColumn(nullable: true)]
+    private ?Machine $machine = null;
 
     public function getId(): ?int
     {
@@ -74,6 +82,30 @@ class BonDetails
     public function setBon(?Bon $bon): static
     {
         $this->bon = $bon;
+
+        return $this;
+    }
+
+    public function getArticle(): ?Article
+    {
+        return $this->article;
+    }
+
+    public function setArticle(?Article $article): static
+    {
+        $this->article = $article;
+
+        return $this;
+    }
+
+    public function getMachine(): ?Machine
+    {
+        return $this->machine;
+    }
+
+    public function setMachine(?Machine $machine): static
+    {
+        $this->machine = $machine;
 
         return $this;
     }

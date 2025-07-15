@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\EntretienRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: EntretienRepository::class)]
@@ -42,6 +43,9 @@ class Entretien
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
     private ?Chantier $chantier = null;
+
+    #[ORM\Column(type: Types::DATE_MUTABLE)]
+    private ?\DateTime $date = null;
 
     public function __construct()
     {
@@ -170,6 +174,18 @@ class Entretien
     public function setChantier(?Chantier $chantier): static
     {
         $this->chantier = $chantier;
+
+        return $this;
+    }
+
+    public function getDate(): ?\DateTime
+    {
+        return $this->date;
+    }
+
+    public function setDate(\DateTime $date): static
+    {
+        $this->date = $date;
 
         return $this;
     }
