@@ -69,8 +69,7 @@
                 </button>
                 <div id="entretienSubmenu" style="display: none;">
                     <a href="/entretien" class="nav-link submenu-link mb-1{% if app.request.getRequestUri() starts with '/entretien' and not app.request.getRequestUri() starts with '/entretien/vidange' and not app.request.getRequestUri() starts with '/entretien/reparation' %} active{% endif %}">Gestion des entretiens</a>
-                    <a href="/entretien/vidange" class="nav-link submenu-link mb-1{% if app.request.getRequestUri() starts with '/entretien/vidange' %} active{% endif %}">Vidanges</a>
-                    <a href="/entretien/reparation" class="nav-link submenu-link mb-1{% if app.request.getRequestUri() starts with '/entretien/reparation' %} active{% endif %}">Réparations</a>
+                    
                     <a href="/mecanicien" class="nav-link submenu-link mb-1{% if app.request.getRequestUri() starts with '/mecanicien' %} active{% endif %}">Mécaniciens</a>
                     <a href="/chauffeur" class="nav-link submenu-link{% if app.request.getRequestUri() starts with '/chauffeur' %} active{% endif %}">Chauffeurs</a>               
                 </div>
