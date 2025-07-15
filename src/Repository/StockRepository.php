@@ -41,6 +41,20 @@ class StockRepository extends ServiceEntityRepository
     //        ;
     //    }
 
+    public function findMachinesByChantier($chantierId): array
+    {
+        return $this->createQueryBuilder('s')
+            ->select('m.id', 'm.nom', 'm.code')
+            ->join('s.machine', 'm')
+            ->andWhere('s.chantier = :chantierId')
+            ->andWhere('s.machine IS NOT NULL')
+            ->setParameter('chantierId', $chantierId)
+            ->groupBy('m.id')
+            ->orderBy('m.nom', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
     public function findStockForArticleAndChantier($articleId, $chantierId): ?\App\Entity\Stock
     {
         return $this->createQueryBuilder('s')

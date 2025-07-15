@@ -30,6 +30,13 @@
                         <!-- Informations générales -->
                         <h5 class="card-title border-bottom pb-2 mb-3">Informations générales</h5>
                         <div class="row mb-3">
+                          <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="entretien_chantier" class="form-label">Chantier</label>
+                                    <input type="hidden" id="entretien_chantier" name="chantier" value="{{ app.session.get('selected_chantier').id }}" required>
+                                    <input type="text" class="form-control" value="{{ app.session.get('selected_chantier').nom }}" readonly>
+                                </div>
+                            </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="entretien_numero" class="form-label">Numéro d'entretien*</label>
@@ -42,10 +49,7 @@
                                     <input type="text" class="form-control datepicker" id="entretien_date" name="date" required>
                                 </div>
                             </div>
-                        </div>
-                        
-                        <div class="row mb-3">
-                            <div class="col-md-6">
+                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="entretien_machine" class="form-label">Machine*</label>
                                     <select class="form-select" id="entretien_machine" name="machine" required>
@@ -54,15 +58,11 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="entretien_chantier" class="form-label">Chantier*</label>
-                                    <select class="form-select" id="entretien_chantier" name="chantier" required>
-                                        <option value="">Sélectionnez un chantier</option>
-                                        <!-- Les options seront chargées par AJAX -->
-                                    </select>
-                                </div>
-                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                           
+                          
                         </div>
                         
                         <div class="row mb-3">
@@ -185,25 +185,32 @@
                             <div class="row">
                                 <div class="col-md-12">
                                     <div class="mb-3">
-                                        <label for="reparation_description" class="form-label">Description*</label>
-                                        <textarea class="form-control" id="reparation_description" name="reparation_description" rows="3"></textarea>
+                                        <label for="reparation_description" class="form-label">Désignation*</label>
+                                        <textarea class="form-control" id="reparation_description" name="reparation_description" rows="2"></textarea>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <div class="mb-3">
                                         <label for="reparation_cout" class="form-label">Coût estimé (DH)</label>
                                         <input type="number" step="0.01" class="form-control" id="reparation_cout" name="reparation_cout">
                                     </div>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <div class="mb-3">
-                                        <label for="reparation_priorite" class="form-label">Priorité</label>
-                                        <select class="form-select" id="reparation_priorite" name="reparation_priorite">
-                                            <option value="basse">Basse</option>
-                                            <option value="moyenne" selected>Moyenne</option>
-                                            <option value="haute">Haute</option>
-                                            <option value="critique">Critique</option>
-                                        </select>
+                                        <label for="reparation_consomation" class="form-label">Kilométrage (consommation)*</label>
+                                        <input type="number" class="form-control" id="reparation_consomation" name="reparation_consomation" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="reparation_date" class="form-label">Date</label>
+                                        <input type="text" class="form-control datepicker" id="reparation_date" name="reparation_date">
+                                    </div>
+                                </div>
+                                <div class="col-md-12">
+                                    <div class="mb-3">
+                                        <label for="reparation_observation" class="form-label">Observation</label>
+                                        <textarea class="form-control" id="reparation_observation" name="reparation_observation" rows="2"></textarea>
                                     </div>
                                 </div>
                             </div>
@@ -228,7 +235,7 @@
 
 <script>
 $(document).ready(function() {
-    // Initialisation du sélecteur de date
+    // Initialisation des sélecteurs de date
     flatpickr(".datepicker", {
         locale: "fr",
         dateFormat: "d/m/Y",
@@ -271,8 +278,10 @@ $(document).ready(function() {
         
         if (hasReparation) {
             $('#reparation_description').prop('required', true);
+            $('#reparation_date').prop('required', true);
         } else {
             $('#reparation_description').prop('required', false);
+            $('#reparation_date').prop('required', false);
         }
         
         // Si aucune intervention n'est sélectionnée, désactiver le bouton d'enregistrement
@@ -298,6 +307,10 @@ $(document).ready(function() {
     $('#entretien_has_reparation').on('change', function() {
         if ($(this).is(':checked')) {
             $('#reparation-section').slideDown(300);
+            // Réinitialiser le datepicker de réparation avec la date du jour
+            if ($('#reparation_date').val() === '') {
+                flatpickr("#reparation_date").setDate(new Date());
+            }
         } else {
             $('#reparation-section').slideUp(300);
         }
@@ -307,35 +320,36 @@ $(document).ready(function() {
     // État initial des boutons
     updateInterventionValidation();
     
-    // Chargement des machines
-    $.ajax({
-        url: '/api/machines',
-        type: 'GET',
-        success: function(machines) {
-            const selectMachine = $('#entretien_machine');
-            machines.forEach(function(machine) {
-                selectMachine.append(new Option(machine.nom, machine.id));
-            });
-        },
-        error: function() {
-            console.error('Erreur lors du chargement des machines');
-        }
-    });
+    // Chargement des machines pour le chantier sélectionné uniquement
+    const chantierId = {{ app.session.get('selected_chantier').id|default('null') }};
     
-    // Chargement des chantiers
-    $.ajax({
-        url: '/api/chantiers',
-        type: 'GET',
-        success: function(chantiers) {
-            const selectChantier = $('#entretien_chantier');
-            chantiers.forEach(function(chantier) {
-                selectChantier.append(new Option(chantier.nom, chantier.id));
-            });
-        },
-        error: function() {
-            console.error('Erreur lors du chargement des chantiers');
-        }
-    });
+    if (chantierId) {
+        $.ajax({
+            url: '/api/chantier/' + chantierId + '/machines',
+            type: 'GET',
+            success: function(machines) {
+                const selectMachine = $('#entretien_machine');
+                if (machines.length === 0) {
+                    selectMachine.html('<option value="">Aucune machine disponible dans ce chantier</option>');
+                } else {
+                    selectMachine.empty();
+                    selectMachine.append('<option value="">Sélectionnez une machine</option>');
+                    machines.forEach(function(machine) {
+                        selectMachine.append(new Option(machine.nom + ' (' + machine.code + ')', machine.id));
+                    });
+                }
+            },
+            error: function() {
+                console.error('Erreur lors du chargement des machines pour ce chantier');
+                $('#entretien_machine').html('<option value="">Erreur de chargement des machines</option>');
+            }
+        });
+    } else {
+        $('#entretien_machine').html('<option value="">Veuillez d\'abord sélectionner un chantier</option>');
+    }
+    
+    // Le chantier est maintenant récupéré depuis la session
+    // Pas besoin de charger les chantiers via AJAX
     
     // Chargement des mécaniciens
     $.ajax({
@@ -404,6 +418,8 @@ $(document).ready(function() {
                 km: $('#vidange_km').val() || 0,
                 montant_ttc: $('#vidange_montant').val() || 0,
                 huile: true, // L'huile est toujours inclus dans une vidange
+                type_huile: 'huile', // Valeur par défaut puisque le champ a été supprimé
+                quantite: 0, // Valeur par défaut puisque le champ a été supprimé
                 filtre_huile: $('#vidange_filtre_huile').is(':checked'),
                 filtre_gasoil: $('#vidange_filtre_gasoil').is(':checked'),
                 filtre_air: $('#vidange_filtre_air').is(':checked'),
@@ -420,7 +436,9 @@ $(document).ready(function() {
             formData.reparation = {
                 description: $('#reparation_description').val(),
                 cout: $('#reparation_cout').val() || 0,
-                priorite: $('#reparation_priorite').val()
+                consomation: $('#reparation_consomation').val() || 0,
+                date: $('#reparation_date').val(),
+                observation: $('#reparation_observation').val()
             };
         }
         

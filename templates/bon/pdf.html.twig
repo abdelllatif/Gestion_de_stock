@@ -21,6 +21,12 @@
             border-bottom: 1px solid #e5e7eb;
             padding-bottom: 3mm;
         }
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10mm;
+            border-bottom: 1px solid #e5e7eb;
+        }
         h1 {
             color: #1e3a8a;
             font-size: 16px;
@@ -97,6 +103,47 @@
             border: 1px solid #ddd;
             padding: 1.5mm;
         }
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 3mm;
+        }
+        .info-table th {
+            background-color: #f3f4f6;
+            border: 1px solid #ddd;
+            padding: 2mm;
+            text-align: left;
+            font-weight: bold;
+            font-size: 11px;
+        }
+        .info-table td {
+            border: 1px solid #ddd;
+            padding: 2mm;
+            font-size: 11px;
+            vertical-align: middle;
+        }
+        .details-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .details-table th {
+            background-color: #f3f4f6;
+            border: 1px solid #ddd;
+            padding: 2mm;
+            font-weight: bold;
+            font-size: 11px;
+        }
+        .details-table td {
+            border: 1px solid #ddd;
+            padding: 2mm;
+            font-size: 11px;
+            vertical-align: middle;
+        }
+        .no-border {
+            border: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
         .footer {
             margin-top: 5mm;
             text-align: center;
@@ -104,6 +151,12 @@
             color: #6b7280;
             border-top: 1px solid #e5e7eb;
             padding-top: 2mm;
+        }
+        .footer-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10mm;
+            border-top: 1px solid #e5e7eb;
         }
         .page-number {
             text-align: center;
@@ -127,19 +180,27 @@
 <body>
     <div class="container">
         <!-- Logo et titre en haut au centre -->
-        <div class="header">
-           
-            
-            <h1>Bon {{ bon.type|upper }} #{{ bon.numeroSerie }}</h1>
-            <p>Document généré le: {{ "now"|date("d/m/Y") }}</p>
-        </div>
+        <table class="header-table">
+            <tr>
+                <td style="text-align: center; padding-bottom: 3mm;">
+                    <h1 style="color: #1e3a8a; margin-bottom: 0;">MATÉRIELLES ET LOGISTIQUE</h1>
+                    <p style="color: #3b82f6; font-size: 10px; margin-top: 2mm;">GESTION DE STOCK</p>
+                    <h1 style="margin-top: 5mm;">Bon {{ bon.type|upper }} #{{ bon.numeroSerie }}</h1>
+                    <p style="margin-top: 2mm;">Document généré le: {{ "now"|date("d/m/Y") }}</p>
+                </td>
+            </tr>
+        </table>
         
-        <div class="info-block">
-            <h2>Informations du Bon</h2>
-            
-            <div class="info-row clearfix">
-                <div class="info-label">Type:</div>
-                <div class="info-value">
+        <h2>Informations du Bon</h2>
+        <table class="info-table">
+            <tr>
+                <th width="30%">Type</th>
+                <th width="20%">Numéro de série</th>
+                <th width="25%">Date</th>
+                <th width="25%">Chantier</th>
+            </tr>
+            <tr>
+                <td>
                     {% if bon.type == 'Sortie' %}
                         <span class="badge badge-sortie">{{ bon.type }}</span>
                     {% elseif bon.type == 'Entrée' %}
@@ -149,56 +210,46 @@
                     {% else %}
                         {{ bon.type }}
                     {% endif %}
-                </div>
-            </div>
-            
-            <div class="info-row clearfix">
-                <div class="info-label">Numéro de série:</div>
-                <div class="info-value">{{ bon.numeroSerie }}</div>
-            </div>
-            
-            <div class="info-row clearfix">
-                <div class="info-label">Date:</div>
-                <div class="info-value">{{ bon.date|date('d/m/Y') }}</div>
-            </div>
-            
-            <div class="info-row clearfix">
-                <div class="info-label">Chantier:</div>
-                <div class="info-value">{{ bon.chantier ? bon.chantier.nom : 'Non assigné' }}</div>
-            </div>
-            
-            <!-- Le fournisseur est géré au niveau des détails, pas du bon lui-même -->
-            {% set hasFournisseur = false %}
-            {% for detail in bon.bonDetails %}
-                {% if detail.fournisseur is defined and detail.fournisseur and not hasFournisseur %}
-                    {% set hasFournisseur = true %}
-                    <div class="info-row clearfix">
-                        <div class="info-label">Fournisseur principal:</div>
-                        <div class="info-value">{{ detail.fournisseur }}</div>
-                    </div>
-                {% endif %}
-            {% endfor %}
-        </div>
+                </td>
+                <td>{{ bon.numeroSerie }}</td>
+                <td>{{ bon.date|date('d/m/Y') }}</td>
+                <td>{{ bon.chantier ? bon.chantier.nom : 'Non assigné' }}</td>
+            </tr>
+        </table>
+        
+        <!-- Fournisseur si disponible -->
+        {% set hasFournisseur = false %}
+        {% for detail in bon.bonDetails %}
+            {% if detail.fournisseur is defined and detail.fournisseur and not hasFournisseur %}
+                {% set hasFournisseur = true %}
+                <table class="info-table" style="margin-top: 3mm;">
+                    <tr>
+                        <th width="30%">Fournisseur principal</th>
+                        <td width="70%">{{ detail.fournisseur }}</td>
+                    </tr>
+                </table>
+            {% endif %}
+        {% endfor %}
 
         <h2>Détails des Articles et Machines</h2>
         
         {% if bon.bonDetails|length > 0 %}
-            <table>
+            <table class="details-table">
                 <thead>
                     <tr>
-                        <th width="15%">Type</th>
+                        <th width="15%" style="text-align: center;">Type</th>
                         <th width="40%">Désignation</th>
                         <th width="15%" style="text-align: center;">Quantité</th>
                         <th width="15%" style="text-align: center;">Unité</th>
                         {% if bon.type == 'Livraison' %}
-                            <th width="15%">Fournisseur</th>
+                            <th width="15%" style="text-align: center;">Fournisseur</th>
                         {% endif %}
                     </tr>
                 </thead>
                 <tbody>
                     {% for detail in bon.bonDetails %}
                         <tr>
-                            <td>
+                            <td style="text-align: center;">
                                 {% if detail.article %}
                                     <span class="badge badge-article">Article</span>
                                 {% elseif detail.machine %}
@@ -206,41 +257,58 @@
                                 {% endif %}
                             </td>
                             <td>
-                                {% if detail.article %}
-                                    <strong>{{ detail.article.nom }}</strong>
-                                    <br><small>Réf: {{ detail.article.reference }}</small>
-                                {% elseif detail.machine %}
-                                    <strong>{{ detail.machine.nom }}</strong>
-                                    {% if detail.machine.code %}
-                                        <br><small>Code: {{ detail.machine.code }}</small>
-                                    {% endif %}
-                                {% endif %}
+                                <table class="no-border">
+                                    <tr>
+                                        <td class="no-border"><strong>{{ detail.article ? detail.article.nom : detail.machine.nom }}</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="no-border" style="color: #6b7280; font-size: 9px;">
+                                            {% if detail.article %}
+                                                Réf: {{ detail.article.reference }}
+                                            {% elseif detail.machine and detail.machine.code %}
+                                                Code: {{ detail.machine.code }}
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                </table>
                             </td>
                             <td style="text-align: center;">{{ detail.quantite }}</td>
                             <td style="text-align: center;">{{ detail.unite|default('-') }}</td>
                             {% if bon.type == 'Livraison' %}
-                                <td>{{ detail.fournisseur|default('-') }}</td>
+                                <td style="text-align: center;">{{ detail.fournisseur|default('-') }}</td>
                             {% endif %}
                         </tr>
                     {% endfor %}
                 </tbody>
             </table>
         {% else %}
-            <div class="info-block" style="text-align: center; font-style: italic; color: #6b7280;">
-                Aucun élément dans ce bon.
-            </div>
+            <table class="info-table">
+                <tr>
+                    <td style="text-align: center; font-style: italic; color: #6b7280;">
+                        Aucun élément dans ce bon.
+                    </td>
+                </tr>
+            </table>
         {% endif %}
         
         {% if bon.note %}
-            <div class="note-section">
-                <strong>Note :</strong>
-                <div>{{ bon.note|nl2br }}</div>
-            </div>
+            <h2>Notes</h2>
+            <table class="info-table">
+                <tr>
+                    <td style="background-color: #f8f9fa;">
+                        <p style="margin: 0;">{{ bon.note|nl2br }}</p>
+                    </td>
+                </tr>
+            </table>
         {% endif %}
         
-        <div class="footer">
-            <p>Document généré le {{ "now"|date("d/m/Y à H:i") }} - Gestion des Matérielles</p>
-        </div>
+        <table class="footer-table">
+            <tr>
+                <td style="text-align: center; font-size: 9px; color: #6b7280; padding-top: 5mm;">
+                    Document généré le {{ "now"|date("d/m/Y à H:i") }} - Gestion des Matérielles
+                </td>
+            </tr>
+        </table>
     </div>
 </body>
 </html>

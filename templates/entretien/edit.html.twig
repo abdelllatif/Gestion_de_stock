@@ -120,7 +120,7 @@
                                 <div class="col-md-6">
                                     <div class="mb-3">
                                         <label for="vidange_montant" class="form-label">Montant TTC (DH)*</label>
-                                        <input type="number" step="0.01" class="form-control" id="vidange_montant" name="vidange_montant" value="{{ vidange is defined ? vidange.cout : '' }}">
+                                        <input type="number" step="0.01" class="form-control" id="vidange_montant" name="vidange_montant" value="{{ vidange is defined ? vidange.montantTtc : '' }}">
                                     </div>
                                 </div>
                             </div>
@@ -202,12 +202,8 @@
                                 </div>
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label for="reparation_priorite" class="form-label">Priorité</label>
-                                        <select class="form-select" id="reparation_priorite" name="reparation_priorite">
-                                            <option value="basse">Basse</option>
-                                            <option value="moyenne" selected>Moyenne</option>
-                                            <option value="haute">Haute</option>
-                                            <option value="critique">Critique</option>
+                                        <label for="reparation_consomation" class="form-label">Kilométrage (consommation)*</label>
+                                        <input type="number" class="form-control" id="reparation_consomation" name="reparation_consomation" required {% if reparation is not null %}value="{{ reparation.consomation }}"{% endif %}>
                                         </select>
                                     </div>
                                 </div>
@@ -438,6 +434,8 @@ $(document).ready(function() {
                 vidange_km: $('#vidange_km').val() || 0,
                 vidange_montant: $('#vidange_montant').val() || 0,
                 vidange_huile: true, // L'huile est toujours inclus dans une vidange
+                type_huile: 'huile', // Valeur par défaut puisque le champ a été supprimé
+                quantite: 0, // Valeur par défaut puisque le champ a été supprimé
                 vidange_filtre_huile: $('#vidange_filtre_huile').is(':checked'),
                 vidange_filtre_gasoil: $('#vidange_filtre_gasoil').is(':checked'),
                 vidange_filtre_air: $('#vidange_filtre_air').is(':checked'),
@@ -454,7 +452,7 @@ $(document).ready(function() {
             formData.reparation = {
                 description: $('#reparation_description').val(),
                 cout: $('#reparation_cout').val() || 0,
-                priorite: $('#reparation_priorite').val()
+                consomation: $('#reparation_consomation').val() || 0
             };
         }
         

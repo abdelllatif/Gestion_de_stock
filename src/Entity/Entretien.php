@@ -31,10 +31,10 @@ class Entretien
     #[ORM\OneToMany(targetEntity: Vidange::class, mappedBy: 'entretien')]
     private Collection $vidanges;
 
-    #[ORM\OneToOne(cascade: ['persist', 'remove'])]
+    #[ORM\ManyToOne]
     private ?Mecanicien $mecanicien = null;
 
-    #[ORM\OneToOne(cascade: ['persist', 'remove'])]
+    #[ORM\ManyToOne]
     private ?Chauffeur $chauffeur = null;
 
     #[ORM\ManyToOne(inversedBy: 'entretiens')]
