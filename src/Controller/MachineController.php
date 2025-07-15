@@ -6,6 +6,7 @@ use App\Entity\Machine;
 use App\Entity\MachineCategorie;
 use App\Repository\MachineRepository;
 use App\Repository\MachineCategorieRepository;
+use App\Repository\StockRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -207,5 +208,36 @@ final class MachineController extends AbstractController
     public function edit(int $id): Response
     {
         return $this->redirectToRoute('app_machine');
+    }
+
+    #[Route('/machine/{machineId}/stock/{articleId}/{chantierId}', name: 'app_machine_stock_details', methods: ['GET'])]
+    public function getStockDetails(int $machineId, int $articleId, int $chantierId, StockRepository $stockRepository): JsonResponse
+    {
+        try {
+            $stock = $stockRepository->findOneBy([
+                'machine' => $machineId,
+                'article' => $articleId,
+                'chantier' => $chantierId
+            ]);
+
+            if (!$stock) {
+                return $this->json(['success' => false, 'errors' => ['Stock non trouvé pour cette machine, cet article et ce chantier']], 404);
+            }
+
+            return $this->json([
+                'success' => true,
+                'stock' => [
+                    'lieu' => $stock->getChantier() ? $stock->getChantier()->getNom() : 'N/A',
+                    'article' => $stock->getArticle() ? $stock->getArticle()->getNom() : 'N/A',
+                    'quantite_chantier' => $stock->getQuantiteChantier() ?? 0,
+                    'bon_etat' => $stock->getBonEtat() ?? 0,
+                    'mauvais_etat' => $stock->getMauvaisEtat() ?? 0,
+                    'feraille_etat' => $stock->getFerailleEtat() ?? 0,
+                    'unite' => $stock->getArticle() ? $stock->getArticle()->getUnite() : 'N/A'
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return $this->json(['success' => false, 'errors' => ['Erreur lors de la récupération des détails du stock: ' . $e->getMessage()]], 500);
+        }
     }
 }

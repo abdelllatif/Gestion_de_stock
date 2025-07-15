@@ -82,7 +82,6 @@
                     {% if machine.categorie and machine.categorie.description %}
                         <h6 class="mb-3">Description de la catégorie</h6>
                         <div class="p-3 bg-light rounded">
-                        {# cate #}
                             {{ machine.categorie.description|nl2br }}
                         </div>
                     {% endif %}
@@ -101,6 +100,7 @@
                                 <th>Bon état</th>
                                 <th>Mauvais état</th>
                                 <th>Ferraille</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -112,10 +112,19 @@
                                     <td>{{ stock.bonEtat }}</td>
                                     <td>{{ stock.mauvaisEtat }}</td>
                                     <td>{{ stock.ferailleEtat }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-info" onclick="openStockDetailsModal({{ machine.id }}, {{ stock.article ? stock.article.id : 0 }}, {{ stock.chantier ? stock.chantier.id : 0 }})" title="Voir les détails">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </td>
                                 </tr>
                             {% endfor %}
                         </tbody>
                     </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    Aucun stock pour cette machine, veuillez en créer.
                 </div>
             {% endif %}
 
@@ -210,6 +219,51 @@
         <button type="button" class="btn btn-primary" id="updateMachineBtn" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); border: none;">
             <i class="bi bi-save me-1"></i> Mettre à jour
         </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal pour les détails du stock -->
+<div class="modal fade" id="stockDetailsModal" tabindex="-1" aria-labelledby="stockDetailsModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); color: white;">
+        <h5 class="modal-title" id="stockDetailsModalLabel"><i class="bi bi-info-circle me-2"></i>Détails du stock</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <table class="table table-borderless">
+          <tbody>
+            <tr>
+              <th class="text-muted" style="width: 150px;">Article</th>
+              <td id="stockDetailsArticle"></td>
+            </tr>
+            <tr>
+              <th class="text-muted">Lieu</th>
+              <td id="stockDetailsLieu"></td>
+            </tr>
+            <tr>
+              <th class="text-muted">Quantité</th>
+              <td id="stockDetailsQuantite"></td>
+            </tr>
+            <tr>
+              <th class="text-muted">Bon état</th>
+              <td id="stockDetailsBonEtat"></td>
+            </tr>
+            <tr>
+              <th class="text-muted">Mauvais état</th>
+              <td id="stockDetailsMauvaisEtat"></td>
+            </tr>
+            <tr>
+              <th class="text-muted">Ferraille</th>
+              <td id="stockDetailsFerraille"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fermer</button>
       </div>
     </div>
   </div>
@@ -336,5 +390,53 @@
         $('#editMachineForm').trigger('reset');
         $('#edit-form-errors').addClass('d-none').html('');
     });
+
+    // Fonction pour ouvrir le modal des détails du stock
+    window.openStockDetailsModal = function(machineId, articleId, chantierId) {
+        // Afficher un indicateur de chargement
+        Swal.fire({
+            title: 'Chargement...',
+            html: 'Récupération des détails du stock',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        // Récupérer les détails du stock via AJAX
+        $.ajax({
+            url: `/machine/${machineId}/stock/${articleId}/${chantierId}`,
+            method: 'GET',
+            success: function(response) {
+                if (response.success) {
+                    const stock = response.stock;
+                    $('#stockDetailsArticle').text(stock.article || 'N/A');
+                    $('#stockDetailsLieu').text(stock.lieu || 'N/A');
+                    $('#stockDetailsQuantite').text(stock.quantite_chantier + ' ' + stock.unite);
+                    $('#stockDetailsBonEtat').text(stock.bon_etat + ' ' + stock.unite);
+                    $('#stockDetailsMauvaisEtat').text(stock.mauvais_etat + ' ' + stock.unite);
+                    $('#stockDetailsFerraille').text(stock.feraille_etat + ' ' + stock.unite);
+                    
+                    // Fermer l'indicateur et ouvrir le modal
+                    Swal.close();
+                    $('#stockDetailsModal').modal('show');
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erreur',
+                        text: response.errors.join('<br>')
+                    });
+                }
+            },
+            error: function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erreur',
+                    text: 'Impossible de récupérer les détails du stock'
+                });
+            }
+        });
+    };
 </script>
 {% endblock %}
