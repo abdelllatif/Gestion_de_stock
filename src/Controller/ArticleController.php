@@ -26,6 +26,7 @@ final class ArticleController extends AbstractController
         ]);
     }
 
+    // helper function to render the article creation form
     #[Route('/article/new', name: 'app_article_new', methods: ['GET', 'POST'])]
     public function new(Request $request, ArticleRepository $articleRepository): Response
     {
