@@ -273,25 +273,41 @@
 
 <script>
 $(document).ready(function() {
-    const table = $('#utilisateursTable').DataTable({
+    // DataTable initialization (copied from Article page for consistency)
+    var table = $('#utilisateursTable').DataTable({
         language: {
-            decimal: ",",
-            thousands: " ",
-            search: "Rechercher :",
-            lengthMenu: "Afficher _MENU_ entrées",
-            info: "Affichage de _START_ à _END_ sur _TOTAL_ entrées",
-            infoEmpty: "Affichage de 0 à 0 sur 0 entrées",
-            infoFiltered: "(filtré de _MAX_ entrées totales)",
-            loadingRecords: "Chargement...",
-            zeroRecords: "Aucun enregistrement correspondant trouvé",
-            emptyTable: "Aucune donnée disponible dans le tableau",
-            paginate: {
-                first: '<i class="bi bi-chevron-bar-left"></i>',
-                previous: '<i class="bi bi-chevron-left"></i>',
-                next: '<i class="bi bi-chevron-right"></i>',
-                last: '<i class="bi bi-chevron-bar-right"></i>'
+            url: 'https://cdn.datatables.net/plug-ins/2.0.7/i18n/fr-FR.json'
+        },
+        responsive: true,
+        pageLength: 10,
+        lengthChange: true,
+        info: true,
+        searching: true,
+        order: [[0, 'asc']],
+        columnDefs: [
+            {
+                targets: [5], // Actions column
+                orderable: false,
+                searchable: false
             }
-        }
+        ],
+        dom: "<'row'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'f>>" +
+             "<'row'<'col-sm-12'tr>>" +
+             "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
+    });
+
+    // Style the search box like Article page
+    let searchBox = $(table.table().container()).find('div.dataTables_filter input');
+    searchBox.addClass('form-control ps-5').attr('placeholder', 'Rechercher un utilisateur...');
+    searchBox.wrap('<div class="position-relative"></div>');
+    searchBox.before('<span class="position-absolute top-50 start-0 translate-middle-y ps-3" style="pointer-events:none;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-search text-secondary" viewBox="0 0 16 16"><path d="M11 6a5 5 0 1 1-10 0 5 5 0 0 1 10 0zm-1.293 6.707a6 6 0 1 0-1.414 1.414l3.85 3.85a1 1 0 0 0 1.415-1.415l-3.85-3.85z"/></svg></span>');
+    searchBox.css({ paddingLeft: '2.5rem', marginBottom: '0.5rem', maxWidth: '300px' });
+
+    // Hover effect for table rows
+    $('#utilisateursTable tbody').on('mouseenter', 'tr', function() {
+        $(this).addClass('table-hover-effect');
+    }).on('mouseleave', 'tr', function() {
+        $(this).removeClass('table-hover-effect');
     });
 
     $('#add_adminRadio, #add_userRadio').on('change', function() {
@@ -435,7 +451,10 @@ $(document).ready(function() {
             Swal.fire({
                 icon: 'error',
                 title: 'Erreur',
-                text: 'Les mots de passe ne correspondent pas.'
+                text: 'Les mots de passe ne correspondent pas.',
+                timer: 3500,
+                showConfirmButton: false,
+                timerProgressBar: true
             });
             return;
         }
@@ -443,7 +462,10 @@ $(document).ready(function() {
             Swal.fire({
                 icon: 'error',
                 title: 'Erreur',
-                text: 'Veuillez entrer un email valide.'
+                text: 'Veuillez entrer un email valide.',
+                timer: 3500,
+                showConfirmButton: false,
+                timerProgressBar: true
             });
             return;
         }
@@ -467,7 +489,10 @@ $(document).ready(function() {
                 Swal.fire({
                     icon: 'success',
                     title: 'Succès',
-                    text: response.message
+                    text: response.message,
+                    timer: 2500,
+                    showConfirmButton: false,
+                    timerProgressBar: true
                 });
                 $form[0].reset();
                 $('#addUserModal').modal('hide');
@@ -484,7 +509,10 @@ $(document).ready(function() {
                 Swal.fire({
                     icon: 'error',
                     title: 'Erreur',
-                    text: response.message || 'Une erreur est survenue: ' + xhr.responseText
+                    text: response.message || 'Une erreur est survenue: ' + xhr.responseText,
+                    timer: 3500,
+                    showConfirmButton: false,
+                    timerProgressBar: true
                 });
             },
             complete: function() {
@@ -502,7 +530,10 @@ $(document).ready(function() {
             Swal.fire({
                 icon: 'error',
                 title: 'Erreur',
-                text: 'Les mots de passe ne correspondent pas.'
+                text: 'Les mots de passe ne correspondent pas.',
+                timer: 3500,
+                showConfirmButton: false,
+                timerProgressBar: true
             });
             return;
         }
@@ -510,7 +541,10 @@ $(document).ready(function() {
             Swal.fire({
                 icon: 'error',
                 title: 'Erreur',
-                text: 'Veuillez entrer un email valide.'
+                text: 'Veuillez entrer un email valide.',
+                timer: 3500,
+                showConfirmButton: false,
+                timerProgressBar: true
             });
             return;
         }
@@ -534,7 +568,10 @@ $(document).ready(function() {
                 Swal.fire({
                     icon: 'success',
                     title: 'Succès',
-                    text: response.message
+                    text: response.message,
+                    timer: 2500,
+                    showConfirmButton: false,
+                    timerProgressBar: true
                 });
                 $form[0].reset();
                 $('#editUserModal').modal('hide');
@@ -551,7 +588,10 @@ $(document).ready(function() {
                 Swal.fire({
                     icon: 'error',
                     title: 'Erreur',
-                    text: response.message || 'Une erreur est survenue: ' + xhr.responseText
+                    text: response.message || 'Une erreur est survenue: ' + xhr.responseText,
+                    timer: 3500,
+                    showConfirmButton: false,
+                    timerProgressBar: true
                 });
             },
             complete: function() {
@@ -577,39 +617,56 @@ $(document).ready(function() {
     document.querySelectorAll('.edit-user').forEach(btn => btn.addEventListener('click', function(e) {
         e.preventDefault();
         const userId = this.getAttribute('data-id');
+        Swal.fire({
+            title: 'Chargement...',
+            html: 'Récupération des données de l\'utilisateur',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
         $.ajax({
             url: '{{ path('app_user_api', {'id': '__ID__'}) }}'.replace('__ID__', userId),
             method: 'GET',
             success: function(user) {
-                $('#edit_id').val(user.id);
-                $('#edit_username').val(user.username);
-                $('#edit_prenom').val(user.prenom);
-                $('#edit_nom').val(user.nom);
-                $('#edit_email').val(user.email);
-                $('#edit_numero').val(user.tele);
-                $('#edit_' + (user.isAdmin ? 'adminRadio' : 'userRadio')).prop('checked', true);
-                $('#edit_adminRadio, #edit_userRadio').trigger('change');
-                // Uncheck all roles first
-                $('#edit_permissionsSection input[name="roles[]"]').prop('checked', false);
-                // Check only the user's roles
-                user.roles.forEach(roleId => {
-                    $('#edit_permissionsSection input[value="' + roleId + '"]').prop('checked', true);
-                });
-                // Update group checkboxes to reflect the state of their children
-                document.querySelectorAll('.group-checkbox').forEach(groupCheckbox => {
-                    const groupClass = groupCheckbox.getAttribute('data-group') + '-checkbox';
-                    const checkboxes = document.querySelectorAll('.' + groupClass);
-                    groupCheckbox.checked = Array.from(checkboxes).length > 0 && Array.from(checkboxes).every(c => c.checked);
-                });
-                $('#edit_username_error, #edit_email_error').text('');
-                $('#edit_username, #edit_email').removeClass('is-invalid');
+                Swal.close();
+                setTimeout(function() {
+                    $('#edit_id').val(user.id);
+                    $('#edit_username').val(user.username);
+                    $('#edit_prenom').val(user.prenom);
+                    $('#edit_nom').val(user.nom);
+                    $('#edit_email').val(user.email);
+                    $('#edit_numero').val(user.tele);
+                    $('#edit_' + (user.isAdmin ? 'adminRadio' : 'userRadio')).prop('checked', true);
+                    $('#edit_adminRadio, #edit_userRadio').trigger('change');
+                    // Uncheck all roles first
+                    $('#edit_permissionsSection input[name="roles[]"]').prop('checked', false);
+                    // Check only the user's roles
+                    user.roles.forEach(roleId => {
+                        $('#edit_permissionsSection input[value="' + roleId + '"]').prop('checked', true);
+                    });
+                    // Update group checkboxes to reflect the state of their children
+                    document.querySelectorAll('.group-checkbox').forEach(groupCheckbox => {
+                        const groupClass = groupCheckbox.getAttribute('data-group') + '-checkbox';
+                        const checkboxes = document.querySelectorAll('.' + groupClass);
+                        groupCheckbox.checked = Array.from(checkboxes).length > 0 && Array.from(checkboxes).every(c => c.checked);
+                    });
+                    $('#edit_username_error, #edit_email_error').text('');
+                    $('#edit_username, #edit_email').removeClass('is-invalid');
+                    $('#editUserModal').modal('show');
+                }, 200);
             },
             error: function(xhr) {
+                Swal.close();
                 let response = xhr.responseJSON || {};
                 Swal.fire({
                     icon: 'error',
                     title: 'Erreur',
-                    text: response.message || 'Impossible de charger les données de l\'utilisateur: ' + xhr.responseText
+                    text: response.message || 'Impossible de charger les données de l\'utilisateur: ' + xhr.responseText,
+                    timer: 3500,
+                    showConfirmButton: false,
+                    timerProgressBar: true
                 });
                 console.log('API Error:', xhr.responseText);
             }
@@ -617,4 +674,42 @@ $(document).ready(function() {
     }));
 });
 </script>
+
+<style>
+.table-hover-effect {
+    background-color: #f8f9fa !important;
+    transform: scale(1.01);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+}
+.dataTables_wrapper .dataTables_length select {
+    padding: 0.375rem 2.25rem 0.375rem 0.75rem;
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+}
+.dataTables_wrapper .dataTables_info {
+    padding-top: 0.75rem;
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    padding: 0.375rem 0.75rem;
+    margin: 0 0.125rem;
+    border-radius: 0.375rem;
+    border: 1px solid #dee2e6;
+    background: #fff;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    background: #e9ecef;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button.current {
+    background: linear-gradient(90deg, #1e3a8a, #3b82f6);
+    color: white !important;
+    border-color: #1e3a8a;
+}
+.form-control:focus, .form-select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
+}
+</style>
 {% endblock %}

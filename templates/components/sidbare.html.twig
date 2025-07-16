@@ -7,18 +7,23 @@
     color: #b9c6e0;
     background: none;
     border-radius: 6px;
-    transition: background 0.2s, color 0.2s;
+    transition: color 0.2s;
 }
+
 .submenu-link:hover, .submenu-link.active {
-    background: linear-gradient(90deg, #1e3a8a, #3b82f6);
-    color: #fff !important;
+    background: none; /* Remove background */
+    color: linear-gradient(90deg,rgb(17, 86, 197), #1e3a8a); /* Text gradient from blue to dark blue */
+    -webkit-background-clip: text; /* For text gradient support */
+    background-clip: text;
 }
+
 .stock-movement-btn, .categories-btn, .entretien-btn {
     color: #b9c6e0;
     background: none;
     border-radius: 8px;
     transition: background 0.2s, color 0.2s;
 }
+
 .stock-movement-btn.active, .categories-btn.active, .entretien-btn.active {
     background: linear-gradient(90deg, #1e3a8a, #3b82f6);
     color: #fff !important;
@@ -38,14 +43,9 @@
                 </a>
             </li>
             <li class="nav-item mb-2">
-                <button type="button" id="stockMovementToggle" class="nav-link w-100 text-start stock-movement-btn{% if activeLink == 'stock_movement' %} active{% endif %}" style="display: flex; align-items: center; justify-content: space-between;">
-                    <span><i class="bi bi-box-seam me-2"></i> Mouvements de stock</span>
-                    <span id="chevronStock" style="transition: transform 0.2s;">›</span>
-                </button>
-                <div id="stockMovementSubmenu" style="display: none;">
-                    <a href="/stock/movement" class="nav-link submenu-link mb-1{% if app.request.getRequestUri() starts with '/stock/movement' %} active{% endif %}">Mouvement des articles</a>
-                    <a href="/stock_movement/machine" class="nav-link submenu-link{% if app.request.getRequestUri() starts with '/stock_movement/machine' %} active{% endif %}">Mouvement des machines</a>
-                </div>
+                <a href="/stock/movement" class="nav-link {% if activeLink == 'stock_movement' %}text-white{% endif %}" style="{% if activeLink == 'stock_movement' %}background: linear-gradient(90deg, #1e3a8a, #3b82f6); border-radius: 8px;{% else %}border-radius: 8px;{% endif %}">
+                   <i class="bi bi-box-seam me-2"></i> Mouvements de stock
+                </a>
             </li>
             <li class="nav-item mb-2">
                 <button type="button" id="categoriesToggle" class="nav-link w-100 text-start categories-btn{% if activeLink == 'categories' %} active{% endif %}" style="display: flex; align-items: center; justify-content: space-between;">
@@ -74,29 +74,17 @@
                     <a href="/chauffeur" class="nav-link submenu-link{% if app.request.getRequestUri() starts with '/chauffeur' %} active{% endif %}">Chauffeurs</a>               
                 </div>
             </li>
-            <li class="nav-item mb-2">
-                <a href="/facture" class="nav-link {% if activeLink == 'facture' %}text-white{% endif %}" style="{% if activeLink == 'facture' %}background: linear-gradient(90deg, #1e3a8a, #3b82f6); border-radius: 8px;{% else %}border-radius: 8px;{% endif %}">
-                    <i class="bi bi-receipt me-2"></i> Factures
-                </a>
-            </li>
-            <li class="nav-item mb-2">
-                <a href="/depot" class="nav-link {% if activeLink == 'depot' %}text-white{% endif %}" style="{% if activeLink == 'depot' %}background: linear-gradient(90deg, #1e3a8a, #3b82f6); border-radius: 8px;{% else %}border-radius: 8px;{% endif %}">
-                    <i class="bi bi-house-door me-2"></i> Dépôts
-                </a>
-            </li>
+
+
             <li class="nav-item mb-2">
                 <a href="/demande/achat" class="nav-link {% if activeLink == 'demande_achat' %}text-white{% endif %}" style="{% if activeLink == 'commande_client' %}background: linear-gradient(90deg, #1e3a8a, #3b82f6); border-radius: 8px;{% else %}border-radius: 8px;{% endif %}">
                     <i class="bi bi-cart me-2"></i> Demande Achat
                 </a>
             </li>
-            <li class="nav-item mb-2">
-                <a href="/client" class="nav-link {% if activeLink == 'client' %}text-white{% endif %}" style="{% if activeLink == 'client' %}background: linear-gradient(90deg, #1e3a8a, #3b82f6); border-radius: 8px;{% else %}border-radius: 8px;{% endif %}">
-                    <i class="bi bi-person-badge me-2"></i> Clients
-                </a>
-            </li>
+
          
             <li class="nav-item mb-2">
-                <a href="/chantier" class="nav-link {% if activeLink == 'chantier' %}text-white{% endif %}" style="{% if activeLink == 'chantier' %}background: linear-gradient(90deg, #1e3a8a, #3b82f6); border-radius: 8px;{% else %}border-radius: 8px;{% endif %}">
+                <a href="/chantiers" class="nav-link {% if activeLink == 'chantier' %}text-white{% endif %}" style="{% if activeLink == 'chantier' %}background: linear-gradient(90deg, #1e3a8a, #3b82f6); border-radius: 8px;{% else %}border-radius: 8px;{% endif %}">
                     <i class="bi bi-building me-2"></i> Chantiers
                 </a>
             </li>
