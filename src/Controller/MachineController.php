@@ -27,71 +27,46 @@ final class MachineController extends AbstractController
         ]);
     }
     
+    private function machineToArray($machine)
+    {
+        return [
+            'id' => $machine->getId(),
+            'nom' => $machine->getNom(),
+            'code' => $machine->getCode(),
+            'nbr' => $machine->getNbr(),
+            'marque' => $machine->getMarque(),
+            'modele' => $machine->getModele(),
+            'anneeFabriq' => $machine->getAnneeFabriq(),
+            'categorie' => $machine->getCategorie() ? [
+                'id' => $machine->getCategorie()->getId(),
+                'nom' => $machine->getCategorie()->getNom()
+            ] : null
+        ];
+    }
+
     #[Route('/machine/create', name: 'app_machine_create', methods: ['POST'])]
     public function create(Request $request, EntityManagerInterface $entityManager, MachineCategorieRepository $categorieRepository): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
-        
-        $errors = [];
-        if (empty($data['nom'])) {
-            $errors[] = "Le nom est requis";
-        }
-        if (empty($data['code'])) {
-            $errors[] = "Le code est requis";
-        }
-        if (empty($data['nbr'])) {
-            $errors[] = "Le numéro est requis";
-        }
-        
-        if (count($errors) > 0) {
-            return $this->json(['errors' => $errors], 400);
-        }
-        
         $machine = new Machine();
-        $machine->setNom($data['nom']);
-        $machine->setCode($data['code']);
-        $machine->setNbr($data['nbr']);
-        
-        // Ajout des nouveaux champs
-        if (!empty($data['marque'])) {
-            $machine->setMarque($data['marque']);
-        }
-        if (!empty($data['modele'])) {
-            $machine->setModele($data['modele']);
-        }
-        if (!empty($data['anneeFabriq'])) {
-            // Vérification que l'année est un nombre entier
-            if (!is_numeric($data['anneeFabriq']) || strpos($data['anneeFabriq'], '.') !== false) {
-                $errors[] = "L'année de fabrication doit être un nombre entier";
-                return $this->json(['errors' => $errors], 400);
-            }
-            $machine->setAnneeFabriq($data['anneeFabriq']);
-        }
-        
-        // Gestion de la catégorie
+        $machine->setNom($data['nom'] ?? '');
+        $machine->setCode($data['code'] ?? '');
+        $machine->setNbr($data['nbr'] ?? '');
+        $machine->setMarque($data['marque'] ?? null);
+        $machine->setModele($data['modele'] ?? null);
+        $machine->setAnneeFabriq($data['anneeFabriq'] ?? null);
         if (!empty($data['categorie'])) {
             $categorie = $categorieRepository->find($data['categorie']);
             if ($categorie) {
                 $machine->setCategorie($categorie);
             }
         }
-        
         $entityManager->persist($machine);
         $entityManager->flush();
-        
         return $this->json([
             'success' => true,
             'message' => 'Machine ajoutée avec succès',
-            'machine' => [
-                'id' => $machine->getId(),
-                'nom' => $machine->getNom(),
-                'code' => $machine->getCode(),
-                'nbr' => $machine->getNbr(),
-                'categorie' => $machine->getCategorie() ? [
-                    'id' => $machine->getCategorie()->getId(),
-                    'nom' => $machine->getCategorie()->getNom()
-                ] : null
-            ]
+            'machine' => $this->machineToArray($machine)
         ]);
     }
     
@@ -120,64 +95,27 @@ final class MachineController extends AbstractController
     public function update(int $id, Request $request, EntityManagerInterface $entityManager, MachineRepository $machineRepository, MachineCategorieRepository $categorieRepository): JsonResponse
     {
         $machine = $machineRepository->find($id);
-        
         if (!$machine) {
-            return $this->json(['error' => 'Machine non trouvée'], 404);
+            return $this->json(['success' => false, 'message' => 'Machine non trouvée'], 404);
         }
-        
         $data = json_decode($request->getContent(), true);
-        
-        $errors = [];
-        if (empty($data['nom'])) {
-            $errors[] = "Le nom est requis";
-        }
-        if (empty($data['code'])) {
-            $errors[] = "Le code est requis";
-        }
-        if (empty($data['nbr'])) {
-            $errors[] = "Le numéro est requis";
-        }
-        
-        if (count($errors) > 0) {
-            return $this->json(['errors' => $errors], 400);
-        }
-        
-        $machine->setNom($data['nom']);
-        $machine->setCode($data['code']);
-        $machine->setNbr($data['nbr']);
-        
-        // Mise à jour des nouveaux champs
-        if (isset($data['marque'])) {
-            $machine->setMarque($data['marque']);
-        }
-        if (isset($data['modele'])) {
-            $machine->setModele($data['modele']);
-        }
-        if (isset($data['anneeFabriq']) && $data['anneeFabriq'] !== '') {
-            // Vérification que l'année est un nombre entier
-            if (!is_numeric($data['anneeFabriq']) || strpos($data['anneeFabriq'], '.') !== false) {
-                $errors[] = "L'année de fabrication doit être un nombre entier";
-                return $this->json(['errors' => $errors], 400);
-            }
-            $machine->setAnneeFabriq($data['anneeFabriq']);
-        } else if (isset($data['anneeFabriq']) && $data['anneeFabriq'] === '') {
-            $machine->setAnneeFabriq(null);
-        }
-        
+        $machine->setNom($data['nom'] ?? $machine->getNom());
+        $machine->setCode($data['code'] ?? $machine->getCode());
+        $machine->setNbr($data['nbr'] ?? $machine->getNbr());
+        $machine->setMarque($data['marque'] ?? $machine->getMarque());
+        $machine->setModele($data['modele'] ?? $machine->getModele());
+        $machine->setAnneeFabriq($data['anneeFabriq'] ?? $machine->getAnneeFabriq());
         if (!empty($data['categorie'])) {
             $categorie = $categorieRepository->find($data['categorie']);
             if ($categorie) {
                 $machine->setCategorie($categorie);
             }
-        } else {
-            $machine->setCategorie(null);
         }
-        
         $entityManager->flush();
-        
         return $this->json([
             'success' => true,
-            'message' => 'Machine mise à jour avec succès'
+            'message' => 'Machine mise à jour avec succès',
+            'machine' => $this->machineToArray($machine)
         ]);
     }
     

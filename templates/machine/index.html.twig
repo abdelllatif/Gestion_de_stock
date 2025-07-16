@@ -136,7 +136,7 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
         <button type="button" class="btn btn-primary" id="updateMachineBtn" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); border: none;">
-            <i class="bi bi-save me-1"></i> Mettre à jour
+            <i class="bi bi-save me-1"></i> Enregistrer
         </button>
       </div>
     </div>
@@ -287,10 +287,7 @@
                 contentType: 'application/json',
                 data: JSON.stringify(formData),
                 success: function(response) {
-                    // Hide modal first
                     $('#addMachineModal').modal('hide');
-                    
-                    // Then show success message
                     Swal.fire({
                         icon: 'success',
                         title: 'Machine ajoutée',
@@ -299,63 +296,46 @@
                         showConfirmButton: false,
                         timerProgressBar: true
                     });
-                    
-                    // Check if response contains machine data
-                    if (!response || !response.machine) {
-                        console.error('Invalid response format:', response);
-                        setTimeout(function() {
-                            location.reload();
-                        }, 3000);
-                        return;
+                    if (response && response.machine) {
+                        try {
+                            const m = response.machine;
+                            const newRow = table.row.add([
+                                m.nom,
+                                m.code,
+                                m.nbr,
+                                m.marque || 'N/A',
+                                m.modele || 'N/A',
+                                m.anneeFabriq || 'N/A',
+                                m.categorie ? m.categorie.nom : 'N/A',
+                                `<div class="btn-group" role="group">
+                                    <a href="${ path('app_machine_show', {'id': '__ID__'}) }".replace('__ID__', m.id) 
+                                       class="btn btn-sm btn-outline-dark me-1" title="Afficher">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-primary me-1" 
+                                        onclick="openEditModal(${m.id})"
+                                        title="Modifier">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                </div>`
+                            ]).draw(false).node();
+                            $(newRow).addClass('table-success');
+                            setTimeout(function() {
+                                $(newRow).removeClass('table-success');
+                            }, 3000);
+                        } catch (e) {
+                            console.error('Error adding row to DataTable:', e);
+                        }
                     }
-                    
-                    try {
-                        const newRow = table.row.add([
-                            response.machine.nom,
-                            response.machine.code,
-                            response.machine.nbr,
-                            response.machine.marque || 'N/A',
-                            response.machine.modele || 'N/A',
-                            response.machine.anneeFabriq || 'N/A',
-                            response.machine.categorie ? response.machine.categorie.nom : 'N/A',
-                            `<div class="btn-group" role="group">
-                                <a href="${ path('app_machine_show', {'id': '__ID__'}) }".replace('__ID__', response.machine.id) 
-                                   class="btn btn-sm btn-outline-dark me-1" title="Afficher">
-                                    <i class="bi bi-eye"></i>
-                                </a>
-                                <button class="btn btn-sm btn-outline-primary me-1" 
-                                    onclick="openEditModal(${response.machine.id})"
-                                    title="Modifier">
-                                    <i class="bi bi-pencil"></i>
-                                </button>
-                            </div>`
-                        ]).draw(false).node();
-                        
-                        $(newRow).addClass('table-success');
-                        setTimeout(function() {
-                            $(newRow).removeClass('table-success');
-                        }, 3000);
-                    } catch (e) {
-                        console.error('Error adding row to DataTable:', e);
-                        // Fallback: reload the page after showing the success message
-                        setTimeout(function() {
-                            location.reload();
-                        }, 3000);
-                    }
-                    
-                    // Reset the form regardless of success or error
                     $('#addMachineForm').trigger('reset');
                 },
                 error: function(xhr) {
                     let errorMessage = 'Une erreur est survenue lors de l\'ajout de la machine';
-                    
                     if (xhr.responseJSON && xhr.responseJSON.errors) {
                         errorMessage = xhr.responseJSON.errors.join('<br>');
                         $('#form-errors').removeClass('d-none').html(errorMessage);
                     } else {
-                        // Close the modal first
                         $('#addMachineModal').modal('hide');
-                        
                         Swal.fire({
                             icon: 'error',
                             title: 'Erreur',
@@ -363,8 +343,6 @@
                             confirmButtonText: 'OK'
                         });
                     }
-                    
-                    // Log error for debugging
                     console.error('Error creating machine:', xhr);
                 },
                 complete: function() {
@@ -400,7 +378,6 @@
                 data: JSON.stringify(formData),
                 success: function(response) {
                     $('#editMachineModal').modal('hide');
-                    
                     Swal.fire({
                         icon: 'success',
                         title: 'Machine mise à jour',
@@ -408,13 +385,30 @@
                         timer: 2000,
                         showConfirmButton: false,
                         timerProgressBar: true
-                    }).then(() => {
-                        location.reload();
                     });
+                    if (response && response.machine) {
+                        // Find the row by matching the machine ID in the actions column
+                        table.rows().every(function() {
+                            const actions = this.data()[7];
+                            if (actions && actions.includes(`openEditModal(${response.machine.id})`)) {
+                                this.data([
+                                    response.machine.nom,
+                                    response.machine.code,
+                                    response.machine.nbr,
+                                    response.machine.marque || 'N/A',
+                                    response.machine.modele || 'N/A',
+                                    response.machine.anneeFabriq || 'N/A',
+                                    response.machine.categorie ? response.machine.categorie.nom : 'N/A',
+                                    actions
+                                ]).draw(false);
+                                $(this.node()).addClass('table-success');
+                                setTimeout(() => { $(this.node()).removeClass('table-success'); }, 3000);
+                            }
+                        });
+                    }
                 },
                 error: function(xhr) {
                     let errorMessage = 'Une erreur est survenue lors de la mise à jour de la machine';
-                    
                     if (xhr.responseJSON && xhr.responseJSON.errors) {
                         errorMessage = xhr.responseJSON.errors.join('<br>');
                         $('#edit-form-errors').removeClass('d-none').html(errorMessage);
@@ -427,7 +421,7 @@
                     }
                 },
                 complete: function() {
-                    $('#updateMachineBtn').prop('disabled', false).html('<i class="bi bi-save me-1"></i> Mettre à jour');
+                    $('#updateMachineBtn').prop('disabled', false).html('<i class="bi bi-save me-1"></i> Enregistrer');
                 }
             });
         });

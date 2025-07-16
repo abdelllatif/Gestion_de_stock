@@ -64,9 +64,9 @@
 <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="addUserModalLabel">Créer un utilisateur</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-header" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); color: white;">
+                <h5 class="modal-title" id="addUserModalLabel"><i class="bi bi-person-plus me-2"></i>Créer un utilisateur</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
             </div>
             <div class="modal-body">
                 <form id="addUserForm">
@@ -155,10 +155,11 @@
                             </div>
                         </div>
                     </div>
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-primary btn-lg" id="addUserSubmit">Ajouter</button>
-                    </div>
                 </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-md" data-bs-dismiss="modal">Annuler</button>
+                <button type="submit" class="btn btn-primary btn-md" id="addUserSubmit" form="addUserForm" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); border: none;"><i class="bi bi-save me-1"></i>Enregistrer</button>
             </div>
         </div>
     </div>
@@ -167,9 +168,9 @@
 <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="editUserModalLabel">Modifier un utilisateur</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-header" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); color: white;">
+                <h5 class="modal-title" id="editUserModalLabel"><i class="bi bi-pencil-square me-2"></i>Modifier un utilisateur</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
             </div>
             <div class="modal-body">
                 <form id="editUserForm">
@@ -259,10 +260,11 @@
                             </div>
                         </div>
                     </div>
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-primary btn-lg" id="editUserSubmit">Enregistrer</button>
-                    </div>
                 </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-lg" data-bs-dismiss="modal">Annuler</button>
+                <button type="submit" class="btn btn-primary btn-lg" id="editUserSubmit" form="editUserForm" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); border: none;"><i class="bi bi-save me-1"></i>Enregistrer</button>
             </div>
         </div>
     </div>
@@ -496,7 +498,29 @@ $(document).ready(function() {
                 });
                 $form[0].reset();
                 $('#addUserModal').modal('hide');
-                window.location.reload();
+                // Dynamically add the new user row to DataTable
+                if (response.user) {
+                    var u = response.user;
+                    var roleNames = '';
+                    if (u.isAdmin) {
+                        roleNames = 'Admin';
+                    } else if (u.roleNames && u.roleNames.length) {
+                        roleNames = u.roleNames.join(', ');
+                    }
+                    var actions = table.row(0).data() ? table.row(0).data()[5] : '';
+                    var newRow = table.row.add([
+                        u.prenom,
+                        u.nom,
+                        u.email,
+                        u.tele,
+                        roleNames,
+                        actions
+                    ]).draw(false).node();
+                    // Set the data-user-id attribute for future edits
+                    $(newRow).attr('data-user-id', u.id);
+                    $(newRow).addClass('table-success');
+                    setTimeout(function() { $(newRow).removeClass('table-success'); }, 3000);
+                }
             },
             error: function(xhr) {
                 console.log('AJAX Error:', {
@@ -575,7 +599,30 @@ $(document).ready(function() {
                 });
                 $form[0].reset();
                 $('#editUserModal').modal('hide');
-                window.location.reload();
+                // Update the row in DataTable
+                if (response.user) {
+                    var u = response.user;
+                    // Find the row by user ID
+                    var row = table.row('[data-user-id="' + u.id + '"]');
+                    if (row.length) {
+                        var roleNames = '';
+                        if (u.isAdmin) {
+                            roleNames = 'Admin';
+                        } else if (u.roleNames && u.roleNames.length) {
+                            roleNames = u.roleNames.join(', ');
+                        }
+                        row.data([
+                            u.prenom,
+                            u.nom,
+                            u.email,
+                            u.tele,
+                            roleNames,
+                            row.data()[5] // keep actions as is
+                        ]).draw(false);
+                        $(row.node()).addClass('table-success');
+                        setTimeout(function() { $(row.node()).removeClass('table-success'); }, 3000);
+                    }
+                }
             },
             error: function(xhr) {
                 console.log('AJAX Error:', {
@@ -632,30 +679,30 @@ $(document).ready(function() {
             success: function(user) {
                 Swal.close();
                 setTimeout(function() {
-                    $('#edit_id').val(user.id);
-                    $('#edit_username').val(user.username);
-                    $('#edit_prenom').val(user.prenom);
-                    $('#edit_nom').val(user.nom);
-                    $('#edit_email').val(user.email);
-                    $('#edit_numero').val(user.tele);
-                    $('#edit_' + (user.isAdmin ? 'adminRadio' : 'userRadio')).prop('checked', true);
-                    $('#edit_adminRadio, #edit_userRadio').trigger('change');
-                    // Uncheck all roles first
-                    $('#edit_permissionsSection input[name="roles[]"]').prop('checked', false);
-                    // Check only the user's roles
-                    user.roles.forEach(roleId => {
-                        $('#edit_permissionsSection input[value="' + roleId + '"]').prop('checked', true);
-                    });
-                    // Update group checkboxes to reflect the state of their children
-                    document.querySelectorAll('.group-checkbox').forEach(groupCheckbox => {
-                        const groupClass = groupCheckbox.getAttribute('data-group') + '-checkbox';
-                        const checkboxes = document.querySelectorAll('.' + groupClass);
-                        groupCheckbox.checked = Array.from(checkboxes).length > 0 && Array.from(checkboxes).every(c => c.checked);
-                    });
-                    $('#edit_username_error, #edit_email_error').text('');
-                    $('#edit_username, #edit_email').removeClass('is-invalid');
+                $('#edit_id').val(user.id);
+                $('#edit_username').val(user.username);
+                $('#edit_prenom').val(user.prenom);
+                $('#edit_nom').val(user.nom);
+                $('#edit_email').val(user.email);
+                $('#edit_numero').val(user.tele);
+                $('#edit_' + (user.isAdmin ? 'adminRadio' : 'userRadio')).prop('checked', true);
+                $('#edit_adminRadio, #edit_userRadio').trigger('change');
+                // Uncheck all roles first
+                $('#edit_permissionsSection input[name="roles[]"]').prop('checked', false);
+                // Check only the user's roles
+                user.roles.forEach(roleId => {
+                    $('#edit_permissionsSection input[value="' + roleId + '"]').prop('checked', true);
+                });
+                // Update group checkboxes to reflect the state of their children
+                document.querySelectorAll('.group-checkbox').forEach(groupCheckbox => {
+                    const groupClass = groupCheckbox.getAttribute('data-group') + '-checkbox';
+                    const checkboxes = document.querySelectorAll('.' + groupClass);
+                    groupCheckbox.checked = Array.from(checkboxes).length > 0 && Array.from(checkboxes).every(c => c.checked);
+                });
+                $('#edit_username_error, #edit_email_error').text('');
+                $('#edit_username, #edit_email').removeClass('is-invalid');
                     $('#editUserModal').modal('show');
-                }, 200);
+                }, 80);
             },
             error: function(xhr) {
                 Swal.close();

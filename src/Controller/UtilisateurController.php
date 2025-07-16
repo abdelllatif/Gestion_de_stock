@@ -45,6 +45,33 @@ final class UtilisateurController extends AbstractController
         ]);
     }
 
+    // Add this helper method to the controller
+    private function userToArray(User $user): array
+    {
+        // Get role names as array of strings
+        $roleNames = [];
+        if (method_exists($user, 'isAdmin') && $user->isAdmin()) {
+            $roleNames = [];
+        } elseif (method_exists($user, 'getRoleEntities')) {
+            foreach ($user->getRoleEntities() as $role) {
+                $roleNames[] = ucfirst(strtolower(str_replace('_', ' ', $role->getNom())));
+            }
+        } elseif (method_exists($user, 'getRolesArray')) {
+            foreach ($user->getRolesArray() as $role) {
+                $roleNames[] = ucfirst(strtolower(str_replace('_', ' ', $role)));
+            }
+        }
+        return [
+            'id' => $user->getId(),
+            'prenom' => $user->getPrenom(),
+            'nom' => $user->getNom(),
+            'email' => $user->getEmail(),
+            'tele' => $user->getTele(),
+            'isAdmin' => $user->isAdmin(),
+            'roleNames' => $roleNames,
+        ];
+    }
+
     #[Route('/utilisateur/new', name: 'app_utilisateur_new', methods: ['POST'])]
     public function addUser(
         Request $request,
@@ -124,7 +151,10 @@ final class UtilisateurController extends AbstractController
             $em->flush();
             $message = 'Utilisateur ajouté avec succès.';
             if ($request->isXmlHttpRequest()) {
-                return new JsonResponse(['message' => $message], 200);
+                return new JsonResponse([
+                    'message' => $message,
+                    'user' => $this->userToArray($user)
+                ], 200);
             }
             $this->addFlash('success', $message);
             return new RedirectResponse($urlGenerator->generate('app_utilisateur'));
@@ -230,7 +260,10 @@ final class UtilisateurController extends AbstractController
             $em->flush();
             $message = 'Utilisateur modifié avec succès.';
             if ($request->isXmlHttpRequest()) {
-                return new JsonResponse(['message' => $message], 200);
+                return new JsonResponse([
+                    'message' => $message,
+                    'user' => $this->userToArray($user)
+                ], 200);
             }
             $this->addFlash('success', $message);
             return new RedirectResponse($urlGenerator->generate('app_utilisateur'));

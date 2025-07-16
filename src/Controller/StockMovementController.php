@@ -128,6 +128,57 @@ final class StockMovementController extends AbstractController
         ]);
     }
 
+    // Add this helper method to the controller
+    private function mouvementToArray($mouvement, $sessionChantierId = null)
+    {
+        $displayType = $mouvement->getType();
+        $canEdit = false;
+        if ($mouvement->getType() === 'Transfert') {
+            if ($sessionChantierId && $mouvement->getChantierRec() && $mouvement->getChantierRec()->getId() == $sessionChantierId) {
+                $displayType = 'Entrée';
+                $canEdit = true;
+            } elseif ($sessionChantierId && $mouvement->getChantierExp() && $mouvement->getChantierExp()->getId() == $sessionChantierId) {
+                $displayType = 'Sortie';
+                $canEdit = true;
+            }
+        } elseif ($mouvement->getType() === 'Augmenter stock' && $mouvement->getChantierRec()) {
+            $displayType = 'Augmenter stock';
+            if ($sessionChantierId && $mouvement->getChantierRec()->getId() == $sessionChantierId) {
+                $canEdit = true;
+            }
+        }
+        return [
+            'id' => $mouvement->getId(),
+            'type' => $mouvement->getType(),
+            'displayType' => $displayType,
+            'canEdit' => $canEdit,
+            'date' => $mouvement->getDate() ? $mouvement->getDate()->format('Y-m-d') : '',
+            'article' => $mouvement->getArticle() ? [
+                'id' => $mouvement->getArticle()->getId(),
+                'nom' => $mouvement->getArticle()->getNom(),
+            ] : null,
+            'machine' => $mouvement->getMachine() ? [
+                'id' => $mouvement->getMachine()->getId(),
+                'nom' => $mouvement->getMachine()->getNom(),
+            ] : null,
+            'quantite' => $mouvement->getQuantite(),
+            'chantierExp' => $mouvement->getChantierExp() ? [
+                'id' => $mouvement->getChantierExp()->getId(),
+                'nom' => $mouvement->getChantierExp()->getNom(),
+            ] : null,
+            'chantierRec' => $mouvement->getChantierRec() ? [
+                'id' => $mouvement->getChantierRec()->getId(),
+                'nom' => $mouvement->getChantierRec()->getNom(),
+            ] : null,
+            'status' => $mouvement->getStatus(),
+            'bonEtat' => $mouvement->getBonEtat(),
+            'mauvaisEtat' => $mouvement->getMauvaisEtat(),
+            'ferailleEtat' => $mouvement->getFerailleEtat(),
+            'fournisseur' => $mouvement->getFournisseur(),
+            'observation' => $mouvement->getObservation(),
+        ];
+    }
+
     #[Route('/stock_movement/new', name: 'app_stock_movement_create', methods: ['POST'])]
     public function create(
         Request $request,
@@ -244,7 +295,14 @@ final class StockMovementController extends AbstractController
         try {
             $em->persist($mouvement);
             $em->flush();
-            return new JsonResponse(['success' => true, 'message' => 'Mouvement créé en attente de validation.']);
+            $session = $request->getSession();
+            $selectedChantier = $session->get('selected_chantier');
+            $sessionChantierId = $selectedChantier['id'] ?? null;
+            return new JsonResponse([
+                'success' => true,
+                'message' => 'Mouvement créé en attente de validation.',
+                'movement' => $this->mouvementToArray($mouvement, $sessionChantierId)
+            ]);
         } catch (\Exception $e) {
             return new JsonResponse(['success' => false, 'message' => 'Erreur lors de la création du mouvement: ' . $e->getMessage()], 500);
         }
@@ -533,7 +591,14 @@ final class StockMovementController extends AbstractController
         try {
             $em->persist($mouvement);
             $em->flush();
-            return new JsonResponse(['success' => true, 'message' => 'Mouvement modifié.']);
+            $session = $request->getSession();
+            $selectedChantier = $session->get('selected_chantier');
+            $sessionChantierId = $selectedChantier['id'] ?? null;
+            return new JsonResponse([
+                'success' => true,
+                'message' => 'Mouvement modifié.',
+                'movement' => $this->mouvementToArray($mouvement, $sessionChantierId)
+            ]);
         } catch (\Exception $e) {
             return new JsonResponse(['success' => false, 'message' => 'Erreur lors de la modification du mouvement: ' . $e->getMessage()], 500);
         }

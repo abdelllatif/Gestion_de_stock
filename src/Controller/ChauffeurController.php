@@ -30,8 +30,6 @@ final class ChauffeurController extends AbstractController
         if ($request->isMethod('POST')) {
             try {
                 $data = json_decode($request->getContent(), true);
-                
-                // Validation des données
                 $errors = [];
                 if (empty($data['nom'])) $errors[] = 'Le nom est requis';
                 if (empty($data['licence'])) $errors[] = 'Le numéro de licence est requis';

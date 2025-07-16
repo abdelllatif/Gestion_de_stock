@@ -89,9 +89,9 @@
 <div class="modal fade" id="addMovementModal" tabindex="-1" aria-labelledby="addMovementModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="addMovementModalLabel">Ajouter un mouvement de stock</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            <div class="modal-header" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); color: white;">
+                <h5 class="modal-title" id="addMovementModalLabel"><i class="bi bi-plus-circle me-2"></i>Ajouter un mouvement de stock</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
             </div>
             <form id="addMovementForm">
                 <div class="modal-body">
@@ -174,8 +174,8 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                    <button type="submit" class="btn btn-primary">Ajouter</button>
+                    <button type="button" class="btn btn-outline-secondary btn-md" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary btn-md" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); border: none;"><i class="bi bi-save me-1"></i>Enregistrer</button>
                 </div>
             </form>
         </div>
@@ -186,9 +186,9 @@
 <div class="modal fade" id="editMovementModal" tabindex="-1" aria-labelledby="editMovementModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="editMovementModalLabel">Modifier un mouvement de stock</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            <div class="modal-header" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); color: white;">
+                <h5 class="modal-title" id="editMovementModalLabel"><i class="bi bi-pencil-square me-2"></i>Modifier un mouvement de stock</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
             </div>
             <form id="editMovementForm">
                 <div class="modal-body">
@@ -272,8 +272,8 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                    <button type="submit" class="btn btn-primary">Modifier</button>
+                    <button type="button" class="btn btn-outline-secondary btn-md" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary btn-md" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6); border: none;"><i class="bi bi-save me-1"></i>Enregistrer</button>
                 </div>
             </form>
         </div>
@@ -283,20 +283,29 @@
 <script>
 $(document).ready(function() {
     var table = $('#stockMovementsTable').DataTable({
-        language: { url: '//cdn.datatables.net/plug-ins/2.0.7/i18n/fr-FR.json' },
+        language: { url: 'https://cdn.datatables.net/plug-ins/2.0.7/i18n/fr-FR.json' },
         responsive: true,
         pageLength: 8,
         lengthChange: true,
         info: true,
         searching: true,
         order: [[1, 'desc']],
+        dom: "<'row'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'f>>" +
+             "<'row'<'col-sm-12'tr>>" +
+             "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
     });
 
     let searchBox = $(table.table().container()).find('div.dataTables_filter input');
-    searchBox.addClass('form-control ps-5').attr('placeholder', 'Rechercher...');
+    searchBox.addClass('form-control ps-5').attr('placeholder', 'Rechercher un mouvement...');
     searchBox.wrap('<div class="position-relative"></div>');
-    searchBox.before('<span class="position-absolute top-50 start-0 translate-middle-y ps-3" style="pointer-events:none;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-search text-secondary" viewBox="0 16 16"><path d="M11 6a5 5 0 1 1-10 0 5 5 0 0 1 10 0zm-1.293 6.707a6 6 0 1 0-1.414 1.414l3.85 3.85a1 1 0 0 0 1.415-1.415l-3.85-3.85z"/></svg></span>');
+    searchBox.before('<span class="position-absolute top-50 start-0 translate-middle-y ps-3" style="pointer-events:none;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-search text-secondary" viewBox="0 0 16 16"><path d="M11 6a5 5 0 1 1-10 0 5 5 0 0 1 10 0zm-1.293 6.707a6 6 0 1 0-1.414 1.414l3.85 3.85a1 1 0 0 0 1.415-1.415l-3.85-3.85z"/></svg></span>');
     searchBox.css({ paddingLeft: '2.5rem', marginBottom: '0.5rem', maxWidth: '300px' });
+
+    $('#stockMovementsTable tbody').on('mouseenter', 'tr', function() {
+        $(this).addClass('table-hover-effect');
+    }).on('mouseleave', 'tr', function() {
+        $(this).removeClass('table-hover-effect');
+    });
 
     function manageDynamicFields(formPrefix = '') {
         var typeField = $(`#${formPrefix}type`);
@@ -483,6 +492,8 @@ $(document).ready(function() {
         }
     }
 
+    // --- SweetAlert2: Use timer, hide confirm, show progress bar for all success/error ---
+    // Add/modify movement
     $('#addMovementForm').on('submit', function(e) {
         e.preventDefault();
         var quantite = parseInt($('#quantite').val(), 10);
@@ -495,7 +506,10 @@ $(document).ready(function() {
             Swal.fire({
                 icon: 'error',
                 title: 'Erreur',
-                text: 'La somme des états (Bon, Mauvais, Ferraille) doit être égale à la quantité.'
+                text: 'La somme des états (Bon, Mauvais, Ferraille) doit être égale à la quantité.',
+                timer: 3500,
+                showConfirmButton: false,
+                timerProgressBar: true
             });
             return;
         }
@@ -510,8 +524,11 @@ $(document).ready(function() {
                     Swal.fire({
                         icon: 'success',
                         title: 'Succès',
-                        text: response.message || 'Mouvement ajouté avec succès!'
-                    }).then(() => {
+                        text: response.message || 'Mouvement ajouté avec succès!',
+                        timer: 2500,
+                        showConfirmButton: false,
+                        timerProgressBar: true
+                    });
                         $('#addMovementModal').modal('hide');
                         $('#addMovementForm')[0].reset();
                         $('#itemId').empty().append('<option value="">Sélectionner...</option>');
@@ -520,13 +537,43 @@ $(document).ready(function() {
                         $('#statusInputs').hide();
                         $('#chantierRecInput').hide();
                         $('#fournisseurInput').hide();
-                        location.reload();
-                    });
+                    // Dynamically add the new row to DataTable
+                    if (response.movement) {
+                        var m = response.movement;
+                        var articleOrMachine = m.article ? m.article.nom : (m.machine ? m.machine.nom : '-');
+                        var chantierRec = m.chantierRec ? m.chantierRec.nom : '-';
+                        var statusHtml = m.status === 'valid' ? '<i class="bi bi-check-circle text-success"></i> Validé' : (m.status === 'rejected' ? '<i class="bi bi-x-circle text-danger"></i> Rejeté' : '<i class="bi bi-hourglass-split text-warning"></i> En attente');
+                        var actions = '';
+                        if (m.canEdit) {
+                            if (m.status === 'waiting') {
+                                actions += `<button class="btn btn-sm btn-outline-success" onclick="changeStatus(${m.id}, 'valid')"><i class="bi bi-check-circle"></i></button> `;
+                                actions += `<button class="btn btn-sm btn-outline-danger" onclick="changeStatus(${m.id}, 'rejected')"><i class="bi bi-x-circle"></i></button> `;
+                            }
+                            actions += `<button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editMovementModal" data-id="${m.id}" data-item-id="${m.article ? m.article.id : (m.machine ? m.machine.id : '')}" data-item-name="${articleOrMachine}" data-item-type="${m.article ? 'article' : (m.machine ? 'machine' : '')}"><i class="bi bi-pencil"></i></button> `;
+                            actions += `<button class="btn btn-sm btn-outline-danger" onclick="showDeleteAlert('Êtes-vous sûr de vouloir supprimer ce mouvement ?', ${m.id})"><i class="bi bi-trash"></i></button>`;
+                        } else {
+                            actions = '<span class="text-muted">En attente (hors chantier)</span>';
+                        }
+                        var newRow = table.row.add([
+                            m.displayType,
+                            m.date ? m.date : '',
+                            articleOrMachine,
+                            m.quantite,
+                            chantierRec,
+                            statusHtml,
+                            actions
+                        ]).draw(false).node();
+                        $(newRow).addClass('table-success');
+                        setTimeout(function() { $(newRow).removeClass('table-success'); }, 3000);
+                    }
                 } else {
                     Swal.fire({
                         icon: 'error',
                         title: 'Erreur',
-                        text: response.message || 'Erreur lors de l\'ajout du mouvement.'
+                        text: response.message || 'Erreur lors de l\'ajout du mouvement.',
+                        timer: 3500,
+                        showConfirmButton: false,
+                        timerProgressBar: true
                     });
                 }
             },
@@ -534,28 +581,45 @@ $(document).ready(function() {
                 Swal.fire({
                     icon: 'error',
                     title: 'Erreur',
-                    text: 'Une erreur s\'est produite. Veuillez réessayer.'
+                    text: 'Une erreur s\'est produite. Veuillez réessayer.',
+                    timer: 3500,
+                    showConfirmButton: false,
+                    timerProgressBar: true
                 });
             }
         });
     });
 
-    var editItemIdToSelect = null;
+    // --- Loading feedback for edit ---
     $('#editMovementModal').on('show.bs.modal', function(e) {
         var button = $(e.relatedTarget);
         var id = button.data('id');
         var itemId = button.data('item-id');
         var itemName = button.data('item-name');
         var itemType = button.data('item-type');
+        Swal.fire({
+            title: 'Chargement...',
+            html: 'Récupération des données du mouvement',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
         $.ajax({
             url: '/stock_movement/' + id + '/edit',
             method: 'GET',
             success: function(response) {
+                Swal.close();
+                setTimeout(function() {
                 if (response.success === false) {
                     Swal.fire({
                         icon: 'error',
                         title: 'Erreur',
-                        text: response.message || 'Erreur lors du chargement des données.'
+                            text: response.message || 'Erreur lors du chargement des données.',
+                            timer: 3500,
+                            showConfirmButton: false,
+                            timerProgressBar: true
                     });
                     return;
                 }
@@ -563,17 +627,23 @@ $(document).ready(function() {
                 response.data.itemType = itemType;
                 response.data.itemName = itemName;
                 fillEditForm(response.data);
+                }, 80);
             },
             error: function() {
+                Swal.close();
                 Swal.fire({
                     icon: 'error',
                     title: 'Erreur',
-                    text: 'Erreur lors du chargement des données.'
+                    text: 'Erreur lors du chargement des données.',
+                    timer: 3500,
+                    showConfirmButton: false,
+                    timerProgressBar: true
                 });
             }
         });
     });
 
+    // --- Edit movement form ---
     $('#editMovementForm').on('submit', function(e) {
         e.preventDefault();
         var quantite = parseInt($('#editQuantite').val(), 10);
@@ -586,7 +656,10 @@ $(document).ready(function() {
             Swal.fire({
                 icon: 'error',
                 title: 'Erreur',
-                text: 'La somme des états (Bon, Mauvais, Ferraille) doit être égale à la quantité.'
+                text: 'La somme des états (Bon, Mauvais, Ferraille) doit être égale à la quantité.',
+                timer: 3500,
+                showConfirmButton: false,
+                timerProgressBar: true
             });
             return;
         }
@@ -601,16 +674,77 @@ $(document).ready(function() {
                     Swal.fire({
                         icon: 'success',
                         title: 'Succès',
-                        text: response.message || 'Mouvement modifié avec succès!'
-                    }).then(() => {
-                        $('#editMovementModal').modal('hide');
-                        location.reload();
+                        text: response.message || 'Mouvement modifié avec succès!',
+                        timer: 2500,
+                        showConfirmButton: false,
+                        timerProgressBar: true
                     });
+                    $('#editMovementModal').modal('hide');
+                    // Dynamically update the row in DataTable
+                    if (response.movement) {
+                        var m = response.movement;
+                        // Find the row by movement ID
+                        var row = null;
+                        table.rows().every(function() {
+                            var data = this.data();
+                            // The ID is not in the table, so we need to match by unique fields (date, type, article/machine, quantite, etc.)
+                            // For best results, add a data attribute to the row when adding, but for now, try to match by type/date/quantite
+                            if (
+                                data[0] === m.displayType &&
+                                data[1] === (m.date ? m.date : '') &&
+                                data[2] === (m.article ? m.article.nom : (m.machine ? m.machine.nom : '-')) &&
+                                data[3] == m.quantite
+                            ) {
+                                row = this;
+                            }
+                        });
+                        var articleOrMachine = m.article ? m.article.nom : (m.machine ? m.machine.nom : '-');
+                        var chantierRec = m.chantierRec ? m.chantierRec.nom : '-';
+                        var statusHtml = m.status === 'valid' ? '<i class="bi bi-check-circle text-success"></i> Validé' : (m.status === 'rejected' ? '<i class="bi bi-x-circle text-danger"></i> Rejeté' : '<i class="bi bi-hourglass-split text-warning"></i> En attente');
+                        var actions = '';
+                        if (m.canEdit) {
+                            if (m.status === 'waiting') {
+                                actions += `<button class="btn btn-sm btn-outline-success" onclick="changeStatus(${m.id}, 'valid')"><i class="bi bi-check-circle"></i></button> `;
+                                actions += `<button class="btn btn-sm btn-outline-danger" onclick="changeStatus(${m.id}, 'rejected')"><i class="bi bi-x-circle"></i></button> `;
+                            }
+                            actions += `<button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editMovementModal" data-id="${m.id}" data-item-id="${m.article ? m.article.id : (m.machine ? m.machine.id : '')}" data-item-name="${articleOrMachine}" data-item-type="${m.article ? 'article' : (m.machine ? 'machine' : '')}"><i class="bi bi-pencil"></i></button> `;
+                            actions += `<button class="btn btn-sm btn-outline-danger" onclick="showDeleteAlert('Êtes-vous sûr de vouloir supprimer ce mouvement ?', ${m.id})"><i class="bi bi-trash"></i></button>`;
+                        } else {
+                            actions = '<span class="text-muted">En attente (hors chantier)</span>';
+                        }
+                        if (row) {
+                            row.data([
+                                m.displayType,
+                                m.date ? m.date : '',
+                                articleOrMachine,
+                                m.quantite,
+                                chantierRec,
+                                statusHtml,
+                                actions
+                            ]).draw(false);
+                        } else {
+                            // If not found, add as new row
+                            var newRow = table.row.add([
+                                m.displayType,
+                                m.date ? m.date : '',
+                                articleOrMachine,
+                                m.quantite,
+                                chantierRec,
+                                statusHtml,
+                                actions
+                            ]).draw(false).node();
+                            $(newRow).addClass('table-success');
+                            setTimeout(function() { $(newRow).removeClass('table-success'); }, 3000);
+                        }
+                    }
                 } else {
                     Swal.fire({
                         icon: 'error',
                         title: 'Erreur',
-                        text: response.message || 'Erreur lors de la modification du mouvement.'
+                        text: response.message || 'Erreur lors de la modification du mouvement.',
+                        timer: 3500,
+                        showConfirmButton: false,
+                        timerProgressBar: true
                     });
                 }
             },
@@ -618,7 +752,10 @@ $(document).ready(function() {
                 Swal.fire({
                     icon: 'error',
                     title: 'Erreur',
-                    text: 'Une erreur s\'est produite. Veuillez réessayer.'
+                    text: 'Une erreur s\'est produite. Veuillez réessayer.',
+                    timer: 3500,
+                    showConfirmButton: false,
+                    timerProgressBar: true
                 });
             }
         });
@@ -643,15 +780,21 @@ function changeStatus(id, status) {
                     Swal.fire({
                         icon: 'success',
                         title: 'Succès',
-                        text: response.message || 'Statut modifié avec succès!'
+                        text: response.message || 'Statut modifié avec succès!',
+                        timer: 2500,
+                        showConfirmButton: false,
+                        timerProgressBar: true
                     });
-                    location.reload();
+                    // No reload needed, the row will be updated by the edit form
                 },
                 error: function() {
                     Swal.fire({
                         icon: 'error',
                         title: 'Erreur',
-                        text: 'Erreur lors de la modification du statut.'
+                        text: 'Erreur lors de la modification du statut.',
+                        timer: 3500,
+                        showConfirmButton: false,
+                        timerProgressBar: true
                     });
                 }
             });
@@ -677,15 +820,22 @@ function showDeleteAlert(message, id) {
                     Swal.fire({
                         icon: 'success',
                         title: 'Succès',
-                        text: response.message || 'Mouvement supprimé avec succès!'
+                        text: response.message || 'Mouvement supprimé avec succès!',
+                        timer: 2500,
+                        showConfirmButton: false,
+                        timerProgressBar: true
+                    }).then(() => {
+                        // No reload needed, the row will be removed by the DataTable
                     });
-                    location.reload();
                 },
                 error: function() {
                     Swal.fire({
                         icon: 'error',
                         title: 'Erreur',
-                        text: 'Erreur lors de la suppression du mouvement.'
+                        text: 'Erreur lors de la suppression du mouvement.',
+                        timer: 3500,
+                        showConfirmButton: false,
+                        timerProgressBar: true
                     });
                 }
             });
@@ -693,4 +843,42 @@ function showDeleteAlert(message, id) {
     });
 }
 </script>
+
+<style>
+.table-hover-effect {
+    background-color: #f8f9fa !important;
+    transform: scale(1.01);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+}
+.dataTables_wrapper .dataTables_length select {
+    padding: 0.375rem 2.25rem 0.375rem 0.75rem;
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+}
+.dataTables_wrapper .dataTables_info {
+    padding-top: 0.75rem;
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    padding: 0.375rem 0.75rem;
+    margin: 0 0.125rem;
+    border-radius: 0.375rem;
+    border: 1px solid #dee2e6;
+    background: #fff;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    background: #e9ecef;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button.current {
+    background: linear-gradient(90deg, #1e3a8a, #3b82f6);
+    color: white !important;
+    border-color: #1e3a8a;
+}
+.form-control:focus, .form-select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
+}
+</style>
 {% endblock %}
