@@ -13,6 +13,9 @@ use App\Repository\ChantierRepository;
 use App\Repository\StockRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class StockMovementController extends AbstractController
 {
@@ -760,5 +763,206 @@ final class StockMovementController extends AbstractController
         } catch (\Exception $e) {
             return new JsonResponse(['success' => false, 'message' => 'Erreur lors de la modification du statut: ' . $e->getMessage()], 500);
         }
+    }
+
+    #[Route('/stock_movement/export-excel', name: 'stock_movement_export_excel', methods: ['GET'])]
+    public function exportExcel(
+        Request $request,
+        MouvementStockRepository $mouvementStockRepository,
+        ChantierRepository $chantierRepository
+    ): Response {
+        $session = $request->getSession();
+        $selectedChantier = $session->get('selected_chantier');
+        $chantierId = $selectedChantier['id'] ?? null;
+        $chantierNom = $selectedChantier['nom'] ?? 'Chantier';
+        $startDate = $request->query->get('start_date');
+        $endDate = $request->query->get('end_date');
+
+        if (!$chantierId) {
+            $this->addFlash('error', 'Aucun chantier sélectionné.');
+            return $this->redirectToRoute('article_movement');
+        }
+
+        $qb = $mouvementStockRepository->createQueryBuilder('m')
+            ->where('m.chantierExp = :chantierId OR m.chantierRec = :chantierId')
+            ->setParameter('chantierId', $chantierId);
+        if ($startDate && $endDate) {
+            $qb->andWhere('m.date BETWEEN :start AND :end')
+                ->setParameter('start', $startDate.' 00:00:00')
+                ->setParameter('end', $endDate.' 23:59:59');
+        } elseif ($startDate) {
+            $qb->andWhere('m.date >= :start')->setParameter('start', $startDate.' 00:00:00');
+        } elseif ($endDate) {
+            $qb->andWhere('m.date <= :end')->setParameter('end', $endDate.' 23:59:59');
+        }
+        $mouvements = $qb->getQuery()->getResult();
+
+        // Prepare data for two sheets
+        $machineMouvements = [];
+        $articleMouvements = [];
+        foreach ($mouvements as $m) {
+            if ($m->getMachine()) {
+                $machineMouvements[] = $m;
+            } elseif ($m->getArticle()) {
+                $articleMouvements[] = $m;
+            }
+        }
+        $spreadsheet = new Spreadsheet();
+        // --- Sheet 1: Machines ---
+        $sheet1 = $spreadsheet->getActiveSheet();
+        $sheet1->setTitle('Machines');
+        if ($startDate && $endDate) {
+            $title1 = 'Mouvements de stock (Machines) du chantier ' . $chantierNom . ' du ' . $startDate . ' au ' . $endDate;
+        } else {
+            $title1 = 'Mouvements de stock (Machines) du chantier ' . $chantierNom;
+        }
+        $sheet1->mergeCells('A1:G1');
+        $sheet1->setCellValue('A1', $title1);
+        $sheet1->getStyle('A1')->getFont()->setBold(true)->setSize(18);
+        $sheet1->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet1->getStyle('A1')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('1e3a8a');
+        $sheet1->getStyle('A1')->getFont()->getColor()->setRGB('FFFFFF');
+        $row = 2;
+        $headers = ['Type', 'Date', 'Article/Machine', 'Quantité', 'Chantier Récepteur', 'Chantier Expéditeur', 'Fournisseur'];
+        $sheet1->fromArray($headers, null, 'A' . $row);
+        $sheet1->getStyle('A'.$row.':G'.$row)->getFont()->setBold(true)->setSize(13);
+        $sheet1->getStyle('A'.$row.':G'.$row)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet1->getStyle('A'.$row.':G'.$row)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('3b82f6');
+        $sheet1->getStyle('A'.$row.':G'.$row)->getFont()->getColor()->setRGB('FFFFFF');
+        $row++;
+        $borderStyle = [
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                    'color' => ['argb' => 'FF888888'],
+                ],
+            ],
+        ];
+        foreach ($machineMouvements as $m) {
+            $type = $m->getType();
+            $displayType = $type;
+            if ($type === 'Transfert') {
+                if ($m->getChantierRec() && $m->getChantierRec()->getId() == $chantierId) {
+                    $displayType = 'Entrée';
+                } elseif ($m->getChantierExp() && $m->getChantierExp()->getId() == $chantierId) {
+                    $displayType = 'Sortie';
+                }
+            }
+            $date = $m->getDate() ? $m->getDate()->format('Y-m-d') : '';
+            $articleOrMachine = $m->getMachine() ? $m->getMachine()->getNom() : '-';
+            $quantite = $m->getQuantite();
+            $chantierExpediteur = '-';
+            $chantierRecepteur = '-';
+            if ($displayType === 'Entrée') {
+                $chantierRecepteur = $chantierNom;
+                $chantierExpediteur = $m->getChantierExp() ? $m->getChantierExp()->getNom() : '-';
+            } elseif ($displayType === 'Sortie') {
+                $chantierExpediteur = $chantierNom;
+                $chantierRecepteur = $m->getChantierRec() ? $m->getChantierRec()->getNom() : '-';
+            } elseif ($displayType === 'Augmenter stock') {
+                $chantierRecepteur = $chantierNom;
+                $chantierExpediteur = '-';
+            }
+            $fournisseur = $type === 'Augmenter stock' ? ($m->getFournisseur() ?: '-') : '-';
+            $sheet1->fromArray([
+                $displayType,
+                $date,
+                $articleOrMachine,
+                $quantite,
+                $chantierRecepteur,
+                $chantierExpediteur,
+                $fournisseur
+            ], null, 'A' . $row);
+            $sheet1->getStyle('A'.$row.':G'.$row)->getFont()->setSize(14);
+            $sheet1->getStyle('A'.$row.':G'.$row)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet1->getStyle('A'.$row.':G'.$row)->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+            $sheet1->getStyle('A'.$row.':G'.$row)->applyFromArray($borderStyle);
+            $row++;
+        }
+        $sheet1->getColumnDimension('A')->setWidth(20);
+        $sheet1->getColumnDimension('B')->setWidth(18);
+        $sheet1->getColumnDimension('C')->setWidth(35);
+        $sheet1->getColumnDimension('D')->setWidth(15);
+        $sheet1->getColumnDimension('E')->setWidth(25);
+        $sheet1->getColumnDimension('F')->setWidth(25);
+        $sheet1->getColumnDimension('G')->setWidth(25);
+        // --- Sheet 2: Articles ---
+        $sheet2 = $spreadsheet->createSheet();
+        $sheet2->setTitle('Articles');
+        if ($startDate && $endDate) {
+            $title2 = 'Mouvements de stock (Articles) du chantier ' . $chantierNom . ' du ' . $startDate . ' au ' . $endDate;
+        } else {
+            $title2 = 'Mouvements de stock (Articles) du chantier ' . $chantierNom;
+        }
+        $sheet2->mergeCells('A1:G1');
+        $sheet2->setCellValue('A1', $title2);
+        $sheet2->getStyle('A1')->getFont()->setBold(true)->setSize(18);
+        $sheet2->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet2->getStyle('A1')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('1e3a8a');
+        $sheet2->getStyle('A1')->getFont()->getColor()->setRGB('FFFFFF');
+        $row = 2;
+        $sheet2->fromArray($headers, null, 'A' . $row);
+        $sheet2->getStyle('A'.$row.':G'.$row)->getFont()->setBold(true)->setSize(13);
+        $sheet2->getStyle('A'.$row.':G'.$row)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet2->getStyle('A'.$row.':G'.$row)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('3b82f6');
+        $sheet2->getStyle('A'.$row.':G'.$row)->getFont()->getColor()->setRGB('FFFFFF');
+        $row++;
+        foreach ($articleMouvements as $m) {
+            $type = $m->getType();
+            $displayType = $type;
+            if ($type === 'Transfert') {
+                if ($m->getChantierRec() && $m->getChantierRec()->getId() == $chantierId) {
+                    $displayType = 'Entrée';
+                } elseif ($m->getChantierExp() && $m->getChantierExp()->getId() == $chantierId) {
+                    $displayType = 'Sortie';
+                }
+            }
+            $date = $m->getDate() ? $m->getDate()->format('Y-m-d') : '';
+            $articleOrMachine = $m->getArticle() ? $m->getArticle()->getNom() : '-';
+            $quantite = $m->getQuantite();
+            $chantierExpediteur = '-';
+            $chantierRecepteur = '-';
+            if ($displayType === 'Entrée') {
+                $chantierRecepteur = $chantierNom;
+                $chantierExpediteur = $m->getChantierExp() ? $m->getChantierExp()->getNom() : '-';
+            } elseif ($displayType === 'Sortie') {
+                $chantierExpediteur = $chantierNom;
+                $chantierRecepteur = $m->getChantierRec() ? $m->getChantierRec()->getNom() : '-';
+            } elseif ($displayType === 'Augmenter stock') {
+                $chantierRecepteur = $chantierNom;
+                $chantierExpediteur = '-';
+            }
+            $fournisseur = $type === 'Augmenter stock' ? ($m->getFournisseur() ?: '-') : '-';
+            $sheet2->fromArray([
+                $displayType,
+                $date,
+                $articleOrMachine,
+                $quantite,
+                $chantierRecepteur,
+                $chantierExpediteur,
+                $fournisseur
+            ], null, 'A' . $row);
+            $sheet2->getStyle('A'.$row.':G'.$row)->getFont()->setSize(14);
+            $sheet2->getStyle('A'.$row.':G'.$row)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet2->getStyle('A'.$row.':G'.$row)->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+            $sheet2->getStyle('A'.$row.':G'.$row)->applyFromArray($borderStyle);
+            $row++;
+        }
+        $sheet2->getColumnDimension('A')->setWidth(20);
+        $sheet2->getColumnDimension('B')->setWidth(18);
+        $sheet2->getColumnDimension('C')->setWidth(35);
+        $sheet2->getColumnDimension('D')->setWidth(15);
+        $sheet2->getColumnDimension('E')->setWidth(25);
+        $sheet2->getColumnDimension('F')->setWidth(25);
+        $sheet2->getColumnDimension('G')->setWidth(25);
+        $writer = new Xlsx($spreadsheet);
+        $response = new StreamedResponse(function() use ($writer) {
+            $writer->save('php://output');
+        });
+        $filename = 'mouvements_stock_' . preg_replace('/\s+/', '_', strtolower($chantierNom)) . '_' . date('Ymd_His') . '.xlsx';
+        $response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        $response->headers->set('Content-Disposition', 'attachment;filename="' . $filename . '"');
+        $response->headers->set('Cache-Control', 'max-age=0');
+        return $response;
     }
 }
