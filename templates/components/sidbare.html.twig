@@ -43,6 +43,12 @@
                 </a>
             </li>
             <li class="nav-item mb-2">
+              <a href="/stock" class="nav-link {% if activeLink == 'stock' %}text-white{% endif %}" 
+              style="{% if activeLink == 'stock' %}background: linear-gradient(90deg, #1e3a8a, #3b82f6); border-radius: 8px;{% else %}border-radius: 8px;{% endif %}">
+             <i class="bi bi-box me-2"></i> Stock
+                 </a>
+            </li>
+            <li class="nav-item mb-2">
                 <a href="/stock/movement" class="nav-link {% if activeLink == 'stock_movement' %}text-white{% endif %}" style="{% if activeLink == 'stock_movement' %}background: linear-gradient(90deg, #1e3a8a, #3b82f6); border-radius: 8px;{% else %}border-radius: 8px;{% endif %}">
                    <i class="bi bi-box-seam me-2"></i> Mouvements de stock
                 </a>
